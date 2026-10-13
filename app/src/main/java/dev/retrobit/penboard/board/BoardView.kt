@@ -214,17 +214,18 @@ class BoardView @JvmOverloads constructor(
     // ------------------------------------------------------------------ sentuhan
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.isPenButtonPressed(MotionEvent.BUTTON_STYLUS_PRIMARY)) {
+        if (event.isButtonPressed(MotionEvent.BUTTON_STYLUS_PRIMARY)) {
             if (event.actionMasked == MotionEvent.ACTION_DOWN) onPenButtonPrimary?.invoke()
             return true
         }
-        if (event.isPenButtonPressed(MotionEvent.BUTTON_STYLUS_SECONDARY)) {
+        if (event.isButtonPressed(MotionEvent.BUTTON_STYLUS_SECONDARY)) {
             if (event.actionMasked == MotionEvent.ACTION_DOWN) onPenButtonSecondary?.invoke()
             return true
         }
 
-        val isStylus = event.toolType == MotionEvent.TOOL_TYPE_STYLUS
-        val isEraser = event.toolType == MotionEvent.TOOL_TYPE_ERASER
+        val toolType = event.getToolType(0)
+        val isStylus = toolType == MotionEvent.TOOL_TYPE_STYLUS
+        val isEraser = toolType == MotionEvent.TOOL_TYPE_ERASER
         if (!isStylus && !isEraser && !allowFinger) return false
 
         if (isEraser) {
