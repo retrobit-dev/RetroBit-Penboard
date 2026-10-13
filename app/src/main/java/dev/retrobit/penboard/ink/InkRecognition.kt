@@ -152,8 +152,8 @@ object InkRecognition {
      * Kenali [strokes]. Model bahasa dipastikan ada lebih dulu; [onDownloading]
      * dipanggil bila model harus diunduh (supaya pengguna tidak menunggu tanpa kabar).
      *
-     * [retryStrokes] adalah versi normalisasi kedua dari tinta yang sama; dipakai
-     * sekali bila percobaan pertama tidak menghasilkan teks sama sekali.
+     * Keadaan Google Play services diperiksa **pemanggil** (lihat
+     * [servicesStatus]) karena fungsi ini tidak memegang `Context`.
      */
     fun recognize(
         variants: List<List<NormalizedStroke>>,
@@ -172,14 +172,6 @@ object InkRecognition {
         val model = buildModel(language)
         if (model == null) {
             lastMessage = "bahasa '$language' tidak dikenal mesin pengenalan"
-            onResult(null, RecognitionFailure.MODEL_MISSING)
-            return
-        }
-        val gms = servicesStatus(context)
-        if (!gms.canAttempt) {
-            // Tanpa Google Play services mesin bawaan memang tidak bisa jalan:
-            // ini bukan "tulisan tidak terbaca", jadi pesannya dibedakan.
-            lastMessage = gms.summary
             onResult(null, RecognitionFailure.MODEL_MISSING)
             return
         }
