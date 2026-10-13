@@ -64,6 +64,61 @@ class InkNormalizerTest {
     }
 
     @Test
+    fun `versi percobaan kedua dipaskan ke kotak tetap`() {
+        // Tulisan setinggi 40 px diperbesar sampai tinggi kotak tetap.
+        val fitted = InkNormalizer.normalizeFitted(listOf(stroke(0f, 0f, 100f, 40f)), 40f)
+        assertEquals(1, fitted.size)
+        val points = fitted.first().points
+        val height = points.maxOf { it.y } - points.minOf { it.y }
+        assertEquals(InkNormalizer.FIT_LINE_HEIGHT, height, 0.01f)
+        // Selalu dimulai dari margin, bukan dari nol.
+        assertTrue(points.minOf { it.x } >= InkNormalizer.FIT_MARGIN - 0.01f)
+    }
+
+    @Test
+    fun `versi percobaan kedua bisa diminta lebih besar`() {
+        val ink = listOf(stroke(0f, 0f, 100f, 40f))
+        val large = InkNormalizer.normalizeFitted(ink, 40f, InkNormalizer.FIT_LARGE_HEIGHT)
+        val height = large.first().points.maxOf { it.y } - large.first().points.minOf { it.y }
+        assertEquals(InkNormalizer.FIT_LARGE_HEIGHT, height, 0.01f)
+    }
+
+    @Test
+    fun `pembesaran dibatasi agar tulisan mini tidak meledak`() {
+        // Tulisan 10x5 px hanya diperbesar sampai batas FIT_MAX_SCALE.
+        val tiny = InkNormalizer.normalizeFitted(listOf(stroke(0f, 0f, 10f, 5f)), 40f)
+        val height = tiny.first().points.maxOf { it.y } - tiny.first().points.minOf { it.y }
+        assertEquals(5f * InkNormalizer.FIT_MAX_SCALE, height, 0.01f)
+    }
+
+    @Test
+    fun `tinta yang sama disiapkan dalam beberapa versi`() {
+        val strokes = listOf(stroke(0f, 0f, 120f, 30f), stroke(10f, 5f, 80f, 20f))
+        val variants = InkNormalizer.variants(strokes, 40f)
+        assertTrue("harus ada beberapa versi", variants.size >= 2)
+        // Versi pertama adalah normalisasi biasa (tidak dimulai dari margin).
+        assertEquals(0f, variants.first().first().points.minOf { it.x }, 0.01f)
+        // Versi berikutnya dipaskan ke kotak tetap, jadi tidak ada yang sama persis.
+        for (index in 1 until variants.size) {
+            val a = variants[index - 1]
+            val b = variants[index]
+            val same = a.size == b.size && a.indices.all { s ->
+                val pa = a[s].points
+                val pb = b[s].points
+                pa.size == pb.size && pa.indices.all { i ->
+                    kotlin.math.abs(pa[i].x - pb[i].x) < 0.5f && kotlin.math.abs(pa[i].y - pb[i].y) < 0.5f
+                }
+            }
+            assertTrue("versi $index seharusnya berbeda dari versi sebelumnya", !same)
+        }
+    }
+
+    @Test
+    fun `tidak ada versi untuk tulisan yang terlalu pendek`() {
+        assertTrue(InkNormalizer.variants(listOf(stroke(5f, 5f)), 40f).isEmpty())
+    }
+
+    @Test
     fun `jumlah goresan dibatasi`() {
         val many = (0 until InkNormalizer.MAX_STROKES + 50).map { index ->
             stroke(0f, (index % 3) * 40f + 5f, 10f, (index % 3) * 40f + 15f)

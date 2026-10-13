@@ -28,6 +28,8 @@ class HandwritingInput(
     /** Kirim teks ke kolom isian; kembalikan true bila teks benar-benar terkirim. */
     private val commit: (String) -> Boolean,
     private val notify: (String) -> Unit,
+    /** Teks yang sudah ada sebelum kursor (membantu mesin memilih kata). */
+    private val preContext: () -> String? = { null },
     /** Mesin pengenalan bawaan tidak tersedia (mis. tanpa Google Play services). */
     private val onUnavailable: (String) -> Unit = {}
 ) {
@@ -95,16 +97,25 @@ class HandwritingInput(
             }
             return
         }
-        val strokes = InkNormalizer.normalize(board.contentStrokes(), board.lineGapPx)
-        if (strokes.isEmpty()) {
+        val raw = board.contentStrokes()
+        // Beberapa versi tinta (ukuran berbeda) dicoba berurutan oleh mesin bila
+        // percobaan sebelumnya tidak menghasilkan teks sama sekali.
+        val variants = InkNormalizer.variants(raw, board.lineGapPx)
+        if (variants.isEmpty()) {
             if (announce) notify(context.getString(R.string.msg_board_empty))
             return
         }
         busy = true
         val language = current.recognitionLanguage
+        val before = try {
+            preContext()
+        } catch (error: Throwable) {
+            null
+        }
         InkRecognition.recognize(
-            strokes = strokes,
+            variants = variants,
             language = language,
+            preContext = before,
             // Model bahasa diunduh otomatis sekali; pengguna diberi tahu supaya tidak menunggu bingung.
             onDownloading = { notify(context.getString(R.string.msg_model_downloading_auto)) }
         ) { text, failure ->
@@ -161,8 +172,19 @@ class HandwritingInput(
         }
     }
 
-    /** Pesan gagal baca + alasan teknis dari mesin (bila ada). */
+    /**
+     * Pesan gagal baca. Kalau mesin sebenarnya menjawab (ada kandidat) tetapi
+     * jawabannya dianggap bukan kata, kandidat itu ikut ditampilkan supaya jelas;
+     * kalau tidak ada jawaban sama sekali, alasan teknisnya yang ditampilkan.
+     */
     private fun notRecognizedMessage(): String {
+        val candidates = InkRecognition.lastCandidateTexts()
+        if (candidates.isNotEmpty()) {
+            return context.getString(
+                R.string.msg_not_recognized_candidates,
+                candidates.take(3).joinToString(", ")
+            )
+        }
         val reason = InkRecognition.lastErrorMessage()
         return if (reason.isNullOrBlank()) {
             context.getString(R.string.msg_not_recognized)

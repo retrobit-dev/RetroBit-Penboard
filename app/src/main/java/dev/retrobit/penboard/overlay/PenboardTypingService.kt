@@ -74,6 +74,16 @@ class PenboardTypingService : AccessibilityService() {
         return pasteText(node, text)
     }
 
+    /** Beberapa huruf sebelum kursor pada kolom yang sedang fokus (boleh null). */
+    fun textBeforeCursor(limit: Int): String? {
+        val node = focusedEditable() ?: return null
+        val text = node.text?.toString() ?: return null
+        val caret = node.textSelectionStart
+        if (caret <= 0) return null
+        val from = if (caret > text.length) text.length else caret
+        return text.substring((from - limit).coerceAtLeast(0), from)
+    }
+
     /** Jalankan aksi tombol keyboard tanpa keyboard Penboard aktif. */
     fun perform(action: KeyAction): Boolean = when (action) {
         KeyAction.CURSOR_LEFT -> moveCaret(-1)

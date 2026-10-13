@@ -178,6 +178,12 @@
     <string name="msg_model_ready">Model bahasa siap dipakai.</string>
     <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
     <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau lebih besar, lalu tekan tombol Teks.</string>
+    <string name="msg_not_recognized_candidates">Mesin membaca "%1$s" — belum bisa dijadikan kata. Coba tulis lebih rapi atau lebih besar.</string>
+    <string name="action_copy_report">Salin laporan mesin</string>
+    <string name="msg_report_copied">Laporan disalin. Tempelkan ke chat supaya bisa saya periksa.</string>
+    <string name="msg_report_failed">Tidak bisa menyalin laporan di perangkat ini.</string>
+    <string name="diag_candidates_none">Belum ada jawaban dari mesin pengenalan.</string>
+    <string name="diag_candidates">Jawaban mesin terakhir: %1$s</string>
     <string name="msg_not_recognized_reason">Tulisan belum bisa dikenali (%1$s). Coba tulis lebih jelas atau lebih besar.</string>
     <string name="msg_model_downloading_auto">Model bahasa sedang diunduh sekali saja (±20 MB). Tulisan Anda tetap di papan; tunggu sebentar.</string>
     <string name="flash_unreadable">✗ tidak terbaca</string>

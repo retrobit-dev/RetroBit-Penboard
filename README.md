@@ -2,7 +2,14 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.5** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.6** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.6
+
+- **Tulisan dikirim ke mesin dalam beberapa versi ukuran.** Sebelumnya tinta selalu diperkecil mengikuti jarak baris panduan, sehingga tulisan kecil bisa jadi terlalu mungil untuk dikenali. Sekarang tinta yang sama disiapkan dalam beberapa versi (normalisasi baris, lalu dipaskan ke kotak tetap tinggi 160 dan 320) dan dicoba berurutan **sampai ada yang terbaca** — jadi ukuran tulisan tidak lagi menentukan berhasil/tidaknya.
+- **Mesin diberi keterangan tambahan** (`RecognitionContext`): **ukuran bidang tulisan** (membantu membedakan huruf kecil dan huruf besar) dan **beberapa huruf sebelum kursor** — dipakai untuk memilih kata yang paling cocok dengan kalimat yang sedang ditulis.
+- **Diagnostik baru**: kartu pemeriksaan menampilkan **jawaban terakhir mesin** (kandidat teks), dan ada tombol **"Salin laporan mesin"** yang menyalin ringkasan (versi, mesin tersedia/tidak, bahasa, status model, jumlah goresan/titik tinta, kandidat terakhir, pesan terakhir) untuk dilaporkan bila masih gagal.
+- Pesan gagal baca kini menyebutkan **apa yang sebenarnya dibaca mesin** bila ada kandidat.
 
 ## Yang baru di 3.0.5
 

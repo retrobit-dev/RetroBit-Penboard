@@ -29,6 +29,7 @@ import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.ink.InkRecognition
+import dev.retrobit.penboard.ink.InkReport
 import dev.retrobit.penboard.ink.ModelStatus
 import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.overlay.PenboardOverlayService
@@ -46,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var store: ConfigStore
     private lateinit var content: LinearLayout
     private lateinit var testField: EditText
+
+    /** Status model bahasa terakhir yang terbaca (dipakai laporan diagnostik). */
+    private var modelStatusText: String? = null
     private var previewPanel: BoardPanel? = null
 
     private val configListener: (PenboardConfig) -> Unit = { config ->
@@ -234,7 +238,7 @@ class MainActivity : AppCompatActivity() {
             val language = RecognitionLanguages.label(store.config.recognitionLanguage)
             val modelLine = Ui.statusText(card, getString(R.string.status_model_checking))
             InkRecognition.modelStatus(store.config.recognitionLanguage) { status ->
-                modelLine.text = getString(
+                val text = getString(
                     when (status) {
                         ModelStatus.READY -> R.string.check_model_ready
                         ModelStatus.NOT_DOWNLOADED -> R.string.check_model_not_downloaded
@@ -242,6 +246,8 @@ class MainActivity : AppCompatActivity() {
                     },
                     language
                 )
+                modelStatusText = text
+                modelLine.text = text
             }
         }
         // Pesan terakhir mesin: membantu menelusuri bila pengenalan gagal.
@@ -254,6 +260,42 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.diag_engine_message, engineMessage.take(160))
             }
         )
+        val candidates = InkRecognition.lastCandidateTexts()
+        Ui.statusText(
+            card,
+            if (candidates.isEmpty()) {
+                getString(R.string.diag_candidates_none)
+            } else {
+                getString(R.string.diag_candidates, candidates.joinToString(", "))
+            }
+        )
+        Ui.buttonRow(card, getString(R.string.action_copy_report) to { copyEngineReport(engineReady) })
+    }
+
+    /** Salin laporan mesin pengenalan ke papan klip supaya mudah diperiksa. */
+    private fun copyEngineReport(engineReady: Boolean) {
+        val version = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "?"
+        } catch (error: Throwable) {
+            "?"
+        }
+        val report = InkReport.lines(
+            appVersion = version,
+            engineAvailable = engineReady,
+            language = RecognitionLanguages.label(store.config.recognitionLanguage),
+            modelStatus = modelStatusText,
+            message = InkRecognition.lastErrorMessage(),
+            candidates = InkRecognition.lastCandidateTexts(),
+            ink = InkRecognition.lastInkSummary()
+        )
+        val copied = try {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.app_name), report))
+            true
+        } catch (error: Throwable) {
+            false
+        }
+        toast(getString(if (copied) R.string.msg_report_copied else R.string.msg_report_failed))
     }
 
     /** Satu langkah panduan dengan tanda selesai/belum. */

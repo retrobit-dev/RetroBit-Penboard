@@ -114,6 +114,8 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
             config = { store.config },
             commit = { text -> commitText(text) },
             notify = { message -> toast(message) },
+            // Huruf sebelum kursor (bila "Penboard Tulis Otomatis" menyala).
+            preContext = { PenboardTypingService.current()?.textBeforeCursor(20) },
             onUnavailable = { message -> toast(message) }
         )
 

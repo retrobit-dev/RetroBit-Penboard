@@ -55,6 +55,14 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             config = { store.config },
             commit = { text -> commitText(text) },
             notify = { message -> toast(message) },
+            // Huruf yang sudah ada sebelum kursor: membantu mesin memilih kata.
+            preContext = {
+                try {
+                    currentInputConnection?.getTextBeforeCursor(20, 0)?.toString()
+                } catch (error: Throwable) {
+                    null
+                }
+            },
             onUnavailable = { message -> handleEngineUnavailable(message) }
         )
         store.addListener(configListener)

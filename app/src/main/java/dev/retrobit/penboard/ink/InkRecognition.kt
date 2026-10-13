@@ -13,6 +13,8 @@ import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognitionModel
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizer
 import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizerOptions
 import com.google.mlkit.vision.digitalink.recognition.Ink
+import com.google.mlkit.vision.digitalink.recognition.RecognitionContext
+import com.google.mlkit.vision.digitalink.recognition.WritingArea
 import dev.retrobit.penboard.util.LanguageTags
 
 enum class ModelStatus { READY, NOT_DOWNLOADED, MISSING, UNKNOWN }
@@ -58,10 +60,35 @@ object InkRecognition {
     @Volatile
     private var lastMessage: String? = null
 
+    /** Kandidat teks terakhir dari mesin (untuk laporan diagnostik). */
+    @Volatile
+    private var lastCandidates: List<String> = emptyList()
+
+    /** Ringkasan tinta terakhir yang dikirim ke mesin. */
+    @Volatile
+    private var lastInk: InkReport.Ink? = null
+
+    /** Batas jumlah kandidat yang disimpan untuk laporan. */
+    private const val MAX_REPORTED_CANDIDATES = 5
+
+    /** Panjang teks sebelum kursor yang dikirim sebagai keterangan (huruf). */
+    private const val PRE_CONTEXT_LENGTH = 20
+
     fun lastErrorMessage(): String? = lastMessage
 
     fun clearLastErrorMessage() {
         lastMessage = null
+    }
+
+    /** Kandidat teks terakhir (boleh kosong). */
+    fun lastCandidateTexts(): List<String> = lastCandidates
+
+    /** Ringkasan tinta terakhir yang dikirim ke mesin (boleh null). */
+    fun lastInkSummary(): InkReport.Ink? = lastInk
+
+    /** Catat ringkasan tinta yang dikirim ke mesin (dipakai [HandwritingInput]). */
+    fun recordInk(ink: InkReport.Ink?) {
+        lastInk = ink
     }
 
     /** ML Kit butuh Google Play services; sebagian perangkat (Huawei tanpa GMS) tidak punya. */
@@ -106,34 +133,43 @@ object InkRecognition {
     /**
      * Kenali [strokes]. Model bahasa dipastikan ada lebih dulu; [onDownloading]
      * dipanggil bila model harus diunduh (supaya pengguna tidak menunggu tanpa kabar).
+     *
+     * [retryStrokes] adalah versi normalisasi kedua dari tinta yang sama; dipakai
+     * sekali bila percobaan pertama tidak menghasilkan teks sama sekali.
      */
     fun recognize(
-        strokes: List<NormalizedStroke>,
+        variants: List<List<NormalizedStroke>>,
         language: String,
+        preContext: String? = null,
         onDownloading: () -> Unit = {},
         onResult: (String?, RecognitionFailure?) -> Unit
     ) {
-        if (strokes.isEmpty()) {
+        lastCandidates = emptyList()
+        val ladder = variants.filter { it.isNotEmpty() }
+        lastInk = InkReport.inkOf(ladder.firstOrNull().orEmpty())
+        if (ladder.isEmpty()) {
             onResult(null, RecognitionFailure.EMPTY)
             return
         }
         val model = buildModel(language)
         if (model == null) {
+            lastMessage = "bahasa '$language' tidak dikenal mesin pengenalan"
             onResult(null, RecognitionFailure.MODEL_MISSING)
             return
         }
+        val context = preContext?.trim()?.takeLast(PRE_CONTEXT_LENGTH)
         remoteModelManager.isModelDownloaded(model)
             .addOnSuccessListener { downloaded ->
                 if (downloaded) {
-                    runRecognizer(strokes, language, onResult, canDownload = false)
+                    attempt(ladder, 0, language, context, onDownloading, allowDownload = false, onResult)
                 } else {
-                    downloadThenRecognize(model, strokes, language, onDownloading, onResult)
+                    downloadThenRecognize(model, ladder, language, context, onDownloading, onResult)
                 }
             }
             .addOnFailureListener { error ->
                 // Status model tidak terbaca: coba saja dulu, unduhan ditangani bila gagal.
                 Log.w(TAG, "Gagal memeriksa model, mencoba mengenali langsung", error)
-                runRecognizer(strokes, language, onResult, canDownload = true, onDownloading = onDownloading)
+                attempt(ladder, 0, language, context, onDownloading, allowDownload = true, onResult)
             }
     }
 
@@ -148,8 +184,9 @@ object InkRecognition {
     /** Unduh model dulu (sekali), lalu kenali tulisannya. */
     private fun downloadThenRecognize(
         model: DigitalInkRecognitionModel,
-        strokes: List<NormalizedStroke>,
+        variants: List<List<NormalizedStroke>>,
         language: String,
+        preContext: String?,
         onDownloading: () -> Unit,
         onResult: (String?, RecognitionFailure?) -> Unit
     ) {
@@ -157,7 +194,7 @@ object InkRecognition {
         remoteModelManager.download(model, DownloadConditions.Builder().build())
             .addOnSuccessListener {
                 lastMessage = null
-                runRecognizer(strokes, language, onResult, canDownload = false)
+                attempt(variants, 0, language, preContext, onDownloading, allowDownload = false, onResult)
             }
             .addOnFailureListener { error ->
                 Log.w(TAG, "Gagal mengunduh model", error)
@@ -166,40 +203,87 @@ object InkRecognition {
             }
     }
 
-    private fun runRecognizer(
-        strokes: List<NormalizedStroke>,
+    /**
+     * Satu percobaan pengenalan memakai versi tinta ke-[index]. Bila mesin tidak
+     * menemukan kandidat teks sama sekali dan masih ada versi berikutnya, tinta
+     * yang sama dicoba lagi dengan normalisasi berbeda (ukuran tulisan berbeda).
+     */
+    private fun attempt(
+        variants: List<List<NormalizedStroke>>,
+        index: Int,
         language: String,
-        onResult: (String?, RecognitionFailure?) -> Unit,
-        canDownload: Boolean,
-        onDownloading: () -> Unit = {}
+        preContext: String?,
+        onDownloading: () -> Unit,
+        allowDownload: Boolean,
+        onResult: (String?, RecognitionFailure?) -> Unit
     ) {
+        val strokes = variants.getOrNull(index)
+        if (strokes == null) {
+            lastMessage = "mesin tidak menemukan kandidat teks setelah ${variants.size} percobaan"
+            onResult(null, RecognitionFailure.FAILED)
+            return
+        }
         val active = ensureRecognizer(language)
         if (active == null) {
+            lastMessage = "mesin pengenalan untuk bahasa '$language' tidak bisa dibuat"
             onResult(null, RecognitionFailure.MODEL_MISSING)
             return
         }
-        active.recognize(toInk(strokes))
+        val ink = toInk(strokes)
+        val context = buildContext(strokes, preContext)
+        val task = if (context != null) active.recognize(ink, context) else active.recognize(ink)
+        task
             .addOnSuccessListener { result ->
-                val text = result.candidates.firstOrNull()?.text
-                if (text.isNullOrBlank()) {
-                    lastMessage = "mesin tidak menemukan kandidat teks"
-                    onResult(null, RecognitionFailure.FAILED)
-                } else {
+                val candidates = result.candidates
+                    .mapNotNull { candidate -> candidate.text?.takeIf { it.isNotBlank() } }
+                lastCandidates = candidates.take(MAX_REPORTED_CANDIDATES)
+                val text = lastCandidates.firstOrNull()
+                if (text != null) {
                     lastMessage = null
                     onResult(text, null)
+                    return@addOnSuccessListener
+                }
+                if (index + 1 < variants.size) {
+                    lastMessage = "percobaan ${index + 1} tanpa teks; mencoba normalisasi berikutnya"
+                    attempt(variants, index + 1, language, preContext, onDownloading, allowDownload = false, onResult)
+                } else {
+                    lastMessage = "mesin tidak menemukan kandidat teks setelah ${variants.size} percobaan"
+                    onResult(null, RecognitionFailure.FAILED)
                 }
             }
             .addOnFailureListener { error ->
                 Log.w(TAG, "Pengenalan gagal", error)
                 lastMessage = describe(error)
                 val model = buildModel(language)
-                if (canDownload && model != null && looksLikeModelProblem(error)) {
+                if (allowDownload && model != null && looksLikeModelProblem(error)) {
                     // Barangkali modelnya terhapus/dipangkas sistem: unduh sekali lalu ulangi.
-                    downloadThenRecognize(model, strokes, language, onDownloading, onResult)
+                    downloadThenRecognize(model, variants, language, preContext, onDownloading, onResult)
                 } else {
                     onResult(null, RecognitionFailure.FAILED)
                 }
             }
+    }
+
+    /**
+     * Keterangan tambahan untuk mesin: ukuran bidang tulisan (membantu membedakan
+     * huruf kecil/besar) dan beberapa huruf sebelum kursor (membantu memilih kata).
+     */
+    private fun buildContext(strokes: List<NormalizedStroke>, preContext: String?): RecognitionContext? {
+        val ink = InkReport.inkOf(strokes) ?: return null
+        return try {
+            val builder = RecognitionContext.builder()
+                .setWritingArea(
+                    WritingArea(
+                        ink.width.toFloat().coerceAtLeast(1f),
+                        ink.height.toFloat().coerceAtLeast(1f)
+                    )
+                )
+            if (!preContext.isNullOrBlank()) builder.setPreContext(preContext)
+            builder.build()
+        } catch (error: Throwable) {
+            Log.w(TAG, "Gagal menyiapkan keterangan tulisan", error)
+            null
+        }
     }
 
     private fun buildModel(language: String): DigitalInkRecognitionModel? {
