@@ -42,11 +42,12 @@ class ColorMathTest {
     }
 
     @Test
-    fun `ambang terang bisa dipakai langsung`() {
-        assertTrue(ColorMath.isLight(0xFFFFFFFF.toInt()))
-        assertFalse(ColorMath.isLight(0xFF000000.toInt()))
-        assertFalse(ColorMath.isLight(ColorMath.LIGHT_THRESHOLD - 1))
-        assertTrue(ColorMath.isLight(ColorMath.LIGHT_THRESHOLD))
+    fun `ambang terang ada di angka 128`() {
+        // Abu-abu 0x80 tepat di ambang, 0x7F tepat di bawahnya.
+        assertEquals(ColorMath.LIGHT_THRESHOLD, ColorMath.luminance(0xFF808080.toInt()))
+        assertTrue(ColorMath.isLight(0xFF808080.toInt()))
+        assertEquals(ColorMath.LIGHT_THRESHOLD - 1, ColorMath.luminance(0xFF7F7F7F.toInt()))
+        assertFalse(ColorMath.isLight(0xFF7F7F7F.toInt()))
     }
 
     @Test
