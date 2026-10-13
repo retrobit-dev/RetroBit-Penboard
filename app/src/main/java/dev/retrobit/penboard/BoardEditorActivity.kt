@@ -25,6 +25,9 @@ import dev.retrobit.penboard.data.RowDef
 import dev.retrobit.penboard.data.ToolMode
 import dev.retrobit.penboard.data.ToolbarSide
 import dev.retrobit.penboard.databinding.ActivityBoardEditorBinding
+import dev.retrobit.penboard.ink.InkRecognition
+import dev.retrobit.penboard.ink.ModelStatus
+import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.ui.Preview
 import dev.retrobit.penboard.ui.Ui
 import kotlin.math.roundToInt
@@ -531,6 +534,75 @@ class BoardEditorActivity : AppCompatActivity() {
             }
         )
 
+        val ocrCard = Ui.card(parent, getString(R.string.sec_recognition))
+        if (!InkRecognition.isSupported) {
+            Ui.bodyText(ocrCard, getString(R.string.ocr_offline_note))
+        } else {
+            Ui.bodyText(ocrCard, getString(R.string.ocr_engine_info, InkRecognition.engineName))
+
+            Ui.bodyText(ocrCard, getString(R.string.ocr_language))
+            val languages = RecognitionLanguages.all
+            val languageSpinner = Spinner(this)
+            languageSpinner.adapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                languages.map { entry -> entry.second + " (" + entry.first + ")" }
+            )
+            val currentLanguage = RecognitionLanguages.normalize(config.recognitionLanguage)
+            languageSpinner.setSelection(languages.indexOfFirst { it.first == currentLanguage }.coerceAtLeast(0), false)
+            ocrCard.addView(languageSpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
+            val statusView = Ui.bodyText(ocrCard, getString(R.string.ocr_status_checking))
+            languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parentView: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    val selected = languages.getOrNull(position) ?: return
+                    if (selected.first != config.recognitionLanguage) {
+                        update { it.copy(recognitionLanguage = selected.first) }
+                        refreshModelStatus(statusView, selected.first)
+                    }
+                }
+
+                override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
+            }
+            refreshModelStatus(statusView, currentLanguage)
+
+            Ui.sliderRow(
+                ocrCard,
+                getString(R.string.ocr_lines),
+                config.recognitionLines,
+                1,
+                6,
+                "baris"
+            ) { value -> update { it.copy(recognitionLines = value) } }
+
+            Ui.switchRow(
+                ocrCard,
+                getString(R.string.ocr_clear_after),
+                getString(R.string.ocr_clear_after_summary),
+                config.clearAfterRecognize
+            ) { value -> update { it.copy(clearAfterRecognize = value) } }
+
+            Ui.fullButton(ocrCard, getString(R.string.ocr_download)) {
+                val label = RecognitionLanguages.label(currentLanguage)
+                statusView.text = getString(R.string.ocr_downloading, label)
+                InkRecognition.downloadModel(currentLanguage) { state ->
+                    runOnUiThread {
+                        statusView.text = when (state) {
+                            ModelStatus.READY -> getString(R.string.ocr_status_ready, label)
+                            ModelStatus.MISSING -> getString(R.string.ocr_status_missing, label)
+                            else -> getString(R.string.ocr_status_unknown)
+                        }
+                        val message = when (state) {
+                            ModelStatus.READY -> getString(R.string.ocr_status_ready, label)
+                            ModelStatus.MISSING -> getString(R.string.ocr_download_failed)
+                            else -> getString(R.string.ocr_status_unknown)
+                        }
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
         val boardCard = Ui.card(parent, getString(R.string.sec_board))
         Ui.switchRow(boardCard, getString(R.string.sw_grid), checked = config.gridEnabled) { value ->
             update { it.copy(gridEnabled = value) }
@@ -577,6 +649,19 @@ class BoardEditorActivity : AppCompatActivity() {
             getString(R.string.action_restore) to { restoreProfile() }
         )
         Ui.fullButton(actions, getString(R.string.action_delete), outlined = true) { confirmDelete() }
+    }
+
+    private fun refreshModelStatus(view: TextView, language: String) {
+        view.text = getString(R.string.ocr_status_checking)
+        InkRecognition.modelStatus(language) { state ->
+            runOnUiThread {
+                view.text = when (state) {
+                    ModelStatus.READY -> getString(R.string.ocr_status_ready, RecognitionLanguages.label(language))
+                    ModelStatus.MISSING -> getString(R.string.ocr_status_missing, RecognitionLanguages.label(language))
+                    else -> getString(R.string.ocr_status_unknown)
+                }
+            }
+        }
     }
 
     private fun duplicateProfile() {

@@ -39,6 +39,20 @@ android {
         }
     }
 
+    flavorDimensions += "ocr"
+    productFlavors {
+        // Varian ringan & 100% luring (tanpa izin internet).
+        create("offline") {
+            dimension = "ocr"
+        }
+        // Varian dengan pengenalan tulisan (ML Kit Digital Ink).
+        create("ink") {
+            dimension = "ocr"
+            applicationIdSuffix = ".ink"
+            versionNameSuffix = "-ink"
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -92,6 +106,9 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
+
+    // Pengenalan tulisan hanya ikut dalam varian "ink" (menambah ukuran APK).
+    "inkImplementation"("com.google.mlkit:digital-ink-recognition:19.0.0")
 
     testImplementation("junit:junit:4.13.2")
     // org.json asli untuk unit test (android.jar hanya berisi stub)

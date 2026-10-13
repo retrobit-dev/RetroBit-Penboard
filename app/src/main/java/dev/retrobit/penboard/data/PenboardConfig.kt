@@ -32,6 +32,7 @@ enum class KeyAction(val id: String, val label: String) {
     CURSOR_RIGHT("cursorRight", "Geser kursor ke kanan"),
     SCROLL_OLDER("scrollOlder", "Lihat tulisan lama (naik)"),
     SCROLL_NEWER("scrollNewer", "Kembali ke baris baru (turun)"),
+    RECOGNIZE("recognize", "Tulisan → teks (pengenalan)"),
     SAVE_IMAGE("saveImage", "Simpan gambar ke Galeri"),
     COLOR("color", "Warna pena (bergiliran)"),
     PROFILE_PREV("profilePrev", "Profil sebelumnya"),
@@ -179,6 +180,12 @@ data class PenboardConfig(
     val keyAccentColor: Int = 0xFF3D5AFE.toInt(),
     /** Warna siap pakai untuk tombol "warna pena" (dipakai bergiliran, tetap). */
     val penColors: List<Int> = emptyList(),
+    /** Bahasa tulisan untuk pengenalan (BCP-47, mis. id-ID). */
+    val recognitionLanguage: String = "id-ID",
+    /** Berapa baris terakhir yang dikenali setiap kali tombol pengenalan ditekan. */
+    val recognitionLines: Int = 3,
+    /** Hapus tulisan yang sudah dikenali (agar papan siap untuk kalimat berikutnya). */
+    val clearAfterRecognize: Boolean = false,
     val toolbarRows: List<RowDef> = emptyList(),
     val boardRows: List<RowDef> = emptyList()
 ) {
@@ -211,6 +218,8 @@ data class PenboardConfig(
             keyBgOpacity = keyBgOpacity.coerceIn(0, 100),
             keyTextSizeSp = keyTextSizeSp.coerceIn(10, 30),
             penColors = penColors.take(MAX_PEN_COLORS),
+            recognitionLanguage = recognitionLanguage.trim().ifBlank { "id-ID" }.take(12),
+            recognitionLines = recognitionLines.coerceIn(1, 6),
             toolbarRows = toolRows.ifEmpty { fallback.toolbarRows },
             boardRows = boardRowsSafe.ifEmpty { fallback.boardRows }
         )
@@ -245,6 +254,9 @@ data class PenboardConfig(
         put("keyTextSizeSp", keyTextSizeSp)
         put("keyAccentColor", keyAccentColor)
         put("penColors", JSONArray().also { array -> penColors.forEach { array.put(it) } })
+        put("recognitionLanguage", recognitionLanguage)
+        put("recognitionLines", recognitionLines)
+        put("clearAfterRecognize", clearAfterRecognize)
         put("toolbarRows", JSONArray().also { a -> toolbarRows.forEach { a.put(it.toJson()) } })
         put("boardRows", JSONArray().also { a -> boardRows.forEach { a.put(it.toJson()) } })
     }
@@ -298,6 +310,9 @@ data class PenboardConfig(
                         for (i in 0 until array.length()) add(array.optInt(i))
                     }
                 },
+                recognitionLanguage = o.optString("recognitionLanguage", "id-ID"),
+                recognitionLines = o.optInt("recognitionLines", 3),
+                clearAfterRecognize = o.optBoolean("clearAfterRecognize", false),
                 toolbarRows = toolbar,
                 boardRows = board
             ).sanitized()

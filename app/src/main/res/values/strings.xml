@@ -128,10 +128,31 @@
     <string name="color_dialog_title">Pilih warna</string>
     <string name="color_hex_label">Kode hex</string>
 
+    <!-- Pengenalan tulisan (OCR) -->
+    <string name="sec_recognition">Pengenalan tulisan (tulisan → teks)</string>
+    <string name="ocr_engine_info">Mesin pengenalan: %1$s. Pengenalan berjalan di perangkat; hanya unduhan model bahasa yang memerlukan internet (sekali saja, ±20 MB).</string>
+    <string name="ocr_offline_note">Varian ini tidak menyertakan mesin pengenalan tulisan, sehingga aplikasi tetap ringan dan tidak meminta izin internet. Tombol “Tulisan → teks” tetap bisa dipasang, tetapi baru berfungsi pada varian Penboard OCR (unduh APK bertanda <b>ink</b>).</string>
+    <string name="ocr_language">Bahasa tulisan</string>
+    <string name="ocr_lines">Baris yang dikenali setiap kali</string>
+    <string name="ocr_clear_after">Hapus tulisan setelah dikenali</string>
+    <string name="ocr_clear_after_summary">Papan langsung bersih untuk kalimat berikutnya (masih bisa diurungkan).</string>
+    <string name="ocr_download">Unduh model bahasa</string>
+    <string name="ocr_status_checking">Memeriksa status model…</string>
+    <string name="ocr_status_ready">Model %1$s sudah siap dan dipakai luring.</string>
+    <string name="ocr_status_missing">Model %1$s belum diunduh (±20 MB, sekali saja).</string>
+    <string name="ocr_status_unknown">Status model belum bisa dipastikan. Sambungkan internet lalu tekan “Unduh model bahasa”.</string>
+
     <!-- Pesan keyboard -->
     <string name="ime_pen_color">Warna pena: %1$s</string>
     <string name="ime_profile_switched">Profil: %1$s</string>
     <string name="ime_board_empty">Papan masih kosong</string>
     <string name="ime_saved">Gambar disimpan ke Galeri › Pictures › Penboard</string>
     <string name="ime_save_failed">Gagal menyimpan gambar</string>
+    <string name="ocr_offline_variant">Pengenalan tulisan hanya ada pada varian Penboard OCR (APK bertanda “ink”).</string>
+    <string name="ocr_empty_board">Belum ada tulisan yang bisa dikenali.</string>
+    <string name="ocr_downloading">Mengunduh model tulisan %1$s (±20 MB)…</string>
+    <string name="ocr_download_failed">Gagal mengunduh model. Periksa koneksi internet lalu coba lagi.</string>
+    <string name="ocr_result">Terkirim: %1$s</string>
+    <string name="ocr_model_missing">Model bahasa belum tersedia. Unduh dulu di aplikasi Penboard.</string>
+    <string name="ocr_failed">Tulisan belum bisa dikenali — coba tulis lebih jelas.</string>
 </resources>

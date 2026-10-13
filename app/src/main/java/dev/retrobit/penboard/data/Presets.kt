@@ -9,6 +9,7 @@ import dev.retrobit.penboard.data.KeyAction.ENTER
 import dev.retrobit.penboard.data.KeyAction.ERASE
 import dev.retrobit.penboard.data.KeyAction.HIDE
 import dev.retrobit.penboard.data.KeyAction.COLOR
+import dev.retrobit.penboard.data.KeyAction.RECOGNIZE
 import dev.retrobit.penboard.data.KeyAction.REDO
 import dev.retrobit.penboard.data.KeyAction.PROFILE_NEXT
 import dev.retrobit.penboard.data.KeyAction.PROFILE_PREV
@@ -55,6 +56,7 @@ object Presets {
                 KeyDef.action(CLEAR),
                 KeyDef.action(COLOR),
                 KeyDef.action(ERASE),
+                KeyDef.action(RECOGNIZE),
                 KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
@@ -305,6 +307,7 @@ object Presets {
                 KeyDef.action(REDO),
                 KeyDef.action(SCROLL_OLDER),
                 KeyDef.action(SCROLL_NEWER),
+                KeyDef.action(RECOGNIZE),
                 KeyDef.action(CLEAR),
                 KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)

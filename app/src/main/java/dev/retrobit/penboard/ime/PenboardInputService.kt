@@ -21,6 +21,11 @@ import dev.retrobit.penboard.data.PresetRepository
 import dev.retrobit.penboard.data.Presets
 import dev.retrobit.penboard.data.ToolMode
 import dev.retrobit.penboard.data.ToolbarSide
+import dev.retrobit.penboard.ink.InkExtractor
+import dev.retrobit.penboard.ink.InkRecognition
+import dev.retrobit.penboard.ink.ModelStatus
+import dev.retrobit.penboard.ink.RecognitionError
+import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.databinding.KeyboardLayoutBinding
 import dev.retrobit.penboard.ui.KeyRowsBuilder
 
@@ -194,6 +199,7 @@ class PenboardInputService : InputMethodService() {
             KeyAction.REDO -> board?.redo()
             KeyAction.CURSOR_LEFT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT)
             KeyAction.CURSOR_RIGHT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT)
+            KeyAction.RECOGNIZE -> recognizeHandwriting()
             KeyAction.SCROLL_OLDER -> board?.scrollByLines(SCROLL_STEP_LINES)
             KeyAction.SCROLL_NEWER -> board?.scrollByLines(-SCROLL_STEP_LINES)
             KeyAction.COLOR -> cyclePenColor()
@@ -281,6 +287,69 @@ class PenboardInputService : InputMethodService() {
         loadedProfileId = null
         applyConfig()
         toast(getString(R.string.ime_profile_switched, next.name))
+    }
+
+    /**
+     * Ubah tulisan pada beberapa baris terakhir menjadi teks di kolom aplikasi tujuan.
+     * Berjalan sepenuhnya di perangkat; hanya unduhan model bahasa yang butuh internet.
+     */
+    private fun recognizeHandwriting() {
+        val board = binding?.boardView ?: return
+        if (!InkRecognition.isSupported) {
+            toast(getString(R.string.ocr_offline_variant))
+            return
+        }
+        if (!board.hasContent) {
+            toast(getString(R.string.ocr_empty_board))
+            return
+        }
+        val language = RecognitionLanguages.normalize(config.recognitionLanguage)
+        val capture = InkExtractor.capture(
+            strokes = board.contentStrokes(),
+            gapPx = board.lineGapPx,
+            lines = config.recognitionLines,
+            width = board.width,
+            height = board.height
+        )
+        if (capture.isEmpty) {
+            toast(getString(R.string.ocr_empty_board))
+            return
+        }
+        InkRecognition.modelStatus(language) { status ->
+            if (status == ModelStatus.MISSING) {
+                toast(getString(R.string.ocr_downloading, RecognitionLanguages.label(language)))
+                InkRecognition.downloadModel(language) { downloadStatus ->
+                    if (downloadStatus == ModelStatus.READY) {
+                        runRecognition(capture, language)
+                    } else {
+                        toast(getString(R.string.ocr_download_failed))
+                    }
+                }
+            } else {
+                runRecognition(capture, language)
+            }
+        }
+    }
+
+    private fun runRecognition(capture: dev.retrobit.penboard.ink.InkCapture, language: String) {
+        if (capture.isEmpty) return
+        val board = binding?.boardView ?: return
+        val recognized = if (config.clearAfterRecognize) board.contentStrokes() else emptyList()
+        InkRecognition.recognize(capture, language) { text, error ->
+            when {
+                !text.isNullOrBlank() -> {
+                    commitText(text.trim() + " ")
+                    toast(getString(R.string.ocr_result, text.trim()))
+                    if (config.clearAfterRecognize && recognized.isNotEmpty()) {
+                        board.removeStrokes(recognized)
+                    }
+                }
+
+                error == RecognitionError.MODEL_MISSING -> toast(getString(R.string.ocr_model_missing))
+                error == RecognitionError.EMPTY -> toast(getString(R.string.ocr_empty_board))
+                else -> toast(getString(R.string.ocr_failed))
+            }
+        }
     }
 
     /** Simpan tulisan papan ke profil yang sedang dipakai. */

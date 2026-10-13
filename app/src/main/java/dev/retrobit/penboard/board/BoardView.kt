@@ -218,6 +218,31 @@ class BoardView @JvmOverloads constructor(
         onContentChanged?.invoke()
     }
 
+    /** Salinan daftar goresan (untuk pengenalan tulisan). */
+    fun contentStrokes(): List<Stroke> = ArrayList(strokes)
+
+    /** Jarak baris saat ini dalam piksel (dipakai pengenalan tulisan). */
+    val lineGapPx: Float get() = gapPx
+
+    /** Hapus sekumpulan goresan sebagai satu langkah urungkan (dipakai setelah pengenalan). */
+    fun removeStrokes(targets: List<Stroke>) {
+        if (targets.isEmpty()) return
+        val wanted = targets.toSet()
+        val removed = ArrayList<Pair<Int, Stroke>>()
+        val kept = ArrayList<Stroke>(strokes.size)
+        strokes.forEachIndexed { index, stroke ->
+            if (stroke in wanted) removed.add(index to stroke) else kept.add(stroke)
+        }
+        if (removed.isEmpty()) return
+        strokes.clear()
+        strokes.addAll(kept)
+        undoStack.addLast(BoardAction.Erase(removed))
+        redoStack.clear()
+        recomputeShift()
+        invalidate()
+        onContentChanged?.invoke()
+    }
+
     /** Geser tampilan ke tulisan yang lebih lama (delta > 0) atau kembali ke baris terbaru. */
     fun scrollByLines(lines: Int) {
         if (lines == 0 || gapPx <= 0f) return
