@@ -40,7 +40,8 @@ object Ui {
             radius = dp(context, 10f).toFloat()
             cardElevation = 0f
             strokeWidth = dp(context, 1f)
-            strokeColor = ColorStateList.valueOf(RETRO_BORDER)
+            // Dipanggil sebagai fungsi: properti `strokeColor` memilih versi Int.
+            setStrokeColor(ColorStateList.valueOf(RETRO_BORDER))
             setContentPadding(dp(context, 16f), dp(context, 14f), dp(context, 16f), dp(context, 16f))
         }
         val inner = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
