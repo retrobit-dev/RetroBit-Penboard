@@ -15,6 +15,22 @@ serta tata letaknya.
 
 ## 1. Fitur
 
+### Baru di v1.2 — pengenalan tulisan (OCR) & dua varian APK
+- **Tulisan → teks**: tombol *Tulisan → teks (pengenalan)* mengubah tulisan pada beberapa baris
+  terakhir menjadi teks dan langsung mengirimkannya ke kolom aplikasi tujuan (memakai
+  **ML Kit Digital Ink** — pengenalan berjalan **di perangkat**).
+- **Dua varian** supaya janji ringan & luring tetap utuh:
+
+  | Varian | Isi | Ukuran | Izin |
+  | --- | --- | --- | --- |
+  | **offline** (bawaan) | papan tulis + tombol, **tanpa** mesin pengenalan | tetap ringan | **tanpa izin internet** |
+  | **ink** (*Penboard OCR*) | varian offline **+ pengenalan tulisan** | lebih besar (berisi ML Kit) | `INTERNET` — hanya untuk mengunduh model bahasa |
+
+- Editor mendapat kartu **Pengenalan tulisan**: pilih bahasa (14 bahasa, termasuk Indonesia & Jawa),
+  jumlah baris yang dikenali (1–6), opsi hapus tulisan setelah dikenali, dan tombol unduh model.
+- Saat tombol pengenalan ditekan dan model bahasa belum ada, aplikasi **mengunduh model otomatis**
+  (±20 MB, sekali saja) lalu mengenali tulisan; setelah itu semuanya berjalan luring.
+
 ### Baru di v1.1
 - **Tulisan tersimpan otomatis per papan** — tulisan tetap ada walau keyboard ditutup, aplikasi
   ditutup, atau HP dimatikan (berkas ringkas di penyimpanan internal, satu berkas per profil).
@@ -69,8 +85,11 @@ diganti nama, dipulihkan ke bawaan, atau dihapus.
 ## 2. Memasang di perangkat
 
 1. Unduh APK dari halaman **[Releases](../../releases)** (dibangun otomatis oleh GitHub Actions),
-   atau dari tab **Actions › Android CI › artifact `penboard-apk`**.
-2. Pasang APK (`app-debug.apk` atau `app-release.apk`).
+   atau dari tab **Actions › Android CI › artifact `penboard-apk`**. Pilih sesuai kebutuhan:
+   - `Penboard-…-offline-release.apk` → ringan, tanpa izin internet (papan tulis + tombol).
+   - `Penboard-…-ink-release.apk` → **Penboard OCR**, ada *Tulisan → teks* (unduh model bahasa saat pertama dipakai).
+   - akhiran `-debug` untuk versi uji.
+2. Pasang APK (kedua varian bisa dipasang berdampingan karena nama paketnya berbeda).
 3. Buka aplikasi **Penboard** → kartu *Status keyboard* → **Pengaturan sistem** → aktifkan **Penboard**
    pada daftar keyboard → kembali → **Pilih keyboard** → pilih **Penboard**.
 4. Ketuk kolom teks di aplikasi mana pun; papan tulis Penboard akan muncul.
@@ -131,6 +150,9 @@ app/src/main/java/dev/retrobit/penboard/
 │   ├── KeyButton.kt          # tombol kustom: label/ikon, status aktif, ulangi saat ditahan
 │   ├── KeyIcons.kt           # ikon vektor untuk tiap aksi
 │   └── BoardExporter.kt      # simpan papan ke PNG (Galeri)
+├── ink/             # pengenalan tulisan (tulisan → teks)
+│   ├── InkCapture.kt           # ambil goresan dari baris terakhir (fungsi murni + unit test)
+│   └── RecognitionLanguages.kt # daftar bahasa tulisan
 ├── ime/             # keyboard-nya sendiri
 │   └── PenboardInputService.kt  # InputMethodService + aksi tombol
 └── ui/              # tampilan aplikasi
@@ -155,19 +177,19 @@ memakai `KeyLayout` sehingga tampilan di editor, pratinjau, dan keyboard selalu 
 Prasyarat: **JDK 17** dan Android SDK (compileSdk 35, minSdk 26). Wrapper Gradle 8.11.1 sudah disertakan.
 
 ```bash
-# APK debug
-./gradlew :app:assembleDebug
-# APK rilis (ditandatangani kunci debug bila tidak ada keystore.properties)
-./gradlew :app:assembleRelease
-# Unit test
-./gradlew :app:testDebugUnitTest
+# APK varian ringan (tanpa OCR)
+./gradlew :app:assembleOfflineDebug
+# APK varian dengan pengenalan tulisan
+./gradlew :app:assembleInkRelease
+# Unit test kedua varian
+./gradlew :app:testOfflineDebugUnitTest :app:testInkDebugUnitTest
 ```
 
-Hasil: `app/build/outputs/apk/debug/app-debug.apk` dan `app/build/outputs/apk/release/app-release.apk`.
+Hasil ada di `app/build/outputs/apk/<varian>/<tipe>/` — mis. `offline/release/app-offline-release.apk`.
 
 ### Build otomatis di GitHub
 Workflow `.github/workflows/android.yml` berjalan pada setiap push/PR:
-unit test → build APK debug + release → unggah artifact `penboard-apk`.
+unit test kedua varian → build APK **offline** & **ink** (debug + release) → unggah artifact `penboard-apk`.
 Bila sebuah **tag** `v*` di-push, APK otomatis dilampirkan ke halaman Releases.
 
 ```bash
@@ -188,20 +210,23 @@ keyPassword=…
 
 ## 7. Pengujian
 
-`./gradlew :app:testDebugUnitTest` menjalankan:
+`./gradlew :app:testOfflineDebugUnitTest :app:testInkDebugUnitTest` menjalankan:
 - `KeyLayoutTest` — perhitungan lebar tombol (lebar relatif, isi sisa ruang, sisa pembulatan).
 - `BoardMathTest` — jumlah baris, geser otomatis, batas geser tampilan, konversi koordinat.
 - `StrokeTest` — titik goresan, batas, dan uji tabrak penghapus.
 - `StrokeCodecTest` — goresan tetap utuh setelah disimpan/dimuat, data rusak diabaikan dengan aman.
+- `InkExtractorTest` — pengambilan goresan untuk pengenalan (baris terakhir, koordinat, batas jumlah).
 - `PenboardConfigTest` — putaran JSON preset, sanitasi nilai ekstrem, duplikasi profil, warna.
 
 ---
 
 ## 8. Catatan & batasan
 
-- Penboard **tidak mengubah tulisan tangan menjadi teks (tanpa OCR)**. Papan dipakai sebagai media
-  menulis stylus, sedangkan tombol mengendalikan teks di aplikasi tujuan. Pengenalan tulisan tangan
-  luring direncanakan sebagai langkah berikutnya.
+- **Pengenalan tulisan tersedia pada varian `ink`** dan memakai ML Kit Digital Ink. Agar aplikasi
+  bawaan tetap ringan dan sepenuhnya luring, mesin pengenalan **tidak** disertakan pada varian
+  `offline`; tombol pengenalan pada varian itu hanya menampilkan keterangan.
+- Model bahasa (±20 MB per bahasa) diunduh sekali saat pertama dipakai; pengenalan berikutnya
+  berjalan di perangkat **tanpa koneksi**. Tidak ada tulisan yang dikirim ke server.
 - Pintasan tombol/ujung penghapus pena hanya bekerja bila stylus & aplikasi mengirimkan informasi
   tombol (M-Pencil umumnya mengirim `TOOL_TYPE_ERASER` pada ujung penghapusnya; sebagian stylus
   mengirim `BUTTON_STYLUS_PRIMARY`).
@@ -222,5 +247,7 @@ Huawei M-Pencil and similar pens. Everything is configurable — board size, tra
 which buttons appear, and their layout (relative width, flex-to-fill, repeat-on-hold, toolbar
 position, rows). It supports pen pressure, side-button undo, eraser-tip erase, palm rejection,
 automatic paper shift, undo/redo, and PNG export. Writing is **saved automatically per board**, can be
-**scrolled back** to review earlier lines, and each board can hold its **own fixed pen-colour palette**.
-100% offline, no internet permission. APKs are built and published by GitHub Actions on every push.
+**scrolled back** to review earlier lines, and each board can hold its **own fixed pen-colour palette**, and can **turn handwriting into text** through ML Kit Digital Ink
+(including Indonesian). Two APKs are published: a lean **offline** build (no internet permission) and
+an **ink** build with handwriting recognition (downloads a ~20 MB language model once, then works
+on-device). APKs are built and published by GitHub Actions on every push.
