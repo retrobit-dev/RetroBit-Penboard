@@ -1,6 +1,7 @@
 package dev.retrobit.penboard.ime
 
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.util.Log
 import android.text.InputType
 import android.view.KeyEvent
@@ -18,15 +19,14 @@ import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.PresetRepository
+import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.Presets
 import dev.retrobit.penboard.data.ToolMode
 import dev.retrobit.penboard.data.ToolbarSide
-import dev.retrobit.penboard.ink.InkExtractor
+import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ink.InkRecognition
-import dev.retrobit.penboard.ink.ModelStatus
-import dev.retrobit.penboard.ink.RecognitionError
-import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.databinding.KeyboardLayoutBinding
+import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.ui.KeyRowsBuilder
 
 /**
@@ -48,7 +48,43 @@ class PenboardInputService : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         config = repository.active()
+        handwriting = HandwritingInput(
+            boardProvider = { binding?.boardView },
+            languageProvider = { config.recognitionLanguage },
+            configAutoRecognize = { config.autoRecognize },
+            configDelayMs = { config.autoRecognizeDelayMs },
+            configLines = { config.recognitionLines },
+            configClearAfter = { config.clearAfterRecognize },
+            commit = { text -> commitText(text); true },
+            notify = { message -> toast(message) }
+        )
+    }
+
+    override fun onDestroy() {
+        handwriting.cancelPending()
+        if (instance === this) instance = null
+        super.onDestroy()
+    }
+
+    /** Sembunyikan jendela keyboard (dipakai tombol "papan melayang" & pegangan overlay). */
+    fun hideKeyboardWindow() {
+        requestHideSelf(0)
+    }
+
+    /** Kirim teks dari papan melayang lewat koneksi keyboard yang sedang aktif. */
+    fun commitFromExternal(text: String): Boolean {
+        val connection = currentInputConnection ?: return false
+        connection.commitText(text, 1)
+        return true
+    }
+
+    /** Hapus satu huruf dari papan melayang. */
+    fun deleteBackwardFromExternal(): Boolean {
+        val connection = currentInputConnection ?: return false
+        connection.deleteSurroundingText(1, 0)
+        return true
     }
 
     override fun onCreateInputView(): View {
@@ -110,7 +146,11 @@ class PenboardInputService : InputMethodService() {
         binding.boardView.penColorOverride = currentPenColor()
         binding.boardView.onContentChanged = { persistBoard() }
         binding.boardView.onEraseHappened = { persistBoard() }
-        binding.boardView.onStrokeCommitted = { persistBoard() }
+        binding.boardView.onStrokeCommitted = {
+            persistBoard()
+            handwriting.onStrokeCommitted()
+        }
+        binding.boardView.onPenButtonAction = { action -> runPenButtonAction(action) }
         binding.boardView.onToolChangedByPen = { penTool ->
             tool = penTool
             refreshToolHighlight()
@@ -199,7 +239,8 @@ class PenboardInputService : InputMethodService() {
             KeyAction.REDO -> board?.redo()
             KeyAction.CURSOR_LEFT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT)
             KeyAction.CURSOR_RIGHT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT)
-            KeyAction.RECOGNIZE -> recognizeHandwriting()
+            KeyAction.RECOGNIZE -> handwriting.recognize(announce = true)
+            KeyAction.OVERLAY_TOGGLE -> toggleOverlay()
             KeyAction.SCROLL_OLDER -> board?.scrollByLines(SCROLL_STEP_LINES)
             KeyAction.SCROLL_NEWER -> board?.scrollByLines(-SCROLL_STEP_LINES)
             KeyAction.COLOR -> cyclePenColor()
@@ -289,66 +330,56 @@ class PenboardInputService : InputMethodService() {
         toast(getString(R.string.ime_profile_switched, next.name))
     }
 
-    /**
-     * Ubah tulisan pada beberapa baris terakhir menjadi teks di kolom aplikasi tujuan.
-     * Berjalan sepenuhnya di perangkat; hanya unduhan model bahasa yang butuh internet.
-     */
-    private fun recognizeHandwriting() {
-        val board = binding?.boardView ?: return
-        if (!InkRecognition.isSupported) {
-            toast(getString(R.string.ocr_offline_variant))
-            return
-        }
-        if (!board.hasContent) {
-            toast(getString(R.string.ocr_empty_board))
-            return
-        }
-        val language = RecognitionLanguages.normalize(config.recognitionLanguage)
-        val capture = InkExtractor.capture(
-            strokes = board.contentStrokes(),
-            gapPx = board.lineGapPx,
-            lines = config.recognitionLines,
-            width = board.width,
-            height = board.height
-        )
-        if (capture.isEmpty) {
-            toast(getString(R.string.ocr_empty_board))
-            return
-        }
-        InkRecognition.modelStatus(language) { status ->
-            if (status == ModelStatus.MISSING) {
-                toast(getString(R.string.ocr_downloading, RecognitionLanguages.label(language)))
-                InkRecognition.downloadModel(language) { downloadStatus ->
-                    if (downloadStatus == ModelStatus.READY) {
-                        runRecognition(capture, language)
-                    } else {
-                        toast(getString(R.string.ocr_download_failed))
-                    }
-                }
-            } else {
-                runRecognition(capture, language)
+    /** Aksi tombol samping pena, dapat diatur per profil. */
+    private fun runPenButtonAction(action: PenButtonAction) {
+        val board = binding?.boardView
+        when (action) {
+            PenButtonAction.RECOGNIZE -> handwriting.recognize(announce = true)
+            PenButtonAction.ERASE -> {
+                tool = ToolMode.ERASE
+                board?.tool = tool
             }
+
+            PenButtonAction.UNDO -> board?.undo()
+            PenButtonAction.CLEAR -> board?.clearBoard()
+            PenButtonAction.OVERLAY -> toggleOverlay()
+            PenButtonAction.HIDE -> requestHideSelf(0)
+            PenButtonAction.NONE -> Unit
         }
+        refreshToolHighlight()
     }
 
-    private fun runRecognition(capture: dev.retrobit.penboard.ink.InkCapture, language: String) {
-        if (capture.isEmpty) return
-        val board = binding?.boardView ?: return
-        val recognized = if (config.clearAfterRecognize) board.contentStrokes() else emptyList()
-        InkRecognition.recognize(capture, language) { text, error ->
-            when {
-                !text.isNullOrBlank() -> {
-                    commitText(text.trim() + " ")
-                    toast(getString(R.string.ocr_result, text.trim()))
-                    if (config.clearAfterRecognize && recognized.isNotEmpty()) {
-                        board.removeStrokes(recognized)
-                    }
-                }
-
-                error == RecognitionError.MODEL_MISSING -> toast(getString(R.string.ocr_model_missing))
-                error == RecognitionError.EMPTY -> toast(getString(R.string.ocr_empty_board))
-                else -> toast(getString(R.string.ocr_failed))
+    /** Tampilkan atau sembunyikan papan tulis melayang di atas aplikasi lain. */
+    private fun toggleOverlay() {
+        if (PenboardOverlayService.running) {
+            startService(
+                Intent(this, PenboardOverlayService::class.java)
+                    .setAction(PenboardOverlayService.ACTION_STOP)
+            )
+            toast(getString(R.string.overlay_stopped))
+            return
+        }
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            toast(getString(R.string.overlay_permission_needed))
+            return
+        }
+        persistBoard()
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(
+                    Intent(this, PenboardOverlayService::class.java)
+                        .setAction(PenboardOverlayService.ACTION_START)
+                )
+            } else {
+                startService(
+                    Intent(this, PenboardOverlayService::class.java)
+                        .setAction(PenboardOverlayService.ACTION_START)
+                )
             }
+            toast(getString(R.string.overlay_started))
+        }.onFailure { error ->
+            Log.w(TAG, "Gagal menjalankan overlay", error)
+            toast(getString(R.string.overlay_permission_needed))
         }
     }
 
@@ -391,8 +422,14 @@ class PenboardInputService : InputMethodService() {
         }
     }
 
-    private companion object {
-        const val TAG = "PenboardIME"
+    companion object {
+        private const val TAG = "PenboardIME"
+
+        /** Instance yang sedang aktif, dipakai papan melayang untuk mengirim teks. */
+        @Volatile
+        var instance: PenboardInputService? = null
+            private set
+
         const val SCROLL_STEP_LINES = 3
     }
 }

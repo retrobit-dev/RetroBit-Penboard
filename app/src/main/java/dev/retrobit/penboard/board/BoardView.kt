@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.View
 import dev.retrobit.penboard.data.Colors
 import dev.retrobit.penboard.data.PenboardConfig
+import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.Presets
 import dev.retrobit.penboard.data.ToolMode
 import dev.retrobit.penboard.util.BoardMath
@@ -96,6 +97,9 @@ class BoardView @JvmOverloads constructor(
     var onEraseHappened: (() -> Unit)? = null
     /** Dipanggil saat alat berubah karena pena (mis. ujung penghapus), agar tombol ikut menyorot. */
     var onToolChangedByPen: ((ToolMode) -> Unit)? = null
+
+    /** Dipanggil saat tombol samping pena ditekan (aksinya diatur per profil). */
+    var onPenButtonAction: ((PenButtonAction) -> Unit)? = null
 
     // ---------------------------------------------------------------- konten
     private val strokes = ArrayList<Stroke>()
@@ -412,12 +416,20 @@ class BoardView @JvmOverloads constructor(
         val secondaryButton = (buttonState and MotionEvent.BUTTON_STYLUS_SECONDARY) != 0
 
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            // tombol kedua pada pena = undo
-            if (secondaryButton) {
-                undo()
-                return true
+            // Tombol samping pena menjalankan aksi sesuai pengaturan profil.
+            val penButton = when {
+                secondaryButton -> config.penButtonSecondary
+                primaryButton -> config.penButtonPrimary
+                else -> null
             }
-            // tombol samping + ujung penghapus = langsung hapus
+            if (penButton != null && penButton != PenButtonAction.NONE) {
+                if (penButton == PenButtonAction.ERASE) {
+                    activeEraseIsPen = true
+                } else {
+                    onPenButtonAction?.invoke(penButton)
+                    return true
+                }
+            }
             if (toolType == MotionEvent.TOOL_TYPE_FINGER && !config.allowFinger) {
                 return false
             }
@@ -427,7 +439,7 @@ class BoardView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 if (event.pointerCount > 1) return false
                 gestureActive = true
-                activeEraseIsPen = isEraserTool || primaryButton
+                if (isEraserTool) activeEraseIsPen = true
                 val useEraser = activeEraseIsPen || currentTool == ToolMode.ERASE
                 if (useEraser) {
                     erasePoints = ArrayList()

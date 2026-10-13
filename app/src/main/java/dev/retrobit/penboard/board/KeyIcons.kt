@@ -139,6 +139,15 @@ object KeyIcons {
                 canvas.drawLine(r - 0.08f * s, b - 0.12f * s, r - 0.08f * s, t + 0.3f * s, paint)
             }
 
+            KeyAction.OVERLAY_TOGGLE -> {
+                canvas.drawLine(l + 0.14f * s, t + 0.16f * s, r - 0.14f * s, t + 0.16f * s, paint)
+                canvas.drawLine(l + 0.14f * s, t + 0.16f * s, l + 0.14f * s, b - 0.36f * s, paint)
+                canvas.drawLine(r - 0.14f * s, t + 0.16f * s, r - 0.14f * s, b - 0.36f * s, paint)
+                canvas.drawLine(cx - 0.22f * s, cy + 0.02f * s, cx + 0.06f * s, cy + 0.02f * s, paint)
+                canvas.drawLine(cx + 0.06f * s, cy + 0.02f * s, cx + 0.06f * s, cy + 0.3f * s, paint)
+                canvas.drawLine(cx + 0.06f * s, cy + 0.3f * s, cx + 0.32f * s, cy + 0.3f * s, paint)
+            }
+
             KeyAction.RECOGNIZE -> {
                 canvas.drawLine(l + 0.08f * s, t + 0.22f * s, cx - 0.04f * s, t + 0.22f * s, paint)
                 canvas.drawLine(l + 0.08f * s, t + 0.5f * s, cx - 0.04f * s, t + 0.5f * s, paint)

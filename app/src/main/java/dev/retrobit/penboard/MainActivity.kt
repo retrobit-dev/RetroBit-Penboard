@@ -1,7 +1,11 @@
 package dev.retrobit.penboard
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -16,6 +20,7 @@ import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.PresetRepository
 import dev.retrobit.penboard.data.ToolMode
 import dev.retrobit.penboard.databinding.ActivityMainBinding
+import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.ui.Preview
 import dev.retrobit.penboard.ui.Ui
 
@@ -52,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         content.removeAllViews()
         val config = repository.active()
         renderStatus(content)
+        renderOverlay(content)
         renderActiveBoard(content, config)
         renderProfiles(content, config)
         renderPreferences(content)
@@ -71,6 +77,63 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.action_pick_keyboard) to { showImePicker() },
             getString(R.string.action_system_settings) to { openImeSettings() }
         )
+    }
+
+    /** Kartu papan tulis melayang: izin, tombol tampilkan/sembunyikan. */
+    private fun renderOverlay(parent: LinearLayout) {
+        val card = Ui.card(parent, getString(R.string.overlay_section), getString(R.string.overlay_info))
+        val granted = Settings.canDrawOverlays(this)
+        Ui.bodyText(
+            card,
+            getString(if (granted) R.string.overlay_permission_granted else R.string.overlay_need_permission)
+        )
+        if (!granted) {
+            Ui.fullButton(card, getString(R.string.overlay_grant)) {
+                runCatching {
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + packageName)
+                        )
+                    )
+                }.onFailure { openImeSettings() }
+            }
+        } else {
+            Ui.fullButton(
+                card,
+                getString(
+                    if (PenboardOverlayService.running) R.string.overlay_hide else R.string.overlay_show
+                ),
+                outlined = true
+            ) {
+                if (PenboardOverlayService.running) {
+                    startService(
+                        Intent(this, PenboardOverlayService::class.java)
+                            .setAction(PenboardOverlayService.ACTION_STOP)
+                    )
+                } else {
+                    requestNotificationPermissionIfNeeded()
+                    runCatching {
+                        startForegroundService(
+                            Intent(this, PenboardOverlayService::class.java)
+                                .setAction(PenboardOverlayService.ACTION_START)
+                        )
+                    }
+                }
+            }
+            Ui.bodyText(
+                card,
+                getString(
+                    if (PenboardOverlayService.running) R.string.overlay_running else R.string.overlay_not_running
+                )
+            )
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        runCatching { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 40) }
     }
 
     private fun renderActiveBoard(parent: LinearLayout, config: PenboardConfig) {

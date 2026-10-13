@@ -18,6 +18,22 @@ enum class ToolbarSide(val id: String, val label: String) {
     }
 }
 
+/** Aksi yang dipicu tombol samping / ujung pena. */
+enum class PenButtonAction(val id: String, val label: String) {
+    NONE("none", "Tidak ada"),
+    RECOGNIZE("recognize", "Tulisan menjadi teks, langsung dikirim"),
+    ERASE("erase", "Alat penghapus (tahan)"),
+    UNDO("undo", "Urungkan"),
+    CLEAR("clear", "Bersihkan papan"),
+    OVERLAY("overlay", "Tampilkan/sembunyikan papan melayang"),
+    HIDE("hide", "Sembunyikan keyboard");
+
+    companion object {
+        fun fromId(id: String?, fallback: PenButtonAction = RECOGNIZE): PenButtonAction =
+            entries.firstOrNull { it.id == id } ?: fallback
+    }
+}
+
 /** Semua aksi yang bisa ditempelkan ke sebuah tombol. */
 enum class KeyAction(val id: String, val label: String) {
     INSERT("insert", "Tulis teks / simbol"),
@@ -33,6 +49,7 @@ enum class KeyAction(val id: String, val label: String) {
     SCROLL_OLDER("scrollOlder", "Lihat tulisan lama (naik)"),
     SCROLL_NEWER("scrollNewer", "Kembali ke baris baru (turun)"),
     RECOGNIZE("recognize", "Tulisan → teks (pengenalan)"),
+    OVERLAY_TOGGLE("overlay", "Papan melayang (overlay)"),
     SAVE_IMAGE("saveImage", "Simpan gambar ke Galeri"),
     COLOR("color", "Warna pena (bergiliran)"),
     PROFILE_PREV("profilePrev", "Profil sebelumnya"),
@@ -186,6 +203,14 @@ data class PenboardConfig(
     val recognitionLines: Int = 3,
     /** Hapus tulisan yang sudah dikenali (agar papan siap untuk kalimat berikutnya). */
     val clearAfterRecognize: Boolean = false,
+    /** Otomatis mengenali tulisan sesaat setelah pena diangkat (tanpa menekan tombol). */
+    val autoRecognize: Boolean = false,
+    /** Jeda sebelum pengenalan otomatis berjalan (milidetik). */
+    val autoRecognizeDelayMs: Int = 900,
+    /** Aksi tombol samping pena (tekanan pertama). */
+    val penButtonPrimary: PenButtonAction = PenButtonAction.RECOGNIZE,
+    /** Aksi tombol pena kedua (bila stylus mengirim dua tombol). */
+    val penButtonSecondary: PenButtonAction = PenButtonAction.UNDO,
     val toolbarRows: List<RowDef> = emptyList(),
     val boardRows: List<RowDef> = emptyList()
 ) {
@@ -220,6 +245,7 @@ data class PenboardConfig(
             penColors = penColors.take(MAX_PEN_COLORS),
             recognitionLanguage = recognitionLanguage.trim().ifBlank { "id-ID" }.take(12),
             recognitionLines = recognitionLines.coerceIn(1, 6),
+            autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(300, 3000),
             toolbarRows = toolRows.ifEmpty { fallback.toolbarRows },
             boardRows = boardRowsSafe.ifEmpty { fallback.boardRows }
         )
@@ -257,6 +283,10 @@ data class PenboardConfig(
         put("recognitionLanguage", recognitionLanguage)
         put("recognitionLines", recognitionLines)
         put("clearAfterRecognize", clearAfterRecognize)
+        put("autoRecognize", autoRecognize)
+        put("autoRecognizeDelayMs", autoRecognizeDelayMs)
+        put("penButtonPrimary", penButtonPrimary.id)
+        put("penButtonSecondary", penButtonSecondary.id)
         put("toolbarRows", JSONArray().also { a -> toolbarRows.forEach { a.put(it.toJson()) } })
         put("boardRows", JSONArray().also { a -> boardRows.forEach { a.put(it.toJson()) } })
     }
@@ -313,6 +343,10 @@ data class PenboardConfig(
                 recognitionLanguage = o.optString("recognitionLanguage", "id-ID"),
                 recognitionLines = o.optInt("recognitionLines", 3),
                 clearAfterRecognize = o.optBoolean("clearAfterRecognize", false),
+                autoRecognize = o.optBoolean("autoRecognize", false),
+                autoRecognizeDelayMs = o.optInt("autoRecognizeDelayMs", 900),
+                penButtonPrimary = PenButtonAction.fromId(o.optString("penButtonPrimary"), PenButtonAction.RECOGNIZE),
+                penButtonSecondary = PenButtonAction.fromId(o.optString("penButtonSecondary"), PenButtonAction.UNDO),
                 toolbarRows = toolbar,
                 boardRows = board
             ).sanitized()

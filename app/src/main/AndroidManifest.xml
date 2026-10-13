@@ -6,6 +6,12 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Papan tulis melayang (overlay) di atas aplikasi lain. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -36,6 +42,16 @@
             android:label="@string/editor_title"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".overlay.PenboardOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:label="@string/overlay_title">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="papan tulis melayang yang dipakai pengguna untuk menulis dengan stylus di atas aplikasi lain" />
+        </service>
 
         <service
             android:name=".ime.PenboardInputService"

@@ -19,6 +19,7 @@ import com.google.android.material.tabs.TabLayout
 import dev.retrobit.penboard.board.KeyButton
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
+import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.PresetRepository
 import dev.retrobit.penboard.data.RowDef
@@ -534,11 +535,47 @@ class BoardEditorActivity : AppCompatActivity() {
             }
         )
 
+        // ------- tombol samping pena -------
+        val penButtonCard = Ui.card(parent, getString(R.string.sec_pen_button), getString(R.string.pen_button_hint))
+        val penActions = PenButtonAction.entries
+        Ui.bodyText(penButtonCard, getString(R.string.pen_button_primary))
+        val primarySpinner = Spinner(this)
+        primarySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, penActions.map { it.label })
+        primarySpinner.setSelection(penActions.indexOf(config.penButtonPrimary).coerceAtLeast(0), false)
+        primarySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val action = penActions.getOrNull(position) ?: return
+                if (action != config.penButtonPrimary) update { it.copy(penButtonPrimary = action) }
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
+        }
+        penButtonCard.addView(primarySpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
+        Ui.bodyText(penButtonCard, getString(R.string.pen_button_secondary))
+        val secondarySpinner = Spinner(this)
+        secondarySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, penActions.map { it.label })
+        secondarySpinner.setSelection(penActions.indexOf(config.penButtonSecondary).coerceAtLeast(0), false)
+        secondarySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val action = penActions.getOrNull(position) ?: return
+                if (action != config.penButtonSecondary) update { it.copy(penButtonSecondary = action) }
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
+        }
+        penButtonCard.addView(secondarySpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
         val ocrCard = Ui.card(parent, getString(R.string.sec_recognition))
         if (!InkRecognition.isSupported) {
             Ui.bodyText(ocrCard, getString(R.string.ocr_offline_note))
         } else {
             Ui.bodyText(ocrCard, getString(R.string.ocr_engine_info, InkRecognition.engineName))
+            val servicesOk = InkRecognition.isServicesAvailable(this)
+            Ui.bodyText(
+                ocrCard,
+                getString(if (servicesOk) R.string.ocr_services_ok else R.string.ocr_engine_missing)
+            )
 
             Ui.bodyText(ocrCard, getString(R.string.ocr_language))
             val languages = RecognitionLanguages.all
@@ -574,6 +611,22 @@ class BoardEditorActivity : AppCompatActivity() {
                 6,
                 "baris"
             ) { value -> update { it.copy(recognitionLines = value) } }
+
+            Ui.switchRow(
+                ocrCard,
+                getString(R.string.ocr_auto),
+                getString(R.string.ocr_auto_summary),
+                config.autoRecognize
+            ) { value -> update { it.copy(autoRecognize = value) } }
+
+            Ui.sliderRow(
+                ocrCard,
+                getString(R.string.ocr_auto_delay),
+                config.autoRecognizeDelayMs,
+                300,
+                3000,
+                "ms"
+            ) { value -> update { it.copy(autoRecognizeDelayMs = value) } }
 
             Ui.switchRow(
                 ocrCard,

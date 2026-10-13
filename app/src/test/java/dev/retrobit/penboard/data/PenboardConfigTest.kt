@@ -21,6 +21,14 @@ class PenboardConfigTest {
             assertEquals(original.boardBgOpacity, restored.boardBgOpacity)
             assertEquals(original.strokeColor, restored.strokeColor)
             assertEquals(original.toolbarSide, restored.toolbarSide)
+            assertEquals(original.penButtonPrimary, restored.penButtonPrimary)
+            assertEquals(original.penButtonSecondary, restored.penButtonSecondary)
+            assertEquals(original.autoRecognize, restored.autoRecognize)
+            assertEquals(original.autoRecognizeDelayMs, restored.autoRecognizeDelayMs)
+            assertEquals(original.recognitionLanguage, restored.recognitionLanguage)
+            assertEquals(original.recognitionLines, restored.recognitionLines)
+            assertEquals(original.clearAfterRecognize, restored.clearAfterRecognize)
+            assertEquals(original.penColors, restored.penColors)
             assertEquals(original.toolbarRows.size, restored.toolbarRows.size)
             assertEquals(original.boardRows.size, restored.boardRows.size)
             assertEquals(original.boardRows.first().keys.size, restored.boardRows.first().keys.size)
@@ -93,6 +101,35 @@ class PenboardConfigTest {
         assertEquals(127, half ushr 24)
         val transparent = Colors.withOpacity(0xFF102030.toInt(), 0)
         assertEquals(0, transparent ushr 24)
+    }
+
+    @Test
+    fun `aksi tombol pena dibaca dengan aman`() {
+        assertEquals(PenButtonAction.RECOGNIZE, PenButtonAction.fromId("recognize"))
+        assertEquals(PenButtonAction.ERASE, PenButtonAction.fromId("erase"))
+        assertEquals(PenButtonAction.UNDO, PenButtonAction.fromId("undo"))
+        // nilai tak dikenal -> kembali ke bawaan yang diberikan
+        assertEquals(PenButtonAction.RECOGNIZE, PenButtonAction.fromId("tidak-ada"))
+        assertEquals(PenButtonAction.UNDO, PenButtonAction.fromId(null, PenButtonAction.UNDO))
+        assertEquals(PenButtonAction.NONE, PenButtonAction.fromId("none"))
+    }
+
+    @Test
+    fun `pengaturan pengenalan tulisan punya nilai bawaan yang masuk akal`() {
+        val config = PenboardConfig()
+        assertEquals(PenButtonAction.RECOGNIZE, config.penButtonPrimary)
+        assertEquals(PenButtonAction.UNDO, config.penButtonSecondary)
+        assertEquals(false, config.autoRecognize)
+        assertEquals(900, config.autoRecognizeDelayMs)
+        assertEquals("id-ID", config.recognitionLanguage)
+
+        // jeda di luar batas dipangkas
+        assertEquals(300, config.copy(autoRecognizeDelayMs = 10).sanitized().autoRecognizeDelayMs)
+        assertEquals(3000, config.copy(autoRecognizeDelayMs = 99_999).sanitized().autoRecognizeDelayMs)
+        // profil lama tanpa bidang ini tetap memakai bawaan
+        val old = PenboardConfig.fromJson(JSONObject("""{"name":"Lama"}"""))
+        assertEquals(PenButtonAction.RECOGNIZE, old.penButtonPrimary)
+        assertEquals("id-ID", old.recognitionLanguage)
     }
 
     @Test

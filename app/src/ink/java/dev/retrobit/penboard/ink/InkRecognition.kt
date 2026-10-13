@@ -1,6 +1,9 @@
 package dev.retrobit.penboard.ink
 
+import android.content.Context
 import android.util.Log
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
@@ -30,6 +33,19 @@ object InkRecognition {
 
     private var recognizer: DigitalInkRecognizer? = null
     private var recognizerLanguage: String? = null
+
+    /** Apakah perangkat punya Google Play services (syarat ML Kit). */
+    fun isServicesAvailable(context: Context): Boolean = try {
+        GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(context.applicationContext) == ConnectionResult.SUCCESS
+    } catch (error: Throwable) {
+        Log.w(TAG, "Tidak bisa memeriksa Google Play services", error)
+        false
+    }
+
+    fun downloadFailureHint(): String =
+        "Gagal menyiapkan model tulisan. Fitur ini memerlukan Google Play services; " +
+            "pada perangkat tanpa layanan Google (mis. sebagian Huawei), pengenalan tulisan tidak tersedia." 
 
     fun modelStatus(language: String, callback: (ModelStatus) -> Unit) {
         val model = buildModel(language)
