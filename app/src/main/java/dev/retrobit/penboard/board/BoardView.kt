@@ -16,9 +16,8 @@ import dev.retrobit.penboard.data.Colors
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.Presets
 import dev.retrobit.penboard.data.ToolMode
-import kotlin.math.floor
+import dev.retrobit.penboard.util.BoardMath
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 /**
  * Papan tulis stylus.
@@ -28,6 +27,8 @@ import kotlin.math.roundToInt
  * - Mendukung Huawei M-Pencil: tekanan stylus memengaruhi tebal garis, tombol
  *   samping pena = urungkan, ujung penghapus pena = mode hapus.
  * - Bisa menolak sentuhan jari (anti telapak tangan) sesuai pengaturan profil.
+ * - Isi papan bisa disimpan ([snapshot]) dan dimuat kembali ([restore]) sehingga
+ *   tulisan tetap ada walau keyboard ditutup atau profil berganti.
  */
 class BoardView @JvmOverloads constructor(
     context: Context,
@@ -65,15 +66,23 @@ class BoardView @JvmOverloads constructor(
     // ---------------------------------------------------------------- pengaturan
     var config: PenboardConfig = Presets.defaultConfig()
 
-    var tool: ToolMode = ToolMode.WRITE
+    /**
+     * Warna pena. Bila null, warna diambil dari profil; tombol pena berwarna
+     * mengisi nilai ini (atau mengosongkannya kembali bila ditekan lagi).
+     */
+    var penColorOverride: Int? = null
+
+    private var currentTool: ToolMode = ToolMode.WRITE
+
+    var tool: ToolMode
+        get() = currentTool
         set(value) {
-            field = value
+            if (currentTool == value) return
+            currentTool = value
             inputPaint = null
+            if (value == ToolMode.ERASE) onToolChangedByPen?.invoke(value)
             invalidate()
         }
-
-    /** Warna pena sesaat (dipakai tombol "ganti warna pena"). null = warna dari profil. */
-    var penColorOverride: Int? = null
 
     /** Radius sudut latar papan (px). 0 = tanpa pembulatan. */
     var cornerRadiusPx: Float = 0f
@@ -85,15 +94,20 @@ class BoardView @JvmOverloads constructor(
     var onStrokeCommitted: (() -> Unit)? = null
     var onContentChanged: (() -> Unit)? = null
     var onEraseHappened: (() -> Unit)? = null
-    var onFeedback: (() -> Unit)? = null
+    /** Dipanggil saat alat berubah karena pena (mis. ujung penghapus), agar tombol ikut menyorot. */
     var onToolChangedByPen: ((ToolMode) -> Unit)? = null
 
     // ---------------------------------------------------------------- konten
     private val strokes = ArrayList<Stroke>()
-    private val undoStack = ArrayDeque<Action>()
-    private val redoStack = ArrayDeque<Action>()
+    private val undoStack = ArrayDeque<BoardAction>()
+    private val redoStack = ArrayDeque<BoardAction>()
 
+    /** Geser konten otomatis (koordinat konten). */
     private var contentShift = 0f
+
+    /** Geser tampilan manual dari baris terbaru (koordinat layar). */
+    private var viewOffset = 0f
+
     private var activeStroke: Stroke? = null
     private var activeEraseIsPen = false
     private var erasePoints: MutableList<Float>? = null
@@ -103,7 +117,6 @@ class BoardView @JvmOverloads constructor(
     private var insetV = 0f
     private var insetH = 0f
 
-    /** Penanda gesture sedang berlangsung. */
     private var gestureActive = false
     private var gestureRemoved = ArrayList<Pair<Int, Stroke>>()
 
@@ -123,6 +136,7 @@ class BoardView @JvmOverloads constructor(
         eraserPaint.color = Colors.withOpacity(newConfig.strokeColor, 45)
         applyBackground()
         requestLayout()
+        recomputeGeometry()
         invalidate()
     }
 
@@ -134,13 +148,26 @@ class BoardView @JvmOverloads constructor(
 
     val strokeCount: Int get() = strokes.size
 
-    val shiftLines: Int get() = if (gapPx <= 0f) 0 else (contentShift / gapPx).roundToInt()
+    /** Geser konten otomatis dalam satuan baris (bisa negatif). */
+    val shiftLines: Int get() = if (gapPx <= 0f) 0 else (contentShift / gapPx).toInt()
+
+    /** Baris yang sedang dilihat saat pengguna menggeser tampilan. */
+    val viewLine: Int get() = (viewOffset / gapPx).toInt()
+
+    val isViewingHistory: Boolean get() = viewOffset > 1f
+
+    /** Bisa digeser bila ada baris lama yang tersembunyi. */
+    val canScroll: Boolean get() = contentShift > 1f
+
+    /** Warna pena yang sedang dipakai. */
+    fun activePenColor(): Int = penColorOverride ?: config.strokeColor
 
     fun clearBoard() {
         strokes.clear()
         undoStack.clear()
         redoStack.clear()
         contentShift = 0f
+        viewOffset = 0f
         activeStroke = null
         erasePoints = null
         invalidate()
@@ -150,17 +177,17 @@ class BoardView @JvmOverloads constructor(
     fun undo() {
         val action = undoStack.removeLastOrNull() ?: return
         when (action) {
-            is Action.AddStroke -> strokes.remove(action.stroke)
-            is Action.Shift -> contentShift = max(0f, contentShift - action.amount)
-            is Action.Erase -> {
-                // kembalikan goresan yang terhapus ke posisi semula
+            is BoardAction.AddStroke -> strokes.remove(action.stroke)
+            is BoardAction.Shift -> contentShift = max(0f, contentShift - action.amount)
+            is BoardAction.Erase -> {
                 action.removed.sortedBy { it.first }.forEach { (index, stroke) ->
-                    val safeIndex = index.coerceIn(0, strokes.size)
-                    strokes.add(safeIndex, stroke)
+                    strokes.add(index.coerceIn(0, strokes.size), stroke)
                 }
             }
         }
         redoStack.addLast(action)
+        viewOffset = BoardMath.clampViewOffset(viewOffset, contentShift)
+        recomputeShift()
         invalidate()
         onContentChanged?.invoke()
     }
@@ -168,14 +195,15 @@ class BoardView @JvmOverloads constructor(
     fun redo() {
         val action = redoStack.removeLastOrNull() ?: return
         when (action) {
-            is Action.AddStroke -> strokes.add(action.stroke)
-            is Action.Shift -> contentShift += action.amount
-            is Action.Erase -> {
-                val toRemove = action.removed.mapNotNull { it.second }
-                strokes.removeAll(toRemove.toSet())
+            is BoardAction.AddStroke -> strokes.add(action.stroke)
+            is BoardAction.Shift -> contentShift += action.amount
+            is BoardAction.Erase -> {
+                val toRemove = action.removed.map { it.second }.toSet()
+                strokes.removeAll(toRemove)
             }
         }
         undoStack.addLast(action)
+        recomputeShift()
         invalidate()
         onContentChanged?.invoke()
     }
@@ -184,8 +212,50 @@ class BoardView @JvmOverloads constructor(
     fun removeLastStroke() {
         val last = strokes.lastOrNull() ?: return
         strokes.remove(last)
-        undoStack.addLast(Action.AddStroke(last))
+        undoStack.addLast(BoardAction.AddStroke(last))
         redoStack.clear()
+        invalidate()
+        onContentChanged?.invoke()
+    }
+
+    /** Geser tampilan ke tulisan yang lebih lama (delta > 0) atau kembali ke baris terbaru. */
+    fun scrollByLines(lines: Int) {
+        if (lines == 0 || gapPx <= 0f) return
+        viewOffset = BoardMath.clampViewOffset(viewOffset + lines * gapPx, contentShift)
+        invalidate()
+    }
+
+    /** Lihat tulisan paling awal. */
+    fun scrollToOldest() {
+        viewOffset = BoardMath.clampViewOffset(contentShift, contentShift)
+        invalidate()
+    }
+
+    /** Kembali ke baris kosong terbaru untuk menulis lanjutan. */
+    fun scrollToNewest() {
+        viewOffset = 0f
+        invalidate()
+    }
+
+    // ---------------------------------------------------------------- simpan/muat
+
+    /** Ambil isi papan untuk disimpan. Null bila papan kosong. */
+    fun snapshot(): BoardSnapshot? {
+        if (strokes.isEmpty()) return null
+        return BoardSnapshot(strokes.map { it }, contentShift)
+    }
+
+    /** Muat isi papan. Data lama pada instance ini diganti seluruhnya. */
+    fun restore(snapshot: BoardSnapshot) {
+        strokes.clear()
+        undoStack.clear()
+        redoStack.clear()
+        strokes.addAll(snapshot.strokes)
+        contentShift = snapshot.shiftPx
+        viewOffset = 0f
+        activeStroke = null
+        erasePoints = null
+        recomputeShift()
         invalidate()
         onContentChanged?.invoke()
     }
@@ -207,11 +277,48 @@ class BoardView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         insetV = 4f * density
         insetH = 14f * density
-        val available = h - insetV * 2f
+        recomputeGeometry()
+    }
+
+    /**
+     * Hitung ulang jarak baris. Dengan "geser otomatis" aktif, jarak baris mengikuti
+     * tinggi papan supaya selalu pas; bila tidak aktif, jarak baris tetap sesuai
+     * pengaturan pengguna dan papan naik sendiri saat baris bawah terpakai.
+     */
+    private fun recomputeGeometry() {
+        val available = height - insetV * 2f
         if (available <= 0f) return
-        val desired = config.lineGapDp * density
-        visibleLines = max(3, (available / desired).roundToInt())
-        gapPx = available / visibleLines
+        val desiredGap = config.lineGapDp * density
+        if (config.autoShift) {
+            visibleLines = BoardMath.visibleLines(available, desiredGap)
+            gapPx = BoardMath.gapPx(available, visibleLines)
+        } else {
+            visibleLines = BoardMath.visibleLines(available, desiredGap)
+            gapPx = desiredGap
+        }
+        recomputeShift()
+    }
+
+    /**
+     * Geser konten supaya selalu ada tempat menulis:
+     * - "geser otomatis" aktif: satu baris kosong selalu disediakan di bawah;
+     * - nonaktif: hanya digeser bila tulisan benar-benar melewati baris terbawah.
+     */
+    private fun recomputeShift() {
+        val lastStroke = strokes.lastOrNull() ?: return
+        val lastLine = lastStroke.lineIndex(gapPx)
+        val requiredLines = if (config.autoShift) {
+            BoardMath.autoShiftLines(lastLine, visibleLines)
+        } else {
+            (lastLine - (visibleLines - 1)).coerceAtLeast(0)
+        }
+        val desired = requiredLines * gapPx
+        if (desired > contentShift) {
+            val delta = desired - contentShift
+            contentShift = desired
+            undoStack.addLast(BoardAction.Shift(delta))
+            redoStack.clear()
+        }
     }
 
     // ---------------------------------------------------------------- menggambar
@@ -220,18 +327,17 @@ class BoardView @JvmOverloads constructor(
         super.onDraw(canvas)
         drawGuides(canvas)
 
+        val scroll = BoardMath.scrollY(contentShift, viewOffset)
         canvas.save()
-        canvas.translate(0f, insetV - contentShift)
+        canvas.translate(0f, insetV - scroll)
 
-        for (stroke in strokes) {
-            drawStroke(canvas, stroke)
-        }
+        for (stroke in strokes) drawStroke(canvas, stroke)
         activeStroke?.let { drawStroke(canvas, it) }
 
         val eraser = erasePoints
-        if (eraser != null && eraser.size >= 2) {
+        if (eraser != null && eraser.size >= 4) {
             var i = 0
-            while (i < eraser.size - 3) {
+            while (i <= eraser.size - 4) {
                 canvas.drawLine(eraser[i], eraser[i + 1], eraser[i + 2], eraser[i + 3], eraserPaint)
                 i += 2
             }
@@ -245,9 +351,9 @@ class BoardView @JvmOverloads constructor(
         baselinePaint.color = Colors.withOpacity(config.gridColor, (config.gridOpacity * 0.7f).toInt())
         val left = insetH
         val right = width - insetH
-        val top = insetV
         for (i in 0..visibleLines) {
-            val y = top + i * gapPx
+            val y = insetV + i * gapPx - viewOffset
+            if (y < -gapPx || y > height + gapPx) continue
             canvas.drawLine(left, y, right, y, linePaint)
             if (config.showBaseline && i < visibleLines) {
                 canvas.drawLine(left, y + gapPx * 0.78f, right, y + gapPx * 0.78f, baselinePaint)
@@ -256,6 +362,9 @@ class BoardView @JvmOverloads constructor(
     }
 
     private fun drawStroke(canvas: Canvas, stroke: Stroke) {
+        if (stroke.isEmpty) return
+        if (stroke.bottom() < contentShift - viewOffset - gapPx * 2f) return
+        if (stroke.top() > contentShift - viewOffset + height + gapPx * 2f) return
         val paint = inputPaint ?: Paint(penPaint).also { inputPaint = it }
         paint.color = stroke.color
         paint.strokeWidth = stroke.widthPx
@@ -263,7 +372,7 @@ class BoardView @JvmOverloads constructor(
             dotPaint.color = stroke.color
             canvas.drawCircle(stroke.xAt(0), stroke.yAt(0), stroke.widthPx / 2f, dotPaint)
         } else {
-            canvas.drawPath(stroke.path(), paint)
+            canvas.drawPath(StrokePaths.of(stroke), paint)
         }
     }
 
@@ -273,18 +382,18 @@ class BoardView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val toolType = event.getToolType(event.actionIndex)
         val buttonState = event.buttonState
-        val isStylus = toolType == MotionEvent.TOOL_TYPE_STYLUS || toolType == MotionEvent.TOOL_TYPE_ERASER
         val isEraserTool = toolType == MotionEvent.TOOL_TYPE_ERASER
         val primaryButton = (buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
         val secondaryButton = (buttonState and MotionEvent.BUTTON_STYLUS_SECONDARY) != 0
 
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            // tombol kedua pada pena = undo
             if (secondaryButton) {
                 undo()
                 return true
             }
+            // tombol samping + ujung penghapus = langsung hapus
             if (toolType == MotionEvent.TOOL_TYPE_FINGER && !config.allowFinger) {
-                // telapak tangan / jari diabaikan
                 return false
             }
         }
@@ -294,15 +403,15 @@ class BoardView @JvmOverloads constructor(
                 if (event.pointerCount > 1) return false
                 gestureActive = true
                 activeEraseIsPen = isEraserTool || primaryButton
-                val useEraser = activeEraseIsPen || tool == ToolMode.ERASE
+                val useEraser = activeEraseIsPen || currentTool == ToolMode.ERASE
                 if (useEraser) {
                     erasePoints = ArrayList()
                     gestureRemoved = ArrayList()
-                    onFeedback?.invoke()
                 } else {
                     val width = config.strokeWidthDp * density * pressureScale(event)
-                    val color = penColorOverride ?: config.strokeColor
-                    activeStroke = Stroke(color, width).also { it.add(toContentX(event.x), toContentY(event.y)) }
+                    activeStroke = Stroke(activePenColor(), width).also {
+                        it.add(toContentX(event.x), toContentY(event.y))
+                    }
                 }
                 invalidate()
                 return true
@@ -310,7 +419,7 @@ class BoardView @JvmOverloads constructor(
 
             MotionEvent.ACTION_MOVE -> {
                 if (!gestureActive) return false
-                val useEraser = activeEraseIsPen || tool == ToolMode.ERASE
+                val useEraser = activeEraseIsPen || currentTool == ToolMode.ERASE
                 if (useEraser) {
                     eraseAt(toContentX(event.x), toContentY(event.y))
                 } else {
@@ -323,10 +432,10 @@ class BoardView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (!gestureActive) return false
                 gestureActive = false
-                val useEraser = activeEraseIsPen || tool == ToolMode.ERASE
+                val useEraser = activeEraseIsPen || currentTool == ToolMode.ERASE
                 if (useEraser) {
                     if (gestureRemoved.isNotEmpty()) {
-                        undoStack.addLast(Action.Erase(gestureRemoved))
+                        undoStack.addLast(BoardAction.Erase(gestureRemoved))
                         redoStack.clear()
                         onEraseHappened?.invoke()
                         onContentChanged?.invoke()
@@ -338,12 +447,12 @@ class BoardView @JvmOverloads constructor(
                     activeStroke = null
                     if (stroke != null && !stroke.isEmpty) {
                         strokes.add(stroke)
-                        undoStack.addLast(Action.AddStroke(stroke))
+                        undoStack.addLast(BoardAction.AddStroke(stroke))
                         redoStack.clear()
                         trimIfNeeded()
+                        recomputeShift()
                         onStrokeCommitted?.invoke()
                         onContentChanged?.invoke()
-                        autoShiftIfNeeded(stroke)
                     }
                 }
                 invalidate()
@@ -370,7 +479,8 @@ class BoardView @JvmOverloads constructor(
 
     private fun toContentX(x: Float): Float = x
 
-    private fun toContentY(y: Float): Float = y - insetV + contentShift
+    private fun toContentY(y: Float): Float =
+        BoardMath.toContentY(y, contentShift, viewOffset, insetV)
 
     private fun eraseAt(x: Float, y: Float) {
         val radius = config.eraserWidthDp * density / 2f
@@ -390,47 +500,34 @@ class BoardView @JvmOverloads constructor(
         }
     }
 
-    /** Geser konten naik supaya selalu ada baris kosong di bawah tulisan. */
-    private fun autoShiftIfNeeded(stroke: Stroke) {
-        if (!config.autoShift) return
-        val writtenLine = stroke.lineIndex(gapPx).coerceAtMost(visibleLines - 1)
-        val lastFree = visibleLines - 2
-        if (writtenLine > lastFree) {
-            val amount = (writtenLine - lastFree) * gapPx
-            contentShift += amount
-            undoStack.addLast(Action.Shift(amount))
-            redoStack.clear()
-        }
-    }
-
     private fun trimIfNeeded() {
         while (strokes.size > MAX_STROKES) {
             strokes.removeAt(0)
         }
     }
 
-    /** Perkiraan tinggi yang dibutuhkan untuk beberapa baris tulis. */
-    fun suggestedHeightPx(): Int = (config.lineGapDp * density * 7f).roundToInt() + (insetV * 2).roundToInt()
+    /** Tinggi yang disarankan untuk beberapa baris tulis. */
+    fun suggestedHeightPx(): Int = (config.lineGapDp * density * 7f).toInt() + (insetV * 2).toInt()
 
-    /** Geometri untuk pengujian / tampilan informasi. */
-    fun lineInfo(): String = "$visibleLines baris x ${gapPx.roundToInt()}px"
+    /** Informasi baris (dipakai dasbor). */
+    fun lineInfo(): String = "$visibleLines baris x ${gapPx.toInt()}px"
 
     fun guideRect(): RectF = RectF(insetH, insetV, width - insetH, height - insetV)
 
     fun linePath(index: Int): Path {
         val path = Path()
-        val y = insetV + index * gapPx - contentShift
+        val y = insetV + index * gapPx - viewOffset
         path.moveTo(insetH, y)
         path.lineTo(width - insetH, y)
         return path
     }
 
-    fun lineIndexOf(y: Float): Int = floor((y - insetV + contentShift) / gapPx).toInt()
+    fun lineIndexOf(y: Float): Int = BoardMath.lineIndexOf(y - insetV + contentShift - viewOffset, gapPx)
 
-    private sealed interface Action {
-        data class AddStroke(val stroke: Stroke) : Action
-        data class Shift(val amount: Float) : Action
-        data class Erase(val removed: List<Pair<Int, Stroke>>) : Action
+    private sealed interface BoardAction {
+        data class AddStroke(val stroke: Stroke) : BoardAction
+        data class Shift(val amount: Float) : BoardAction
+        data class Erase(val removed: List<Pair<Int, Stroke>>) : BoardAction
     }
 
     private companion object {

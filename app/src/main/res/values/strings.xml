@@ -11,6 +11,8 @@
     <string name="action_pick_keyboard">Pilih keyboard</string>
     <string name="action_system_settings">Pengaturan sistem</string>
     <string name="action_test">Uji coba</string>
+    <string name="action_scroll_older">Lihat tulisan lama</string>
+    <string name="action_scroll_newer">Kembali ke baris baru</string>
     <string name="action_edit">Ubah</string>
     <string name="action_duplicate">Duplikat</string>
     <string name="action_rename">Ganti nama</string>
@@ -29,6 +31,7 @@
     <string name="section_profiles">Daftar papan</string>
     <string name="section_profiles_summary">Ketuk untuk memakai, ketuk “Ubah” untuk mengatur tombol, ukuran, dan transparansi.</string>
     <string name="section_preferences">Preferensi</string>
+    <string name="board_saved_hint">Tulisan di papan tersimpan otomatis per papan, jadi tetap ada walau keyboard ditutup. Tombol “Lihat tulisan lama / baris baru” bisa dipakai untuk menelusuri tulisan panjang.</string>
     <string name="section_guide">Cara pakai</string>
     <string name="badge_active">Aktif</string>
     <string name="profile_detail">%1$d dp · %2$d baris tulis · %3$d tombol</string>
@@ -84,6 +87,12 @@
     <string name="sec_size">Ukuran</string>
     <string name="sec_opacity">Transparansi</string>
     <string name="sec_colors">Warna</string>
+    <string name="sec_pen_colors">Warna pena tetap</string>
+    <string name="pen_color_hint">Warna ini dipakai bergiliran setiap tombol warna pena ditekan, dan tetap dipakai sampai Anda menekannya lagi (setelah warna terakhir kembali ke warna profil). Tambahkan tombol “Warna pena” pada tab Tombol agar bisa dipakai.</string>
+    <string name="pen_color_empty">Belum ada warna tetap. Tambahkan minimal satu warna.</string>
+    <string name="btn_add_color">Tambah warna</string>
+    <string name="btn_clear_colors">Kosongkan warna</string>
+    <string name="lbl_pen_slot">Warna %1$d</string>
     <string name="sec_board">Papan tulis</string>
     <string name="sec_layout">Tata letak tombol</string>
     <string name="size_board_height">Tinggi papan</string>
@@ -109,7 +118,7 @@
     <string name="sw_finger">Terima sentuhan jari (tanpa stylus)</string>
     <string name="sw_finger_summary">Matikan untuk mencegah telapak tangan ikut menulis.</string>
     <string name="sw_autoshift">Geser papan otomatis</string>
-    <string name="sw_autoshift_summary">Saat baris bawah terisi, tulisan naik satu baris sehingga selalu ada baris kosong.</string>
+    <string name="sw_autoshift_summary">Saat baris bawah terisi, tulisan naik otomatis sehingga selalu tersedia baris kosong. Bila dimatikan, papan hanya naik ketika tulisan melewati baris terbawah.</string>
     <string name="sw_toolbar">Tampilkan laci tombol</string>
     <string name="layout_position">Posisi laci tombol</string>
     <string name="unit_dp">dp</string>

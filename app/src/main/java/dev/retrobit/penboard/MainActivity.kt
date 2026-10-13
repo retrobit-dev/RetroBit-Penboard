@@ -81,6 +81,23 @@ class MainActivity : AppCompatActivity() {
         card.addView(board, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         Preview.boardPreview(card, board, config, density, maxHeightFraction = 0.42f)
 
+        // Tulisan disimpan otomatis per papan, sehingga tetap ada setelah aplikasi ditutup.
+        board.restore(repository.loadBoard(config.id))
+        val persist = {
+            repository.saveBoard(config.id, board.snapshot())
+            Unit
+        }
+        board.onContentChanged = persist
+        board.onEraseHappened = persist
+        board.onStrokeCommitted = persist
+
+        Ui.buttonRow(
+            card,
+            getString(R.string.action_scroll_older) to { board.scrollByLines(3) },
+            getString(R.string.action_scroll_newer) to { board.scrollByLines(-3) }
+        )
+        Ui.bodyText(card, getString(R.string.board_saved_hint))
+
         val keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         card.addView(keys, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         Preview.populate(keys, config, density, currentTool = ToolMode.WRITE)

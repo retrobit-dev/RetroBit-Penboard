@@ -1,6 +1,8 @@
 package dev.retrobit.penboard.data
 
 import android.content.Context
+import dev.retrobit.penboard.board.BoardSnapshot
+import dev.retrobit.penboard.board.StrokeCodec
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -10,6 +12,7 @@ import org.json.JSONObject
 class PresetRepository(context: Context) {
 
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val boardStore = BoardStore(context.applicationContext)
     private var cache: MutableList<PenboardConfig>? = null
 
     fun profiles(): MutableList<PenboardConfig> {
@@ -63,8 +66,28 @@ class PresetRepository(context: Context) {
         list.removeAll { it.id == id }
         if (list.isEmpty()) list.add(Presets.defaultConfig())
         persist(list)
+        boardStore.clear(id)
         if (activeId() == id) setActive(list.first().id)
     }
+
+    // ------------------------------------------------- isi papan tulis (goresan)
+
+    /** Simpan tulisan papan untuk sebuah profil. Snapshot null = papan kosong. */
+    fun saveBoard(profileId: String, snapshot: BoardSnapshot?) {
+        if (snapshot == null || snapshot.strokes.isEmpty()) {
+            boardStore.clear(profileId)
+            return
+        }
+        boardStore.save(profileId, StrokeCodec.encode(snapshot.strokes, snapshot.shiftPx))
+    }
+
+    /** Muat tulisan papan untuk sebuah profil (kosong bila belum pernah disimpan). */
+    fun loadBoard(profileId: String): BoardSnapshot =
+        StrokeCodec.decode(boardStore.load(profileId))
+
+    fun hasBoard(profileId: String): Boolean = boardStore.hasBoard(profileId)
+
+    fun clearBoard(profileId: String) = boardStore.clear(profileId)
 
     fun rename(id: String, newName: String) {
         profile(id)?.let { upsert(it.copy(name = newName)) }
@@ -80,6 +103,7 @@ class PresetRepository(context: Context) {
 
     fun resetEverything() {
         cache = null
+        boardStore.clearAll()
         prefs.edit().clear().apply()
         profiles()
         setActive(profiles().first().id)

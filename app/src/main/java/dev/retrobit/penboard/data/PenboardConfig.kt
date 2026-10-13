@@ -30,9 +30,12 @@ enum class KeyAction(val id: String, val label: String) {
     REDO("redo", "Ulangi"),
     CURSOR_LEFT("cursorLeft", "Geser kursor ke kiri"),
     CURSOR_RIGHT("cursorRight", "Geser kursor ke kanan"),
+    SCROLL_OLDER("scrollOlder", "Lihat tulisan lama (naik)"),
+    SCROLL_NEWER("scrollNewer", "Kembali ke baris baru (turun)"),
     SAVE_IMAGE("saveImage", "Simpan gambar ke Galeri"),
-    COLOR("color", "Ganti warna pena"),
-    PROFILE_NEXT("profileNext", "Ganti profil papan"),
+    COLOR("color", "Warna pena (bergiliran)"),
+    PROFILE_PREV("profilePrev", "Profil sebelumnya"),
+    PROFILE_NEXT("profileNext", "Profil berikutnya"),
     ERASE("erase", "Alat penghapus"),
     WRITE("write", "Alat pena"),
     HIDE("hide", "Sembunyikan papan");
@@ -174,6 +177,8 @@ data class PenboardConfig(
     val keyTextColor: Int = 0xFFF8FAFC.toInt(),
     val keyTextSizeSp: Int = 17,
     val keyAccentColor: Int = 0xFF3D5AFE.toInt(),
+    /** Warna siap pakai untuk tombol "warna pena" (dipakai bergiliran, tetap). */
+    val penColors: List<Int> = emptyList(),
     val toolbarRows: List<RowDef> = emptyList(),
     val boardRows: List<RowDef> = emptyList()
 ) {
@@ -205,6 +210,7 @@ data class PenboardConfig(
             keyCornerDp = keyCornerDp.coerceIn(0, 28),
             keyBgOpacity = keyBgOpacity.coerceIn(0, 100),
             keyTextSizeSp = keyTextSizeSp.coerceIn(10, 30),
+            penColors = penColors.take(MAX_PEN_COLORS),
             toolbarRows = toolRows.ifEmpty { fallback.toolbarRows },
             boardRows = boardRowsSafe.ifEmpty { fallback.boardRows }
         )
@@ -238,6 +244,7 @@ data class PenboardConfig(
         put("keyTextColor", keyTextColor)
         put("keyTextSizeSp", keyTextSizeSp)
         put("keyAccentColor", keyAccentColor)
+        put("penColors", JSONArray().also { array -> penColors.forEach { array.put(it) } })
         put("toolbarRows", JSONArray().also { a -> toolbarRows.forEach { a.put(it.toJson()) } })
         put("boardRows", JSONArray().also { a -> boardRows.forEach { a.put(it.toJson()) } })
     }
@@ -245,6 +252,9 @@ data class PenboardConfig(
     companion object {
         /** Batas jumlah baris tombol supaya keyboard tetap masuk akal di layar. */
         const val MAX_ROWS = 8
+
+        /** Batas jumlah warna pena tetap per profil. */
+        const val MAX_PEN_COLORS = 6
 
         fun fromJson(o: JSONObject): PenboardConfig {
             val toolbar = mutableListOf<RowDef>()
@@ -283,6 +293,11 @@ data class PenboardConfig(
                 keyTextColor = o.optInt("keyTextColor", 0xFFF8FAFC.toInt()),
                 keyTextSizeSp = o.optInt("keyTextSizeSp", 17),
                 keyAccentColor = o.optInt("keyAccentColor", 0xFF3D5AFE.toInt()),
+                penColors = buildList {
+                    o.optJSONArray("penColors")?.let { array ->
+                        for (i in 0 until array.length()) add(array.optInt(i))
+                    }
+                },
                 toolbarRows = toolbar,
                 boardRows = board
             ).sanitized()

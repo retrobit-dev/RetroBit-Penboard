@@ -507,6 +507,30 @@ class BoardEditorActivity : AppCompatActivity() {
             update { it.copy(keyAccentColor = value) }
         }
 
+        val penCard = Ui.card(parent, getString(R.string.sec_pen_colors))
+        Ui.bodyText(penCard, getString(R.string.pen_color_hint))
+        if (config.penColors.isEmpty()) {
+            Ui.bodyText(penCard, getString(R.string.pen_color_empty))
+        }
+        config.penColors.forEachIndexed { index, color ->
+            Ui.colorRow(penCard, getString(R.string.lbl_pen_slot, index + 1), color) { value ->
+                val updated = config.penColors.toMutableList()
+                updated[index] = value
+                update { it.copy(penColors = updated) }
+            }
+        }
+        Ui.buttonRow(
+            penCard,
+            getString(R.string.btn_add_color) to {
+                update { it.copy(penColors = (it.penColors + DEFAULT_PEN_COLOR).take(PenboardConfig.MAX_PEN_COLORS)) }
+                buildLookTab()
+            },
+            getString(R.string.btn_clear_colors) to {
+                update { it.copy(penColors = emptyList()) }
+                buildLookTab()
+            }
+        )
+
         val boardCard = Ui.card(parent, getString(R.string.sec_board))
         Ui.switchRow(boardCard, getString(R.string.sw_grid), checked = config.gridEnabled) { value ->
             update { it.copy(gridEnabled = value) }
@@ -608,5 +632,6 @@ class BoardEditorActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_CONFIG_ID = "config_id"
         private const val MAX_ROWS = PenboardConfig.MAX_ROWS
+        private const val DEFAULT_PEN_COLOR = 0xFFEF4444.toInt()
     }
 }

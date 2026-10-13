@@ -39,6 +39,7 @@ class PenboardInputService : InputMethodService() {
     private var config: PenboardConfig = Presets.defaultConfig()
     private var tool: ToolMode = ToolMode.WRITE
     private var penColorIndex = -1
+    private var loadedProfileId: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -71,6 +72,11 @@ class PenboardInputService : InputMethodService() {
         applyConfig()
     }
 
+    override fun onFinishInputView(finishingInput: Boolean) {
+        persistBoard()
+        super.onFinishInputView(finishingInput)
+    }
+
     /** Papan stylus tidak boleh dipaksa mode layar penuh (mis. saat lanskap). */
     override fun onEvaluateFullscreenMode(): Boolean = false
 
@@ -97,9 +103,14 @@ class PenboardInputService : InputMethodService() {
         binding.boardView.applyConfig(config)
         binding.boardView.tool = tool
         binding.boardView.penColorOverride = currentPenColor()
-        binding.boardView.onContentChanged = { }
-        binding.boardView.onEraseHappened = { }
-        binding.boardView.onStrokeCommitted = { }
+        binding.boardView.onContentChanged = { persistBoard() }
+        binding.boardView.onEraseHappened = { persistBoard() }
+        binding.boardView.onStrokeCommitted = { persistBoard() }
+        binding.boardView.onToolChangedByPen = { penTool ->
+            tool = penTool
+            refreshToolHighlight()
+        }
+        loadBoardIfNeeded()
 
         binding.toolbarTop.removeAllViews()
         binding.toolbarSide.removeAllViews()
@@ -159,9 +170,6 @@ class PenboardInputService : InputMethodService() {
         }
     }
 
-    private fun currentPenColor(): Int? =
-        Colors.penPalette.getOrNull(penColorIndex)
-
     // ------------------------------------------------------------ aksi tombol
 
     private fun onKey(key: KeyDef) {
@@ -186,8 +194,11 @@ class PenboardInputService : InputMethodService() {
             KeyAction.REDO -> board?.redo()
             KeyAction.CURSOR_LEFT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_LEFT)
             KeyAction.CURSOR_RIGHT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT)
+            KeyAction.SCROLL_OLDER -> board?.scrollByLines(SCROLL_STEP_LINES)
+            KeyAction.SCROLL_NEWER -> board?.scrollByLines(-SCROLL_STEP_LINES)
             KeyAction.COLOR -> cyclePenColor()
-            KeyAction.PROFILE_NEXT -> switchToNextProfile()
+            KeyAction.PROFILE_PREV -> switchProfile(-1)
+            KeyAction.PROFILE_NEXT -> switchProfile(1)
             KeyAction.SAVE_IMAGE -> saveImage()
             KeyAction.ERASE -> {
                 tool = ToolMode.ERASE
@@ -241,24 +252,56 @@ class PenboardInputService : InputMethodService() {
         connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
     }
 
+    /** Warna pena bergiliran dan tetap (sampai ditekan lagi untuk kembali ke warna profil). */
     private fun cyclePenColor() {
-        val palette = Colors.penPalette
-        penColorIndex = if (penColorIndex + 1 >= palette.size) 0 else penColorIndex + 1
-        binding?.boardView?.penColorOverride = currentPenColor()
-        toast(getString(R.string.ime_pen_color, Colors.toHex(palette[penColorIndex])))
+        val palette = if (config.penColors.isNotEmpty()) config.penColors else Colors.penPalette
+        val next = penColorIndex + 1
+        if (next >= palette.size) {
+            penColorIndex = -1
+            binding?.boardView?.penColorOverride = null
+            toast(getString(R.string.ime_pen_color, Colors.toHex(config.strokeColor)))
+            return
+        }
+        penColorIndex = next
+        binding?.boardView?.penColorOverride = palette[next]
+        toast(getString(R.string.ime_pen_color, Colors.toHex(palette[next])))
     }
 
-    private fun switchToNextProfile() {
+    private fun switchProfile(direction: Int) {
         val profiles = repository.profiles()
-        if (profiles.isEmpty()) return
+        if (profiles.size < 2) return
         val currentIndex = profiles.indexOfFirst { it.id == repository.activeId() }
-        val nextIndex = if (currentIndex + 1 >= profiles.size) 0 else currentIndex + 1
+        val size = profiles.size
+        val nextIndex = ((currentIndex + direction) % size + size) % size
         val next = profiles[nextIndex]
+        persistBoard(loadedProfileId)
         repository.setActive(next.id)
         prefs.lastUsedProfileId = next.id
         config = next
+        loadedProfileId = null
         applyConfig()
         toast(getString(R.string.ime_profile_switched, next.name))
+    }
+
+    /** Simpan tulisan papan ke profil yang sedang dipakai. */
+    private fun persistBoard(profileId: String? = null) {
+        val board = binding?.boardView ?: return
+        val target = profileId ?: loadedProfileId ?: repository.activeId()
+        repository.saveBoard(target, board.snapshot())
+    }
+
+    /** Muat tulisan tersimpan sekali per profil (agar urungkan/ulangi tidak hilang). */
+    private fun loadBoardIfNeeded() {
+        val board = binding?.boardView ?: return
+        val activeId = repository.activeId()
+        if (loadedProfileId == activeId) return
+        board.restore(repository.loadBoard(activeId))
+        loadedProfileId = activeId
+    }
+
+    private fun currentPenColor(): Int? {
+        val palette = if (config.penColors.isNotEmpty()) config.penColors else Colors.penPalette
+        return palette.getOrNull(penColorIndex)
     }
 
     private fun saveImage() {
@@ -281,5 +324,6 @@ class PenboardInputService : InputMethodService() {
 
     private companion object {
         const val TAG = "PenboardIME"
+        const val SCROLL_STEP_LINES = 3
     }
 }

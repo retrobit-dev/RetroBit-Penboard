@@ -116,6 +116,29 @@ object KeyIcons {
                 canvas.drawLine(l + 0.08f * s, b - 0.12f * s, l + 0.08f * s, t + 0.3f * s, paint)
             }
 
+            KeyAction.SCROLL_OLDER -> {
+                canvas.drawLine(l + 0.14f * s, t + 0.18f * s, r - 0.14f * s, t + 0.18f * s, paint)
+                canvas.drawLine(cx, b - 0.16f * s, l + 0.22f * s, cy + 0.04f * s, paint)
+                canvas.drawLine(cx, b - 0.16f * s, r - 0.22f * s, cy + 0.04f * s, paint)
+                canvas.drawLine(cx, b - 0.16f * s, cx, cy - 0.06f * s, paint)
+            }
+
+            KeyAction.SCROLL_NEWER -> {
+                canvas.drawLine(l + 0.14f * s, b - 0.18f * s, r - 0.14f * s, b - 0.18f * s, paint)
+                canvas.drawLine(cx, t + 0.16f * s, l + 0.22f * s, cy - 0.04f * s, paint)
+                canvas.drawLine(cx, t + 0.16f * s, r - 0.22f * s, cy - 0.04f * s, paint)
+                canvas.drawLine(cx, t + 0.16f * s, cx, cy + 0.06f * s, paint)
+            }
+
+            KeyAction.PROFILE_PREV -> {
+                canvas.drawLine(r - 0.3f * s, t + 0.12f * s, l + 0.08f * s, t + 0.12f * s, paint)
+                canvas.drawLine(l + 0.08f * s, t + 0.12f * s, l + 0.08f * s, b - 0.34f * s, paint)
+                canvas.drawLine(r - 0.08f * s, t + 0.3f * s, l + 0.3f * s, t + 0.3f * s, paint)
+                canvas.drawLine(l + 0.3f * s, t + 0.3f * s, l + 0.3f * s, b - 0.12f * s, paint)
+                canvas.drawLine(l + 0.3f * s, b - 0.12f * s, r - 0.08f * s, b - 0.12f * s, paint)
+                canvas.drawLine(r - 0.08f * s, b - 0.12f * s, r - 0.08f * s, t + 0.3f * s, paint)
+            }
+
             KeyAction.ERASE -> {
                 val body = Path().apply {
                     moveTo(l + 0.14f * s, b - 0.44f * s)
