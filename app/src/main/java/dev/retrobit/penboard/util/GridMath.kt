@@ -1,16 +1,22 @@
 package dev.retrobit.penboard.util
 
 /**
- * Ukuran tombol grid 3x3.
+ * Ukuran tombol grid.
  *
- * Grid dipasang di kanan papan tulis; ukurannya diambil dari tinggi papan supaya
- * tiga baris tombol sejajar dengan papan, tetapi lebarnya tidak pernah melebihi
- * [MAX_WIDTH_FRACTION] layar agar papan tulis tetap lebar di kiri.
+ * Grid dipasang di kanan papan tulis: **3 kolom tetap**, jumlah baris bisa 1 sampai
+ * [MAX_ROWS] (jadi 3-12 tombol). Ukurannya diambil dari tinggi papan dibagi jumlah
+ * baris, tetapi lebarnya tidak pernah melebihi [MAX_WIDTH_FRACTION] layar supaya papan
+ * tulis tetap lebar di kiri.
  */
 object GridMath {
 
     const val COLUMNS = 3
+    const val MIN_ROWS = 1
+    const val MAX_ROWS = 4
+
+    /** Jumlah baris bawaan. */
     const val ROWS = 3
+
     const val MAX_WIDTH_FRACTION = 0.34f
 
     /** Jarak antar tombol (dp) — dipakai pemanggil untuk menghitung spacingPx. */
@@ -18,7 +24,7 @@ object GridMath {
 
     /**
      * Sisi tombol (px) = sekecil mungkin antara:
-     *  - tinggi papan dibagi tiga baris (dikurangi jarak antar baris),
+     *  - tinggi papan dibagi [rows] baris (dikurangi jarak antar baris),
      *  - batas lebar [MAX_WIDTH_FRACTION] layar.
      * Bila hasilnya di bawah [minCellPx], ukuran dinaikkan selama masih muat di tinggi papan.
      */
@@ -26,17 +32,19 @@ object GridMath {
         boardHeightPx: Int,
         availableWidthPx: Int,
         spacingPx: Int = 0,
-        minCellPx: Int = 0
+        minCellPx: Int = 0,
+        rows: Int = ROWS
     ): Int {
-        val usableHeight = (boardHeightPx - spacingPx * (ROWS - 1)).coerceAtLeast(1)
-        var cell = usableHeight / ROWS
+        val safeRows = rows.coerceIn(MIN_ROWS, MAX_ROWS)
+        val usableHeight = (boardHeightPx - spacingPx * (safeRows - 1)).coerceAtLeast(1)
+        var cell = usableHeight / safeRows
 
         val budget = (availableWidthPx * MAX_WIDTH_FRACTION).toInt()
         val maxByWidth = (budget - spacingPx * (COLUMNS - 1)) / COLUMNS
         if (maxByWidth in 1 until cell) cell = maxByWidth
 
         if (minCellPx > 0 && cell < minCellPx) {
-            cell = minOf(minCellPx, usableHeight / ROWS)
+            cell = minOf(minCellPx, usableHeight / safeRows)
         }
         return if (cell < 1) 1 else cell
     }
@@ -44,7 +52,7 @@ object GridMath {
     /** Jumlah baris grid yang perlu ditampilkan untuk [count] tombol. */
     fun rowsFor(count: Int): Int = when {
         count <= 0 -> 1
-        count > COLUMNS * ROWS -> ROWS
+        count > COLUMNS * MAX_ROWS -> MAX_ROWS
         else -> (count + COLUMNS - 1) / COLUMNS
     }
 }

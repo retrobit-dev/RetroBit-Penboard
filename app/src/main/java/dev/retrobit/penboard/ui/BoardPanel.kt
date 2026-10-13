@@ -14,7 +14,12 @@ import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.util.GridMath
 
 /**
- * Susunan Penboard: **papan tulis di kiri sampai tombol, grid 3x3 di kanan**.
+ * Susunan Penboard ala HiWrite: **papan tulis di kiri sampai tombol, grid tombol di kanan**.
+ *
+ * - Tiga kolom tombol tetap; jumlah baris 1-4 (diatur pengguna, lihat
+ *   [PenboardConfig.gridRows]) sehingga sampai 12 tombol bisa dipasang.
+ * - Tombol digambar sebagai **ikon** monokrom ([KeyIcons]) mengikuti tema retro
+ *   cyberpunk grayscale ePaper, dan label teks hanya dipakai bila aksinya tidak punya ikon.
  *
  * Dipakai bersama oleh keyboard ([dev.retrobit.penboard.ime.PenboardInputService])
  * dan papan melayang ([dev.retrobit.penboard.overlay.PenboardOverlayService]),
@@ -38,7 +43,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
     private val gridContainer = LinearLayout(context)
     private val panelRow = LinearLayout(context)
     private val panel = LinearLayout(context)
-    private val panelBackground = GradientDrawable()
+    private val panelBackground = ScanlineDrawable()
 
     val root = FrameLayout(context)
     val board = BoardView(context)
@@ -54,7 +59,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
 
         gridContainer.orientation = LinearLayout.VERTICAL
         gridContainer.gravity = Gravity.CENTER_VERTICAL or Gravity.END
-        for (rowIndex in 0 until GridMath.ROWS) {
+        for (rowIndex in 0 until GridMath.MAX_ROWS) {
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.END
@@ -98,13 +103,22 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
         val spacing = (GridMath.SPACING_DP * density).toInt()
         val boardHeightPx = (config.boardHeightDp * density).toInt()
         val screenWidth = context.resources.displayMetrics.widthPixels
-        val cell = GridMath.cellSizePx(boardHeightPx, screenWidth, spacing, (44 * density).toInt())
-        val panelPadding = (2 * density).toInt()
+        val cell = GridMath.cellSizePx(
+            boardHeightPx,
+            screenWidth,
+            spacing,
+            (44 * density).toInt(),
+            config.gridRows
+        )
+        val panelPadding = (3 * density).toInt()
 
         panel.setPadding(panelPadding, panelPadding, panelPadding, panelPadding)
-        panelBackground.shape = GradientDrawable.RECTANGLE
-        panelBackground.cornerRadius = config.cornerRadiusDp * density
-        panelBackground.setColor(BoardView.withAlpha(config.panelColor, config.panelOpacity * 255 / 100))
+        panelBackground.radiusPx = config.cornerRadiusDp * density
+        panelBackground.fillColor =
+            BoardView.withAlpha(config.panelColor, config.panelOpacity * 255 / 100)
+        panelBackground.borderColor = BoardView.withAlpha(config.accentColor, 120)
+        panelBackground.scanlines = config.scanlines
+        panelBackground.lineSpacingPx = 3f * density
         panel.background = panelBackground
 
         board.layoutParams = LinearLayout.LayoutParams(0, boardHeightPx, 1f)
@@ -114,6 +128,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
         board.allowFinger = config.allowFinger
         board.pressureEnabled = config.pressureEnabled
         board.showLines = config.showLines
+        board.dotLines = config.scanlines
         board.haptics = config.haptics
         board.edgeToEdge = true
         board.cornerRadiusPx = config.cornerRadiusDp * density
@@ -124,27 +139,35 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
 
         val defaults = PenboardConfig.defaultGridKeys()
         gridRows.forEachIndexed { rowIndex, row ->
-            row.visibility = if (config.gridButtonCount > rowIndex * GridMath.COLUMNS) View.VISIBLE else View.GONE
+            row.visibility = if (config.gridRows > rowIndex) View.VISIBLE else View.GONE
         }
         for (index in 0 until PenboardConfig.GRID_SLOTS) {
             val button = buttons[index]
             val key = config.gridKeys.getOrNull(index) ?: defaults[index]
             button.visibility = if (index < config.gridButtonCount) View.VISIBLE else View.INVISIBLE
-            button.text = config.labelFor(key)
             button.repeatOnHold = key.repeatOnHold
             button.onTap = { listener?.onKey(key, key.action) }
+            button.contentDescription = config.labelFor(key)
             button.layoutParams = LinearLayout.LayoutParams(cell, cell).apply {
                 marginStart = if (index % GridMath.COLUMNS == 0) 0 else spacing
                 topMargin = if (index >= GridMath.COLUMNS) spacing else 0
             }
             button.style(
-                radiusPx = config.cornerRadiusDp * density * 0.85f,
+                radiusPx = config.cornerRadiusDp * density * 0.9f,
                 fillColor = BoardView.withAlpha(config.buttonColor, config.buttonOpacity * 255 / 100),
-                borderColor = BoardView.withAlpha(config.accentColor, 140),
+                borderColor = BoardView.withAlpha(config.accentColor, 130),
                 labelColor = config.buttonTextColor,
-                textSizePx = cell * 0.20f,
+                textSizePx = cell * 0.26f,
                 haptics = config.haptics
             )
+            val glyph = KeyIcons.glyph(key.action)
+            if (glyph != null) {
+                button.text = ""
+                button.showGlyph(glyph, config.buttonTextColor, 0.5f)
+            } else {
+                button.showGlyph(null, config.buttonTextColor)
+                button.text = config.labelFor(key)
+            }
         }
         gridContainer.layoutParams = LinearLayout.LayoutParams(
             cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1),

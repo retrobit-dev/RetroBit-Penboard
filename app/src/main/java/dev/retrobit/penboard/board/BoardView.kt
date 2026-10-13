@@ -3,6 +3,7 @@ package dev.retrobit.penboard.board
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -71,6 +72,9 @@ class BoardView @JvmOverloads constructor(
         }
 
     var showLines: Boolean = true
+
+    /** Garis panduan digambar putus-putus halus (bagian dari tema ePaper). */
+    var dotLines: Boolean = true
         set(value) {
             if (field == value) return
             field = value
@@ -282,6 +286,12 @@ class BoardView @JvmOverloads constructor(
 
     private fun drawGuideLines(canvas: Canvas) {
         if (!showLines) return
+        // Garis panduan bergaya ePaper: titik-titik halus, bukan garis penuh.
+        linePaint.pathEffect = if (dotLines) {
+            DashPathEffect(floatArrayOf(2f * density, 3f * density), 0f)
+        } else {
+            null
+        }
         val left = if (edgeToEdge) 0f else insetH
         val right = if (edgeToEdge) width.toFloat() else width - insetH
         var y = lineGapPx

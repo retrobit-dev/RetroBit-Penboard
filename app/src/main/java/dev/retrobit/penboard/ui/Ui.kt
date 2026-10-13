@@ -3,6 +3,7 @@ package dev.retrobit.penboard.ui
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
@@ -23,6 +24,9 @@ import kotlin.math.roundToInt
 /** Pembuat tampilan sederhana (semua kartu pengaturan dibuat dari kode). */
 object Ui {
 
+    /** Garis tepi kartu tema retro (abu gelap). */
+    private val RETRO_BORDER = 0xFF3A3A3A.toInt()
+
     fun dp(context: Context, value: Float): Int =
         (value * context.resources.displayMetrics.density).roundToInt()
 
@@ -33,16 +37,20 @@ object Ui {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply { bottomMargin = dp(context, 12f) }
-            radius = dp(context, 18f).toFloat()
-            cardElevation = dp(context, 2f).toFloat()
+            radius = dp(context, 10f).toFloat()
+            cardElevation = 0f
+            strokeWidth = dp(context, 1f)
+            strokeColor = ColorStateList.valueOf(RETRO_BORDER)
             setContentPadding(dp(context, 16f), dp(context, 14f), dp(context, 16f), dp(context, 16f))
         }
         val inner = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         card.addView(inner)
         inner.addView(
             AppCompatTextView(context).apply {
-                text = title
-                textSize = 16.5f
+                text = title.uppercase()
+                textSize = 14.5f
+                letterSpacing = 0.08f
+                typeface = Typeface.MONOSPACE
                 setPadding(0, 0, 0, dp(context, 2f))
             }
         )
@@ -51,7 +59,8 @@ object Ui {
                 AppCompatTextView(context).apply {
                     text = subtitle
                     textSize = 12.5f
-                    alpha = 0.75f
+                    alpha = 0.7f
+                    typeface = Typeface.MONOSPACE
                     setPadding(0, 0, 0, dp(context, 8f))
                 }
             )
@@ -63,7 +72,9 @@ object Ui {
     fun body(parent: LinearLayout, text: String): AppCompatTextView =
         AppCompatTextView(parent.context).apply {
             this.text = text
-            textSize = 13f
+            textSize = 12.5f
+            typeface = Typeface.MONOSPACE
+            alpha = 0.85f
             setPadding(0, dp(parent.context, 2f), 0, dp(parent.context, 6f))
             parent.addView(this)
         }
@@ -96,11 +107,20 @@ object Ui {
         }
         val labels = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         labels.addView(
-            AppCompatTextView(context).apply { text = title; textSize = 14.5f }
+            AppCompatTextView(context).apply {
+                text = title
+                textSize = 13.5f
+                typeface = Typeface.MONOSPACE
+            }
         )
         if (summary != null) {
             labels.addView(
-                AppCompatTextView(context).apply { text = summary; textSize = 12f; alpha = 0.7f }
+                AppCompatTextView(context).apply {
+                    text = summary
+                    textSize = 11.5f
+                    alpha = 0.65f
+                    typeface = Typeface.MONOSPACE
+                }
             )
         }
         row.addView(labels, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
@@ -127,11 +147,16 @@ object Ui {
             orientation = LinearLayout.HORIZONTAL
             setPadding(0, dp(context, 6f), 0, 0)
         }
-        val titleView = AppCompatTextView(context).apply { text = title; textSize = 14.5f }
+        val titleView = AppCompatTextView(context).apply {
+            text = title
+            textSize = 13.5f
+            typeface = Typeface.MONOSPACE
+        }
         val valueView = AppCompatTextView(context).apply {
             text = format(value, unit)
-            textSize = 13.5f
+            textSize = 13f
             gravity = Gravity.END
+            typeface = Typeface.MONOSPACE
         }
         header.addView(titleView, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         header.addView(valueView)
@@ -181,7 +206,8 @@ object Ui {
             val button = MaterialButton(context).apply {
                 text = label
                 isAllCaps = false
-                textSize = 13f
+                textSize = 12.5f
+                typeface = Typeface.MONOSPACE
                 setOnClickListener { onClick() }
             }
             row.addView(
@@ -200,9 +226,10 @@ object Ui {
         val button = MaterialButton(context).apply {
             text = label
             isAllCaps = false
-            textSize = 13f
+            textSize = 12.5f
+            typeface = Typeface.MONOSPACE
             strokeWidth = dp(context, 1f)
-            strokeColor = ColorStateList.valueOf(0x66808080)
+            strokeColor = ColorStateList.valueOf(RETRO_BORDER)
             backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             setOnClickListener { onClick() }
         }
@@ -230,7 +257,11 @@ object Ui {
             setPadding(0, dp(context, 6f), 0, dp(context, 6f))
         }
         row.addView(
-            AppCompatTextView(context).apply { text = title; textSize = 14.5f },
+            AppCompatTextView(context).apply {
+                text = title
+                textSize = 13.5f
+                typeface = Typeface.MONOSPACE
+            },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         )
         val spinner = Spinner(context).apply {
@@ -268,7 +299,11 @@ object Ui {
             setOnClickListener { onPick(color) }
         }
         row.addView(
-            AppCompatTextView(context).apply { text = title; textSize = 14.5f },
+            AppCompatTextView(context).apply {
+                text = title
+                textSize = 13.5f
+                typeface = Typeface.MONOSPACE
+            },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         )
         val swatch = View(context).apply {
@@ -288,7 +323,9 @@ object Ui {
     fun statusText(parent: LinearLayout, text: String): TextView =
         AppCompatTextView(parent.context).apply {
             this.text = text
-            textSize = 13f
+            textSize = 12.5f
+            typeface = Typeface.MONOSPACE
+            alpha = 0.9f
             setPadding(0, dp(parent.context, 2f), 0, dp(parent.context, 4f))
             parent.addView(this)
         }

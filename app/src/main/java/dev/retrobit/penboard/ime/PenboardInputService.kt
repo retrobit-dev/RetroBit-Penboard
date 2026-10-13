@@ -95,6 +95,22 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             KeyAction.ENTER -> sendEnter()
             KeyAction.BACKSPACE -> deleteBackward()
             KeyAction.DELETE_WORD -> deleteWord()
+            KeyAction.DELETE_FORWARD -> sendKey(KeyEvent.KEYCODE_FORWARD_DEL)
+            KeyAction.TAB -> sendKey(KeyEvent.KEYCODE_TAB)
+
+            // Penempatan kursor (tombol panah ala HiWrite).
+            KeyAction.CURSOR_LEFT -> sendKey(KeyEvent.KEYCODE_DPAD_LEFT)
+            KeyAction.CURSOR_RIGHT -> sendKey(KeyEvent.KEYCODE_DPAD_RIGHT)
+            KeyAction.CURSOR_UP -> sendKey(KeyEvent.KEYCODE_DPAD_UP)
+            KeyAction.CURSOR_DOWN -> sendKey(KeyEvent.KEYCODE_DPAD_DOWN)
+            KeyAction.CURSOR_HOME -> sendKey(KeyEvent.KEYCODE_MOVE_HOME)
+            KeyAction.CURSOR_END -> sendKey(KeyEvent.KEYCODE_MOVE_END)
+
+            // Papan klip & pilihan teks.
+            KeyAction.SELECT_ALL -> contextMenu(android.R.id.selectAll)
+            KeyAction.CUT -> contextMenu(android.R.id.cut)
+            KeyAction.COPY -> contextMenu(android.R.id.copy)
+            KeyAction.PASTE -> contextMenu(android.R.id.paste)
             KeyAction.UNDO -> panel?.board?.undo()
             KeyAction.REDO -> panel?.board?.redo()
             KeyAction.CLEAR -> {
@@ -127,6 +143,29 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         if (currentInputConnection == null) return false
         deleteWord()
         return true
+    }
+
+    /**
+     * Jalankan aksi tombol dari papan melayang (panah kursor, tab, papan klip).
+     * Mengembalikan false bila tidak ada kolom isian yang sedang aktif.
+     */
+    fun performExternal(action: KeyAction): Boolean {
+        if (currentInputConnection == null) return false
+        handleAction(action, "")
+        return true
+    }
+
+    /** Kirim satu penekanan tombol ke kolom isian (dipakai panah kursor dan tab). */
+    private fun sendKey(code: Int) {
+        val connection = currentInputConnection ?: return
+        connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
+        connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+    }
+
+    /** Aksi menu teks: pilih semua, potong, salin, tempel. */
+    private fun contextMenu(id: Int) {
+        val connection = currentInputConnection ?: return
+        connection.performContextMenuAction(id)
     }
 
     private fun commitText(text: String): Boolean {

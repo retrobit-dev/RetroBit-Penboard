@@ -1,22 +1,49 @@
 package dev.retrobit.penboard.data
 
 import dev.retrobit.penboard.ink.RecognitionLanguages
+import dev.retrobit.penboard.util.GridMath
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Aksi yang bisa dipasang pada tombol keyboard maupun tombol samping pena. */
+/**
+ * Aksi yang bisa dipasang pada tombol keyboard maupun tombol samping pena.
+ *
+ * [label] hanya dipakai sebagai cadangan bila ikonnya tidak digambar; semua aksi
+ * yang punya ikon digambar sebagai ikon di papan tombol (lihat `ui/KeyIcons.kt`).
+ */
 enum class KeyAction(val id: String, val label: String) {
+    // Papan tulis & pengenalan
     TEXT("text", "abc"),
-    SPACE("space", "Spasi"),
-    ENTER("enter", "Baris"),
-    BACKSPACE("backspace", "\u232B"),
-    DELETE_WORD("deleteWord", "\u232B\u232B"),
-    UNDO("undo", "\u21B6"),
-    REDO("redo", "\u21B7"),
+    RECOGNIZE("recognize", "Teks"),
     CLEAR("clear", "Bersih"),
     DELETE_STROKE("deleteStroke", "Hapus gores"),
+    UNDO("undo", "Batal"),
+    REDO("redo", "Ulangi"),
     CYCLE_PEN("cyclePen", "Warna"),
-    RECOGNIZE("recognize", "Teks"),
+
+    // Tombol keyboard konvensional
+    SPACE("space", "Spasi"),
+    ENTER("enter", "Enter"),
+    BACKSPACE("backspace", "Hapus"),
+    DELETE_WORD("deleteWord", "Hapus kata"),
+    DELETE_FORWARD("deleteForward", "Hapus depan"),
+    TAB("tab", "Tab"),
+
+    // Penempatan kursor
+    CURSOR_LEFT("cursorLeft", "Kiri"),
+    CURSOR_RIGHT("cursorRight", "Kanan"),
+    CURSOR_UP("cursorUp", "Atas"),
+    CURSOR_DOWN("cursorDown", "Bawah"),
+    CURSOR_HOME("cursorHome", "Awal baris"),
+    CURSOR_END("cursorEnd", "Akhir baris"),
+
+    // Papan klip & pilihan
+    SELECT_ALL("selectAll", "Pilih semua"),
+    CUT("cut", "Potong"),
+    COPY("copy", "Salin"),
+    PASTE("paste", "Tempel"),
+
+    // Jembatan ke perangkat
     SYSTEM_HANDWRITING("systemHandwriting", "Huawei"),
     OVERLAY_TOGGLE("overlay", "Layang"),
     HIDE("hide", "Tutup");
@@ -43,7 +70,7 @@ enum class PenButtonAction(val id: String, val label: String, val key: KeyAction
     }
 }
 
-/** Satu tombol pada grid 3x3. */
+/** Satu tombol pada grid tombol (3 kolom, sampai 4 baris). */
 data class KeyDef(
     val action: KeyAction = KeyAction.SPACE,
     /** Label khusus; kosong berarti memakai label bawaan aksi. */
@@ -88,24 +115,27 @@ data class PenboardConfig(
     /** Ketebalan goresan mengikuti tekanan stylus (M-Pen dan pena sejenis). */
     val pressureEnabled: Boolean = true,
 
-    // Grid tombol 3x3
-    val gridButtonCount: Int = 9,
+    // Grid tombol (3 kolom, jumlah baris bisa diatur 1-4)
+    val gridRows: Int = DEFAULT_ROWS,
+    val gridButtonCount: Int = DEFAULT_ROWS * COLUMNS,
     val gridKeys: List<KeyDef> = defaultGridKeys(),
     val penButtonPrimary: PenButtonAction = PenButtonAction.RECOGNIZE,
     val penButtonSecondary: PenButtonAction = PenButtonAction.UNDO,
 
-    // Tampilan & transparansi (0-100)
-    val panelColor: Int = 0xFF111827.toInt(),
-    val panelOpacity: Int = 92,
-    val boardColor: Int = 0xFFFFFFFF.toInt(),
-    val boardOpacity: Int = 96,
-    val lineColor: Int = 0xFF94A3B8.toInt(),
-    val buttonColor: Int = 0xFF1F2937.toInt(),
-    val buttonOpacity: Int = 88,
-    val buttonTextColor: Int = 0xFFF8FAFC.toInt(),
-    val accentColor: Int = 0xFF0EA5E9.toInt(),
-    val cornerRadiusDp: Int = 16,
+    // Tampilan & transparansi (0-100) — bawaan: tema retro cyberpunk grayscale ePaper
+    val panelColor: Int = PANEL_COLOR,
+    val panelOpacity: Int = 90,
+    val boardColor: Int = PAPER_COLOR,
+    val boardOpacity: Int = 97,
+    val lineColor: Int = 0xFFB9B9B9.toInt(),
+    val buttonColor: Int = BUTTON_COLOR,
+    val buttonOpacity: Int = 92,
+    val buttonTextColor: Int = 0xFFE6E6E6.toInt(),
+    val accentColor: Int = ACCENT_COLOR,
+    val cornerRadiusDp: Int = 6,
     val haptics: Boolean = true,
+    /** Tekstur garis pindaian ala layar ePaper (bagian dari tema retro). */
+    val scanlines: Boolean = true,
 
     // Pengenalan tulisan
     val autoRecognize: Boolean = true,
@@ -125,6 +155,26 @@ data class PenboardConfig(
     val currentPenColor: Int
         get() = penColors.getOrElse(penColorIndex) { DEFAULT_PEN_COLORS.first() }
 
+    /**
+     * Pakai lagi tema **retro cyberpunk grayscale ePaper** (warna, transparansi, dan
+     * bentuk saja) tanpa mengubah susunan tombol maupun pengaturan pengenalan.
+     */
+    fun withRetroTheme(): PenboardConfig = copy(
+        panelColor = PANEL_COLOR,
+        panelOpacity = THEME_PANEL_OPACITY,
+        boardColor = PAPER_COLOR,
+        boardOpacity = THEME_BOARD_OPACITY,
+        lineColor = THEME_LINE_COLOR,
+        buttonColor = BUTTON_COLOR,
+        buttonOpacity = THEME_BUTTON_OPACITY,
+        buttonTextColor = THEME_BUTTON_TEXT,
+        accentColor = ACCENT_COLOR,
+        penColors = DEFAULT_PEN_COLORS,
+        penColorIndex = 0,
+        cornerRadiusDp = THEME_RADIUS_DP,
+        scanlines = true
+    )
+
     /** Label tombol: label khusus, teks aksi TEXT, atau label bawaan aksi. */
     fun labelFor(key: KeyDef): String = when {
         key.label.isNotBlank() -> key.label
@@ -142,6 +192,7 @@ data class PenboardConfig(
         put("showLines", showLines)
         put("allowFinger", allowFinger)
         put("pressureEnabled", pressureEnabled)
+        put("gridRows", gridRows)
         put("gridButtonCount", gridButtonCount)
         put("gridKeys", JSONArray().apply { gridKeys.forEach { put(it.toJson()) } })
         put("penButtonPrimary", penButtonPrimary.id)
@@ -157,6 +208,7 @@ data class PenboardConfig(
         putColor("accentColor", accentColor)
         put("cornerRadiusDp", cornerRadiusDp)
         put("haptics", haptics)
+        put("scanlines", scanlines)
         put("autoRecognize", autoRecognize)
         put("autoRecognizeDelayMs", autoRecognizeDelayMs)
         put("autoSpace", autoSpace)
@@ -168,13 +220,16 @@ data class PenboardConfig(
     /** Semua angka dipangkas ke rentang yang masuk akal. */
     fun sanitized(): PenboardConfig {
         val colors = penColors.map { it }.distinct().take(MAX_PEN_COLORS).ifEmpty { DEFAULT_PEN_COLORS }
+        val rows = gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
         return copy(
             boardHeightDp = boardHeightDp.coerceIn(MIN_BOARD_HEIGHT_DP, MAX_BOARD_HEIGHT_DP),
             lineGapDp = lineGapDp.coerceIn(MIN_LINE_GAP_DP, MAX_LINE_GAP_DP),
             penWidthDp = penWidthDp.coerceIn(MIN_PEN_WIDTH_DP, MAX_PEN_WIDTH_DP),
             penColors = colors,
             penColorIndex = penColorIndex.coerceIn(0, colors.size - 1),
-            gridButtonCount = gridButtonCount.coerceIn(MIN_GRID_KEYS, MAX_GRID_KEYS),
+            gridRows = rows,
+            // Tombol tidak boleh melebihi jumlah sel yang tersedia di baris yang dipilih.
+            gridButtonCount = gridButtonCount.coerceIn(MIN_GRID_KEYS, rows * COLUMNS),
             gridKeys = sanitizeKeys(gridKeys),
             panelOpacity = panelOpacity.coerceIn(0, 100),
             boardOpacity = boardOpacity.coerceIn(0, 100),
@@ -200,7 +255,13 @@ data class PenboardConfig(
 
     companion object {
         const val SCHEMA_VERSION = 1
-        const val GRID_SLOTS = 9
+
+        /** Tiga kolom tetap; jumlah baris bisa 1 sampai 4 (12 tombol). */
+        const val COLUMNS = GridMath.COLUMNS
+        const val MIN_GRID_ROWS = GridMath.MIN_ROWS
+        const val MAX_GRID_ROWS = GridMath.MAX_ROWS
+        const val DEFAULT_ROWS = GridMath.ROWS
+        const val GRID_SLOTS = COLUMNS * MAX_GRID_ROWS
         const val MAX_PEN_COLORS = 6
 
         const val MIN_BOARD_HEIGHT_DP = 120
@@ -216,24 +277,49 @@ data class PenboardConfig(
         const val MIN_AUTO_DELAY_MS = 500
         const val MAX_AUTO_DELAY_MS = 5000
 
+        // Tema retro cyberpunk grayscale ePaper.
+        const val PANEL_COLOR = 0xFF0B0B0B.toInt()
+        const val PAPER_COLOR = 0xFFEDEDED.toInt()
+        const val BUTTON_COLOR = 0xFF161616.toInt()
+        const val ACCENT_COLOR = 0xFFC8C8C8.toInt()
+
+        /** Tinta ePaper: hitam, grafit, lalu abu. */
         val DEFAULT_PEN_COLORS: List<Int> = listOf(
-            0xFFEF4444.toInt(),
-            0xFF111827.toInt(),
-            0xFF2563EB.toInt()
+            0xFF101010.toInt(),
+            0xFF3F3F3F.toInt(),
+            0xFF7A7A7A.toInt()
         )
 
-        /** Grid bawaan: tombol yang paling sering dipakai saat menulis satu kata. */
+        /**
+         * Grid bawaan ala HiWrite: baris pertama-tama panah kursor, lalu tombol
+         * keyboard konvensional, lalu tombol papan tulis.
+         */
         fun defaultGridKeys(): List<KeyDef> = listOf(
-            KeyDef(KeyAction.RECOGNIZE),
+            // Baris 1 - penempatan kursor
+            KeyDef(KeyAction.CURSOR_LEFT, repeatOnHold = true),
+            KeyDef(KeyAction.CURSOR_UP, repeatOnHold = true),
+            KeyDef(KeyAction.CURSOR_RIGHT, repeatOnHold = true),
+            // Baris 2 - tombol keyboard konvensional
+            KeyDef(KeyAction.CURSOR_DOWN, repeatOnHold = true),
             KeyDef(KeyAction.SPACE),
             KeyDef(KeyAction.ENTER),
+            // Baris 3 - hapus & papan tulis
             KeyDef(KeyAction.BACKSPACE, repeatOnHold = true),
-            KeyDef(KeyAction.UNDO),
+            KeyDef(KeyAction.RECOGNIZE),
             KeyDef(KeyAction.CLEAR),
-            KeyDef(KeyAction.DELETE_STROKE),
-            KeyDef(KeyAction.SYSTEM_HANDWRITING),
-            KeyDef(KeyAction.HIDE)
+            // Baris 4 - tambahan
+            KeyDef(KeyAction.DELETE_WORD, repeatOnHold = true),
+            KeyDef(KeyAction.UNDO),
+            KeyDef(KeyAction.REDO)
         )
+
+        /** Nilai tema retro dipakai juga oleh [withRetroTheme]. */
+        const val THEME_PANEL_OPACITY = 90
+        const val THEME_BOARD_OPACITY = 97
+        const val THEME_BUTTON_OPACITY = 92
+        const val THEME_LINE_COLOR = 0xFFB9B9B9.toInt()
+        const val THEME_BUTTON_TEXT = 0xFFE6E6E6.toInt()
+        const val THEME_RADIUS_DP = 6
 
         fun fromJson(json: JSONObject): PenboardConfig {
             val base = PenboardConfig()
@@ -253,6 +339,7 @@ data class PenboardConfig(
                 showLines = json.optBoolean("showLines", base.showLines),
                 allowFinger = json.optBoolean("allowFinger", base.allowFinger),
                 pressureEnabled = json.optBoolean("pressureEnabled", base.pressureEnabled),
+                gridRows = json.optInt("gridRows", base.gridRows),
                 gridButtonCount = json.optInt("gridButtonCount", base.gridButtonCount),
                 gridKeys = keys,
                 penButtonPrimary = PenButtonAction.fromId(json.optString("penButtonPrimary", base.penButtonPrimary.id)),
@@ -268,6 +355,7 @@ data class PenboardConfig(
                 accentColor = json.color("accentColor", base.accentColor),
                 cornerRadiusDp = json.optInt("cornerRadiusDp", base.cornerRadiusDp),
                 haptics = json.optBoolean("haptics", base.haptics),
+                scanlines = json.optBoolean("scanlines", base.scanlines),
                 autoRecognize = json.optBoolean("autoRecognize", base.autoRecognize),
                 autoRecognizeDelayMs = json.optInt("autoRecognizeDelayMs", base.autoRecognizeDelayMs),
                 autoSpace = json.optBoolean("autoSpace", base.autoSpace),

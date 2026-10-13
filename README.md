@@ -1,72 +1,95 @@
 # Penboard
 
-Papan tulis stylus untuk Android. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Ini **bukan keyboard QWERTY** — papan tulisnya lebar di kiri, tombol-tombol operasinya kecil dan rapi 3x3 di kanan.
+Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **2.0.3** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
 
-Yang baru di 2.0.3:
+## Yang baru di 3.0.0
 
-- **Tulisan tidak lagi terpotong.** Begitu pena menyentuh papan, hitungan 2 detik dibatalkan; kalau pena masih menempel saat waktunya habis, papan menunggu pena diangkat dulu.
-- **Goresan dihaluskan** (lengkung kuadratik) sehingga tulisan lebih enak dilihat dan lebih mudah dikenali mesin.
-- **Panduan pemasangan 3 langkah** di halaman utama, dengan tanda ✓ bila langkahnya sudah beres.
-- Pesan **"✗ tidak terbaca"** muncul di papan kalau tulisannya belum bisa dikenali, jadi jelas bukan karena papan yang diam.
-- Tombol **Hapus satu kata** di papan melayang sekarang benar-benar menghapus satu kata, bukan beberapa huruf.
+- **Tombol penempatan kursor**: ← → ↑ ↓ plus ke awal/akhir baris, digambar sebagai ikon panah (bisa ditahan untuk menggeser cepat).
+- **Tombol keyboard konvensional**: spasi, enter, hapus (⌫, tahan untuk mengulang), hapus satu kata, hapus huruf di depan kursor, dan tab — semuanya berikon.
+- **Tombol papan klip**: pilih semua, potong, salin, tempel.
+- **Semua tombol memakai ikon**, bukan tulisan, sehingga ukurannya kecil dan seragam.
+- **Jumlah baris area tombol bisa diatur**: 1 baris, 2 baris, 3 baris, atau 4 baris (3 kolom tetap) — jadi sampai 12 tombol, dan jumlah tombol yang tampil juga bisa diatur (1–12).
+- **Tema retro cyberpunk grayscale ePaper**: papan warna kertas, panel hitam bertekstur garis pindaian, garis panduan titik-titik, tombol monokrom, dan huruf mesin tik (monospace). Satu tombol untuk kembali ke tema ini kapan saja.
+- **Papan tulis overlay dengan transparansi yang bisa diatur** (panel, papan, dan tombol masing-masing 0–100%).
 
 ## Cara pakai singkat
 
-1. Pasang APK, buka Penboard.
-2. **Keyboard Penboard**: ketuk *Pilih keyboard* lalu pilih **Penboard**. Setelah itu, di aplikasi mana pun, papan tulis muncul saat mengetuk kolom isian.
-3. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis diubah menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
-4. Ingin memaksa jadi teks sekarang? Ketuk tombol **Teks**, atau tekan **tombol samping M-Pen**.
+1. Pasang APK, buka Penboard, ikuti **panduan 3 langkah** di halaman utama.
+2. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
+3. Butuh memindahkan kursor atau menambah spasi/enter? Pakai tombol ikon di kanan papan.
+4. Ingin memaksa jadi teks sekarang? Ketuk tombol ikon **"A + percikan"** (Teks), atau tekan **tombol samping M-Pen**.
 5. Ingin menulis di atas aplikasi lain? Beri izin *tampil di atas aplikasi lain*, lalu nyalakan **Papan melayang**.
 
 ## Susunan papan
 
 ```
-+----------------------------------------------+---------------+
-|                                              |   [1] [2] [3] |
-|            PAPAN TULIS (kiri)                |   [4] [5] [6] |
-|      dari tepi kiri sampai ke tombol         |   [7] [8] [9] |
-+----------------------------------------------+---------------+
++----------------------------------------------+----------------+
+|                                              |   [<-] [^] [->] |  baris 1
+|            PAPAN TULIS (kiri)                |   [v] [spasi] [!]|  baris 2
+|      dari tepi kiri sampai ke tombol         |   [x] [A+] [tmr] |  baris 3
+|                                              |   [x2][u] [r]    |  baris 4 (opsional)
++----------------------------------------------+----------------+
 ```
 
-- Papan tulis memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol).
-- Sebelah kanan berisi grid tombol **3 baris x 3 kolom**.
-- Jumlah tombol bisa diatur 1 sampai 9, dan **setiap tombol bebas dipilih fungsinya** serta labelnya.
+- **Papan tulis** memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol).
+- **Area tombol**: 3 kolom tetap, jumlah baris 1–4 (diatur pengguna), sampai 12 tombol.
+- Setiap tombol bebas dipilih aksinya dan bisa diberi label sendiri.
+
+## Daftar tombol (ikon)
+
+| Ikon | Aksi |
+| --- | --- |
+| panah ← → ↑ ↓ | geser kursor kiri/kanan/atas/bawah |
+| panah + garis | kursor ke awal baris / ke akhir baris |
+| ␣ | spasi |
+| ↵ | enter / baris baru |
+| ⌫ | hapus satu huruf (tahan = mengulang) |
+| huruf dicoret | hapus satu kata |
+| ⌫ terbalik | hapus huruf di depan kursor |
+| tab | tab (kolom berikutnya) |
+| bingkai putus-putus | pilih semua teks |
+| gunting | potong | 
+| dua lembar | salin |
+| papan klip | tempel |
+| pena | ganti warna pena |
+| A + percikan | ubah tulisan menjadi teks |
+| tong sampah | bersihkan papan |
+| penghapus | hapus goresan terakhir |
+| panah melengkung | batal (undo) / ulangi (redo) |
+| coretan tangan | pindah ke tulisan tangan perangkat (Huawei/Celia) |
+| dua jendela | nyalakan papan melayang |
+| panah bawah | sembunyikan keyboard |
 
 ## Pengaturan yang tersedia
 
 | Bagian | Isi |
 | --- | --- |
 | Papan tulis | tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan, ketebalan ikut tekanan stylus, izinkan jari, getaran |
-| Tombol 3x3 | jumlah tombol (1–9), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
+| Area tombol | **jumlah baris 1–4**, jumlah tombol tampil 1–12, fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
-| Tampilan | transparansi panel/papan/tombol (0–100%), warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
-| Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan: tidak ada, jadikan teks, batal goresan, hapus goresan, bersihkan papan, tulisan tangan perangkat, papan melayang |
+| Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
+| Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 
-Panel dan papan dibuat tembus pandang supaya tulisan di aplikasi lain tetap terbaca.
-
-## Fungsi tombol
-
-`abc` (teks tertentu) · Spasi · Baris · Hapus satu huruf · Hapus satu kata · Batal (undo) · Ulangi (redo) · Bersihkan · Hapus gores · Warna · Teks (ubah jadi teks) · Huawei (pindah ke tulisan tangan perangkat) · Layang (papan melayang) · Tutup (sembunyikan keyboard).
-
-Umpan balik saat menulis:
-
-- Garis **hitung mundur** di papan menunjukkan kapan input otomatis akan berjalan; hitungan ini berhenti begitu pena kembali menyentuh papan.
-- Setelah teks terkirim, muncul **kilasan tanda centang + teks** yang baru masuk, jadi kelihatan hasil pengenalannya; kalau gagal, muncul **"✗ tidak terbaca"**.
-- **Tekanan M-Pen** membuat goresan lebih tebal atau tipis (bisa dimatikan).
-- **Ujung penghapus stylus** menghapus goresan yang ada di sekitar sentuhan itu.
+Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif (karena memerlukan kolom isian); papan melayang menulis dan menyalin teks.
 
 ## Mesin pengenalan
 
 Pengenalan memakai **ML Kit Digital Ink Recognition** (Google) yang berjalan **di dalam ponsel dan luring** setelah model bahasanya terunduh. Bawaan: bahasa Indonesia (`id-ID`, sekitar 20 MB). Tersedia juga English US/UK, Melayu, Jawa, Sunda, 中文, 日本語, 한국어, العربية, Русский, हिन्दी, ไทย, Tiếng Việt.
+
+Umpan balik saat menulis:
+
+- Garis **hitung mundur** di papan menunjukkan kapan input otomatis akan berjalan; hitungan berhenti begitu pena kembali menyentuh papan (atau bisa dimatikan).
+- Setelah teks terkirim, muncul **kilasan tanda centang + teks**; kalau gagal, muncul **"✗ tidak terbaca"**.
+- **Tekanan M-Pen** membuat goresan lebih tebal atau tipis; **ujung penghapus stylus** menghapus goresan di sekitar sentuhan.
 
 ### Soal Huawei
 
 Mesin tulisan tangan Huawei (Celia) **tidak bisa dipanggil oleh aplikasi lain** — Huawei hanya menyediakannya lewat keyboard bawaannya, dan HMS ML Kit hanya menyediakan OCR gambar (bukan tulisan tangan). Karena itu Penboard:
 
 1. memakai tombol samping M-Pen sebagai pemicu teks sehingga tidak bentrok dengan pintasan keyboard Huawei;
-2. menyediakan tombol **Huawei** pada grid untuk berpindah ke keyboard tulisan tangan bawaan, dan bisa kembali ke Penboard kapan saja;
+2. menyediakan tombol **coretan tangan** pada grid untuk berpindah ke keyboard tulisan tangan bawaan, dan bisa kembali ke Penboard kapan saja;
 3. mematikan tulisan tangan sistem pada kolom **Uji tulis** (agar goresan tidak muncul dua kali);
 4. punya pilihan **pindah otomatis** ke keyboard tulisan tangan perangkat bila mesin pengenalan bawaan tidak ada (mis. perangkat Huawei tanpa Google Play services).
 
@@ -76,6 +99,7 @@ Semua data tetap di ponsel. Tidak ada tulisan yang dikirim ke server mana pun; h
 
 - Perlu izin *tampil di atas aplikasi lain*.
 - Bisa digeser lewat pegangan kecil di atas papan; posisinya diingat.
+- Transparansinya mengikuti pengaturan tema (panel/papan/tombol).
 - Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip dan diumumkan lewat pesan singkat.
 - Berjalan sebagai foreground service dengan notifikasi biasa.
 
@@ -96,7 +120,7 @@ keyAlias=...
 keyPassword=...
 ```
 
-Teknologi: Kotlin 2.0, AGP 8.7, Gradle 8.11, `minSdk 26`, `targetSdk 35`, satu modul `app`, tanpa berkas tata letak XML (seluruh tampilan dibuat dari kode).
+Teknologi: Kotlin 2.0, AGP 8.7, Gradle 8.11, `minSdk 26`, `targetSdk 35`, satu modul `app`, tanpa berkas tata letak XML (seluruh tampilan dibuat dari kode, termasuk ikon tombol).
 
 ## Struktur berkas
 
@@ -108,7 +132,7 @@ app/src/main/java/dev/retrobit/penboard/
 ├── ime/                       PenboardInputService (keyboard)
 ├── overlay/                   PenboardOverlayService (papan melayang)
 ├── ink/                       InkRecognition (ML Kit), InkNormalizer, RecognitionText, RecognitionLanguages
-├── ui/                        BoardPanel, KeyButton, Ui, ColorPicker
+├── ui/                        BoardPanel, KeyButton, KeyIcons, ScanlineDrawable, Ui, ColorPicker
 └── util/                      BoardMath, GridMath, StylusCompat, SystemHandwriting
 ```
 

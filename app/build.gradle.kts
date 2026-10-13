@@ -22,8 +22,8 @@ android {
         applicationId = "dev.retrobit.penboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20003
-        versionName = "2.0.3"
+        versionCode = 30000
+        versionName = "3.0.0"
         vectorDrawables.useSupportLibrary = true
     }
 

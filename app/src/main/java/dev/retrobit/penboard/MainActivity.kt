@@ -35,6 +35,7 @@ import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
+import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.StylusCompat
 import dev.retrobit.penboard.util.SystemHandwriting
 
@@ -225,12 +226,22 @@ class MainActivity : AppCompatActivity() {
             override fun onPenButton(primary: Boolean) = Unit
             override fun onContentChanged() = Unit
         }
+        // Tinggi pratinjau mengikuti papan atau grid tombol, mana yang lebih tinggi.
+        val density = resources.displayMetrics.density
+        val spacingPx = (GridMath.SPACING_DP * density).toInt()
+        val boardHeightPx = (store.config.boardHeightDp * density).toInt()
+        val cellPx = GridMath.cellSizePx(
+            boardHeightPx,
+            resources.displayMetrics.widthPixels,
+            spacingPx,
+            (44 * density).toInt(),
+            store.config.gridRows
+        )
+        val gridHeightPx = cellPx * store.config.gridRows + spacingPx * (store.config.gridRows - 1)
+        val previewHeight = maxOf(boardHeightPx, gridHeightPx) + (24 * density).toInt()
         card.addView(
             panel.root,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(store.config.boardHeightDp + 26f)
-            )
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)
         )
         panel.applyConfig(store.config)
     }
@@ -316,8 +327,16 @@ class MainActivity : AppCompatActivity() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_grid), getString(R.string.card_grid_sub))
         Ui.sliderRow(
+            card, getString(R.string.setting_grid_rows), config.gridRows,
+            PenboardConfig.MIN_GRID_ROWS, PenboardConfig.MAX_GRID_ROWS, getString(R.string.unit_rows)
+        ) { value ->
+            // Menambah baris langsung mengisi tombol di baris baru; mengurangi baris
+            // otomatis memangkas tombol yang tidak punya tempat lagi.
+            store.update { it.copy(gridRows = value, gridButtonCount = value * GridMath.COLUMNS) }
+        }
+        Ui.sliderRow(
             card, getString(R.string.setting_grid_count), config.gridButtonCount,
-            PenboardConfig.MIN_GRID_KEYS, PenboardConfig.MAX_GRID_KEYS, getString(R.string.unit_keys)
+            PenboardConfig.MIN_GRID_KEYS, config.gridRows * GridMath.COLUMNS, getString(R.string.unit_keys)
         ) { value -> store.update { it.copy(gridButtonCount = value) } }
 
         Ui.divider(card)
@@ -353,7 +372,8 @@ class MainActivity : AppCompatActivity() {
             store.update {
                 it.copy(
                     gridKeys = PenboardConfig.defaultGridKeys(),
-                    gridButtonCount = PenboardConfig.MAX_GRID_KEYS
+                    gridRows = PenboardConfig.DEFAULT_ROWS,
+                    gridButtonCount = PenboardConfig.DEFAULT_ROWS * GridMath.COLUMNS
                 )
             }
             render()
@@ -404,6 +424,18 @@ class MainActivity : AppCompatActivity() {
     private fun renderLookCard() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_look), getString(R.string.card_look_sub))
+        Ui.body(card, getString(R.string.theme_note))
+        Ui.outlinedButton(card, getString(R.string.action_theme_retro)) {
+            store.update { it.withRetroTheme() }
+            render()
+        }
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_scanlines),
+            getString(R.string.setting_scanlines_sub),
+            config.scanlines
+        ) { value -> store.update { it.copy(scanlines = value) } }
+        Ui.divider(card)
         Ui.sliderRow(card, getString(R.string.setting_panel_opacity), config.panelOpacity, 0, 100, "%") { value ->
             store.update { it.copy(panelOpacity = value) }
         }
@@ -545,6 +577,18 @@ class MainActivity : AppCompatActivity() {
             KeyAction.ENTER -> R.string.hint_enter
             KeyAction.BACKSPACE -> R.string.hint_backspace
             KeyAction.DELETE_WORD -> R.string.hint_delete_word
+            KeyAction.DELETE_FORWARD -> R.string.hint_delete_forward
+            KeyAction.TAB -> R.string.hint_tab
+            KeyAction.CURSOR_LEFT -> R.string.hint_cursor_left
+            KeyAction.CURSOR_RIGHT -> R.string.hint_cursor_right
+            KeyAction.CURSOR_UP -> R.string.hint_cursor_up
+            KeyAction.CURSOR_DOWN -> R.string.hint_cursor_down
+            KeyAction.CURSOR_HOME -> R.string.hint_cursor_home
+            KeyAction.CURSOR_END -> R.string.hint_cursor_end
+            KeyAction.SELECT_ALL -> R.string.hint_select_all
+            KeyAction.CUT -> R.string.hint_cut
+            KeyAction.COPY -> R.string.hint_copy
+            KeyAction.PASTE -> R.string.hint_paste
             KeyAction.UNDO -> R.string.hint_undo
             KeyAction.REDO -> R.string.hint_redo
             KeyAction.CLEAR -> R.string.hint_clear

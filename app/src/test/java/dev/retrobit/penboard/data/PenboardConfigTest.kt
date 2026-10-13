@@ -12,12 +12,65 @@ class PenboardConfigTest {
     fun `nilai bawaan masuk akal`() {
         val config = PenboardConfig()
         assertEquals(PenboardConfig.SCHEMA_VERSION, config.schemaVersion)
-        assertEquals(9, config.gridButtonCount)
+        assertEquals(PenboardConfig.DEFAULT_ROWS, config.gridRows)
+        assertEquals(PenboardConfig.COLUMNS * PenboardConfig.DEFAULT_ROWS, config.gridButtonCount)
         assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
         assertEquals(2000, config.autoRecognizeDelayMs)
         assertTrue(config.autoRecognize)
         assertTrue(config.autoSpace)
         assertTrue(config.pressureEnabled)
+        assertTrue(config.scanlines)
+    }
+
+    @Test
+    fun `tema bawaan adalah retro cyberpunk grayscale ePaper`() {
+        val config = PenboardConfig()
+        assertEquals(PenboardConfig.PANEL_COLOR, config.panelColor)
+        assertEquals(PenboardConfig.PAPER_COLOR, config.boardColor)
+        assertEquals(PenboardConfig.BUTTON_COLOR, config.buttonColor)
+        assertEquals(PenboardConfig.ACCENT_COLOR, config.accentColor)
+        // Grayscale: warna merah, hijau, dan biru sama rata (tidak ada warna mencolok).
+        listOf(
+            config.panelColor, config.boardColor, config.lineColor,
+            config.buttonColor, config.buttonTextColor, config.accentColor
+        ).forEach { color ->
+            assertEquals("warna $color bukan grayscale", 0, graySpread(color))
+        }
+        assertTrue(PenboardConfig.DEFAULT_PEN_COLORS.all { graySpread(it) <= 6 })
+    }
+
+    @Test
+    fun `tema retro bisa dipakai ulang tanpa mengubah tombol`() {
+        val custom = PenboardConfig(
+            gridRows = 4,
+            gridButtonCount = 12,
+            accentColor = 0xFFFF00FF.toInt(),
+            autoRecognizeDelayMs = 3000
+        ).sanitized()
+        val themed = custom.withRetroTheme()
+        assertEquals(PenboardConfig.ACCENT_COLOR, themed.accentColor)
+        assertEquals(PenboardConfig.PAPER_COLOR, themed.boardColor)
+        assertTrue(themed.scanlines)
+        assertEquals(custom.gridRows, themed.gridRows)
+        assertEquals(custom.gridKeys, themed.gridKeys)
+        assertEquals(custom.autoRecognizeDelayMs, themed.autoRecognizeDelayMs)
+    }
+
+    @Test
+    fun `jumlah baris dan tombol saling menjaga`() {
+        // Empat baris berarti sampai 12 tombol.
+        val fourRows = PenboardConfig(gridRows = 4, gridButtonCount = 12).sanitized()
+        assertEquals(4, fourRows.gridRows)
+        assertEquals(12, fourRows.gridButtonCount)
+
+        // Tombol dipangkas bila melebihi jumlah sel di baris yang dipilih.
+        val tooMany = PenboardConfig(gridRows = 1, gridButtonCount = 9).sanitized()
+        assertEquals(1, tooMany.gridRows)
+        assertEquals(PenboardConfig.COLUMNS, tooMany.gridButtonCount)
+
+        // Baris liar dibatasi ke 1-4.
+        assertEquals(PenboardConfig.MAX_GRID_ROWS, PenboardConfig(gridRows = 99).sanitized().gridRows)
+        assertEquals(PenboardConfig.MIN_GRID_ROWS, PenboardConfig(gridRows = 0).sanitized().gridRows)
     }
 
     @Test
@@ -46,10 +99,11 @@ class PenboardConfigTest {
 
     @Test
     fun `angka liar dipangkas ke rentang aman`() {
-        val wild = PenboardConfig(
+            val wild = PenboardConfig(
             boardHeightDp = 9999,
             lineGapDp = 1,
             penWidthDp = 99,
+            gridRows = 99,
             gridButtonCount = 77,
             cornerRadiusDp = -5,
             autoRecognizeDelayMs = 50,
@@ -99,12 +153,44 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `tombol kursor dan keyboard konvensional bisa dipilih`() {
+        assertEquals(KeyAction.CURSOR_LEFT, KeyAction.fromId("cursorLeft"))
+        assertEquals(KeyAction.CURSOR_RIGHT, KeyAction.fromId("cursorRight"))
+        assertEquals(KeyAction.CURSOR_UP, KeyAction.fromId("cursorUp"))
+        assertEquals(KeyAction.CURSOR_DOWN, KeyAction.fromId("cursorDown"))
+        assertEquals(KeyAction.CURSOR_HOME, KeyAction.fromId("cursorHome"))
+        assertEquals(KeyAction.CURSOR_END, KeyAction.fromId("cursorEnd"))
+        assertEquals(KeyAction.SPACE, KeyAction.fromId("space"))
+        assertEquals(KeyAction.ENTER, KeyAction.fromId("enter"))
+        assertEquals(KeyAction.BACKSPACE, KeyAction.fromId("backspace"))
+        assertEquals(KeyAction.DELETE_WORD, KeyAction.fromId("deleteWord"))
+        assertEquals(KeyAction.DELETE_FORWARD, KeyAction.fromId("deleteForward"))
+        assertEquals(KeyAction.TAB, KeyAction.fromId("tab"))
+        assertEquals(KeyAction.SELECT_ALL, KeyAction.fromId("selectAll"))
+        assertEquals(KeyAction.CUT, KeyAction.fromId("cut"))
+        assertEquals(KeyAction.COPY, KeyAction.fromId("copy"))
+        assertEquals(KeyAction.PASTE, KeyAction.fromId("paste"))
+
+        // Semua aksi punya id unik supaya tersimpan dengan benar di pengaturan.
+        val ids = KeyAction.entries.map { it.id }
+        assertEquals(ids.size, ids.distinct().size)
+    }
+
+    @Test
     fun `grid bawaan memuat tombol penting`() {
         val keys = PenboardConfig.defaultGridKeys()
         assertEquals(PenboardConfig.GRID_SLOTS, keys.size)
         assertTrue(keys.any { it.action == KeyAction.RECOGNIZE })
         assertTrue(keys.any { it.action == KeyAction.SPACE })
+        assertTrue(keys.any { it.action == KeyAction.ENTER })
         assertTrue(keys.any { it.action == KeyAction.BACKSPACE && it.repeatOnHold })
+        // Empat panah kursor ada di susunan bawaan (baris pertama-tama).
+        listOf(
+            KeyAction.CURSOR_LEFT, KeyAction.CURSOR_RIGHT, KeyAction.CURSOR_UP, KeyAction.CURSOR_DOWN
+        ).forEach { action ->
+            assertTrue("panah $action tidak ada di grid bawaan", keys.any { it.action == action })
+        }
+        assertTrue(keys.take(PenboardConfig.COLUMNS).all { it.action.name.startsWith("CURSOR_") })
     }
 
     @Test
@@ -113,5 +199,13 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.GRID_SLOTS, restored.gridKeys.size)
         assertTrue(restored.penColors.isNotEmpty())
         assertFalse(restored.gridButtonCount <= 0)
+    }
+
+    /** Selisih terbesar antar kanal warna: 0 berarti benar-benar abu-abu. */
+    private fun graySpread(color: Int): Int {
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = color and 0xFF
+        return maxOf(r, g, b) - minOf(r, g, b)
     }
 }

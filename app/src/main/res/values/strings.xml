@@ -82,10 +82,16 @@
     <string name="setting_pen_button_secondary">Tombol samping (tahan/kedua)</string>
 
     <!-- Kartu: tombol 3x3 -->
-    <string name="card_grid">Tombol 3x3</string>
-    <string name="card_grid_sub">Pilih berapa tombol yang tampil dan apa fungsinya.</string>
-    <string name="setting_grid_count">Jumlah tombol</string>
+    <string name="card_grid">Tombol papan</string>
+    <string name="card_grid_sub">Area tombol bisa 1 baris, 2 baris, sampai 4 baris (3 kolom). Pilih sendiri berapa tombol yang tampil dan apa fungsinya.</string>
+    <string name="setting_grid_rows">Jumlah baris area tombol</string>
+    <string name="unit_rows">baris</string>
+    <string name="setting_grid_count">Jumlah tombol yang tampil</string>
     <string name="unit_keys">tombol</string>
+    <string name="action_theme_retro">Pakai tema retro cyberpunk grayscale ePaper</string>
+    <string name="theme_note">Tema retro cyberpunk: papan warna kertas ePaper, panel hitam dengan garis pindaian, tombol monokrom berikon, huruf mesin tik.</string>
+    <string name="setting_scanlines">Garis pindaian ePaper</string>
+    <string name="setting_scanlines_sub">Tekstur garis halus pada panel dan garis panduan putus-putus di papan.</string>
     <string name="grid_slot_label">Tombol %1$d: %2$s</string>
     <string name="grid_slot_title">Tombol grid %1$d</string>
     <string name="action_change">Ubah</string>
@@ -97,6 +103,18 @@
     <string name="setting_repeat_sub">Cocok untuk tombol hapus.</string>
 
     <!-- Keterangan fungsi tombol -->
+    <string name="hint_delete_forward">hapus huruf di depan kursor</string>
+    <string name="hint_tab">tab (geser ke kolom berikutnya)</string>
+    <string name="hint_cursor_left">geser kursor ke kiri</string>
+    <string name="hint_cursor_right">geser kursor ke kanan</string>
+    <string name="hint_cursor_up">geser kursor ke atas</string>
+    <string name="hint_cursor_down">geser kursor ke bawah</string>
+    <string name="hint_cursor_home">kursor ke awal baris</string>
+    <string name="hint_cursor_end">kursor ke akhir baris</string>
+    <string name="hint_select_all">pilih semua teks</string>
+    <string name="hint_cut">potong teks terpilih</string>
+    <string name="hint_copy">salin teks terpilih</string>
+    <string name="hint_paste">tempel dari papan klip</string>
     <string name="hint_text">menulis teks tertentu</string>
     <string name="hint_space">menambah spasi</string>
     <string name="hint_enter">baris baru</string>
@@ -140,6 +158,7 @@
     <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
     <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau pakai tombol Hapus.</string>
     <string name="flash_unreadable">✗ tidak terbaca</string>
+    <string name="msg_needs_keyboard">Tombol ini bekerja saat keyboard Penboard aktif (papan melayang hanya menulis dan menyalin teks).</string>
     <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
     <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
 

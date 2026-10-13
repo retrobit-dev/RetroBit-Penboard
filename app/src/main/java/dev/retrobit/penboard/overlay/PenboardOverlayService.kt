@@ -224,7 +224,19 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
             KeyAction.RECOGNIZE -> handwriting?.recognize(announce = true)
             KeyAction.SYSTEM_HANDWRITING -> openHandwritingPicker()
             KeyAction.OVERLAY_TOGGLE, KeyAction.HIDE -> stopSelf()
+
+            // Aksi yang butuh kolom isian: panah kursor, tab, dan papan klip.
+            KeyAction.CURSOR_LEFT, KeyAction.CURSOR_RIGHT, KeyAction.CURSOR_UP, KeyAction.CURSOR_DOWN,
+            KeyAction.CURSOR_HOME, KeyAction.CURSOR_END, KeyAction.DELETE_FORWARD, KeyAction.TAB,
+            KeyAction.SELECT_ALL, KeyAction.CUT, KeyAction.COPY, KeyAction.PASTE -> fieldAction(action)
         }
+    }
+
+    /** Teruskan aksi kolom isian ke keyboard Penboard; kalau tidak aktif, beri tahu. */
+    private fun fieldAction(action: KeyAction) {
+        val ime = PenboardInputService.current()
+        if (ime != null && ime.performExternal(action)) return
+        toast(getString(R.string.msg_needs_keyboard))
     }
 
     override fun onStrokeStarted() {

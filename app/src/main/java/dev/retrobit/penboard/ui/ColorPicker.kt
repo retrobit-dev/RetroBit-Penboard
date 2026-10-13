@@ -16,13 +16,17 @@ import androidx.appcompat.widget.AppCompatTextView
 /** Pemilih warna sederhana: contoh warna, pengatur transparansi, dan kode heksadesimal. */
 object ColorPicker {
 
+    /**
+     * Contoh warna: baris pertama-tama tangga abu-abu (sesuai tema retro grayscale
+     * ePaper), baru warna lain untuk yang ingin menyimpang dari tema.
+     */
     private val swatches = listOf(
+        0xFF000000.toInt(), 0xFF1A1A1A.toInt(), 0xFF333333.toInt(), 0xFF4D4D4D.toInt(),
+        0xFF666666.toInt(), 0xFF808080.toInt(), 0xFF999999.toInt(), 0xFFB3B3B3.toInt(),
+        0xFFCCCCCC.toInt(), 0xFFE6E6E6.toInt(), 0xFFFFFFFF.toInt(), 0xFF8C8C8C.toInt(),
         0xFFEF4444.toInt(), 0xFFF97316.toInt(), 0xFFFACC15.toInt(), 0xFF22C55E.toInt(),
         0xFF06B6D4.toInt(), 0xFF3B82F6.toInt(), 0xFF8B5CF6.toInt(), 0xFFEC4899.toInt(),
-        0xFFFCA5A5.toInt(), 0xFFFDBA74.toInt(), 0xFFFDE68A.toInt(), 0xFF86EFAC.toInt(),
-        0xFF67E8F9.toInt(), 0xFF93C5FD.toInt(), 0xFFC4B5FD.toInt(), 0xFFF9A8D4.toInt(),
-        0xFF111827.toInt(), 0xFF334155.toInt(), 0xFF94A3B8.toInt(), 0xFFE2E8F0.toInt(),
-        0xFFFFFFFF.toInt(), 0xFF0EA5E9.toInt(), 0xFFA3E635.toInt(), 0xFF7C2D12.toInt()
+        0xFF111827.toInt(), 0xFF334155.toInt(), 0xFF94A3B8.toInt(), 0xFF7C2D12.toInt()
     )
 
     fun show(context: Context, title: String, initial: Int, onPick: (Int) -> Unit) {
