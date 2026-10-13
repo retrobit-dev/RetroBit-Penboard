@@ -79,6 +79,54 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `preset HiWrite menyetel tata letak dan tema seperti HiWrite`() {
+        val custom = PenboardConfig(
+            boardHeightDp = 130,
+            penColorIndex = 2,
+            gridRows = 1,
+            gridButtonCount = 1,
+            scanlines = false,
+            panelOpacity = 40,
+            autoRecognize = false,
+            autoSpace = false,
+            autoRecognizeDelayMs = 4500,
+            recognitionLanguage = "en-US",
+            penButtonPrimary = PenButtonAction.OVERLAY_TOGGLE
+        )
+
+        val preset = custom.withHiWritePreset()
+
+        // Papan tulis & tombol ala HiWrite.
+        assertEquals(200, preset.boardHeightDp)
+        assertEquals(PenboardConfig.MAX_GRID_ROWS, preset.gridRows)
+        assertEquals(PenboardConfig.MAX_GRID_KEYS, preset.gridButtonCount)
+        assertEquals(PenboardConfig.GRID_SLOTS, preset.gridKeys.size)
+        assertTrue(preset.gridKeys.take(PenboardConfig.COLUMNS).all { it.action.name.startsWith("CURSOR_") })
+        listOf(KeyAction.SPACE, KeyAction.ENTER, KeyAction.BACKSPACE).forEach { action ->
+            assertTrue("$action tidak ada di preset", preset.gridKeys.any { it.action == action })
+        }
+
+        // Tema retro grayscale ePaper dengan garis pindaian.
+        assertEquals(0, graySpread(preset.panelColor))
+        assertEquals(0, graySpread(preset.boardColor))
+        assertEquals(0, graySpread(preset.buttonColor))
+        assertTrue(preset.scanlines)
+
+        // Input otomatis 2 detik dengan spasi otomatis.
+        assertTrue(preset.autoRecognize)
+        assertTrue(preset.autoSpace)
+        assertTrue(preset.clearAfterRecognize)
+        assertEquals(2000, preset.autoRecognizeDelayMs)
+
+        // Pengaturan pribadi dibiarkan.
+        assertEquals("en-US", preset.recognitionLanguage)
+        assertEquals(PenButtonAction.OVERLAY_TOGGLE, preset.penButtonPrimary)
+
+        // Hasilnya sudah bersih: dipanggil lagi tidak mengubah apa pun.
+        assertEquals(preset, preset.withHiWritePreset())
+    }
+
+    @Test
     fun `penyimpanan bolak-balik tidak mengubah pengaturan`() {
         val config = PenboardConfig(
             boardHeightDp = 220,

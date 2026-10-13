@@ -2,7 +2,11 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.2
+
+- **Preset HiWrite satu ketukan** (kartu "Mulai cepat" di halaman utama): langsung menyetel papan tinggi, 6 baris tombol berikon, tema retro grayscale ePaper, dan input otomatis 2 detik. Bahasa tulisan, tombol samping pena, dan letak papan melayang tidak diubah.
 
 ## Yang baru di 3.0.1
 

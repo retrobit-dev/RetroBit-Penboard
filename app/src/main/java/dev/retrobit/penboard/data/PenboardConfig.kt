@@ -175,6 +175,34 @@ data class PenboardConfig(
         scanlines = true
     )
 
+    /**
+     * Preset **HiWrite** (gaya Huawei): satu ketukan untuk menyalakan seluruh saran
+     * ala HiWrite — papan tulis tinggi, 6 baris tombol berikon (18 tombol), tema
+     * retro cyberpunk grayscale ePaper, dan input otomatis 2 detik.
+     *
+     * Pengaturan pribadi yang tidak berhubungan dibiarkan apa adanya: bahasa tulisan,
+     * tombol samping pena, dan penempatan papan melayang.
+     */
+    fun withHiWritePreset(): PenboardConfig = withRetroTheme().copy(
+        // Papan tulis: lebih tinggi supaya enak ditulis, pena 3 dp.
+        boardHeightDp = 200,
+        lineGapDp = 48,
+        penWidthDp = 3,
+        showLines = true,
+        allowFinger = false,
+        pressureEnabled = true,
+        // Tombol: 6 baris x 3 kolom = 18 tombol berikon.
+        gridRows = MAX_GRID_ROWS,
+        gridButtonCount = MAX_GRID_KEYS,
+        gridKeys = defaultGridKeys(),
+        // Pengenalan: kata jadi teks otomatis setelah 2 detik, lalu papan bersih.
+        autoRecognize = true,
+        autoRecognizeDelayMs = 2000,
+        autoSpace = true,
+        clearAfterRecognize = true,
+        haptics = true
+    ).sanitized()
+
     /** Label tombol: label khusus, teks aksi TEXT, atau label bawaan aksi. */
     fun labelFor(key: KeyDef): String = when {
         key.label.isNotBlank() -> key.label

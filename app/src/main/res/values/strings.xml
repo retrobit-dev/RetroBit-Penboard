@@ -3,6 +3,12 @@
     <string name="app_name">Penboard</string>
     <string name="app_tagline">Papan tulis stylus: tulis dengan M-Pen, teks langsung masuk ke kolom isian.</string>
 
+    <!-- Kartu: pintasan preset HiWrite -->
+    <string name="card_preset">Mulai cepat: preset HiWrite</string>
+    <string name="card_preset_sub">Satu ketukan untuk menyetel semuanya seperti HiWrite (Huawei).</string>
+    <string name="action_preset_huawei">Terapkan preset HiWrite</string>
+    <string name="preset_note">Papan tulis 200 dp, 6 baris tombol berikon (18 tombol), tema retro cyberpunk grayscale ePaper, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan, tombol samping pena, dan penempatan papan melayang tidak diubah.</string>
+
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
     <string name="card_keyboard_sub">Papan tulis di kiri, tombol 3x3 di kanan.</string>

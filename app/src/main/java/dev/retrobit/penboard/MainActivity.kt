@@ -421,6 +421,16 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.recognition_note))
     }
 
+    /** Pintasan: satu ketukan menyetel semuanya seperti HiWrite. */
+    private fun renderPresetCard() {
+        val card = Ui.card(content, getString(R.string.card_preset), getString(R.string.card_preset_sub))
+        Ui.outlinedButton(card, getString(R.string.action_preset_huawei)) {
+            store.update { it.withHiWritePreset() }
+            render()
+        }
+        Ui.body(card, getString(R.string.preset_note))
+    }
+
     private fun renderLookCard() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_look), getString(R.string.card_look_sub))
