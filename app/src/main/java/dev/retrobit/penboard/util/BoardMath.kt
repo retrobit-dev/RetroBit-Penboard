@@ -44,8 +44,8 @@ object BoardMath {
 
     /** Berapa baris papan perlu naik agar selalu tersisa satu baris kosong di bawah. */
     fun autoShiftLines(writtenLine: Int, visibleLines: Int): Int {
+        if (visibleLines <= 0) return 0
         val lastFreeLine = max(0, visibleLines - 2)
-        val safeLine = writtenLine.coerceIn(0, max(0, visibleLines - 1))
-        return (safeLine - lastFreeLine).coerceAtLeast(0)
+        return (writtenLine.coerceAtLeast(0) - lastFreeLine).coerceAtLeast(0)
     }
 }

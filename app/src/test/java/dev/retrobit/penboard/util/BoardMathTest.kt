@@ -54,7 +54,10 @@ class BoardMathTest {
         assertEquals(2, BoardMath.autoShiftLines(6, 7))
         // nilai di luar area tetap aman
         assertEquals(0, BoardMath.autoShiftLines(-3, 7))
-        assertEquals(1, BoardMath.autoShiftLines(99, 7))
-        assertEquals(0, BoardMath.autoShiftLines(2, 2))
+        // goresan yang jauh di bawah digeser seluruhnya sampai masuk ke baris bebas terakhir
+        assertEquals(94, BoardMath.autoShiftLines(99, 7))
+        // papan dua baris: baris terbawah masih dianggap perlu digeser
+        assertEquals(2, BoardMath.autoShiftLines(2, 2))
+        assertEquals(0, BoardMath.autoShiftLines(2, 0))
     }
 }
