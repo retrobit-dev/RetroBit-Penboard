@@ -8,9 +8,10 @@ import dev.retrobit.penboard.data.KeyAction.DELETE_STROKE
 import dev.retrobit.penboard.data.KeyAction.ENTER
 import dev.retrobit.penboard.data.KeyAction.ERASE
 import dev.retrobit.penboard.data.KeyAction.HIDE
-import dev.retrobit.penboard.data.KeyAction.NEW_LINE
+import dev.retrobit.penboard.data.KeyAction.COLOR
 import dev.retrobit.penboard.data.KeyAction.REDO
-import dev.retrobit.penboard.data.KeyAction.SEND
+import dev.retrobit.penboard.data.KeyAction.PROFILE_NEXT
+import dev.retrobit.penboard.data.KeyAction.SAVE_IMAGE
 import dev.retrobit.penboard.data.KeyAction.SPACE
 import dev.retrobit.penboard.data.KeyAction.UNDO
 import dev.retrobit.penboard.data.KeyAction.WRITE
@@ -47,8 +48,9 @@ object Presets {
                 KeyDef.action(REDO),
                 KeyDef.action(DELETE_STROKE, repeat = true),
                 KeyDef.action(CLEAR),
+                KeyDef.action(COLOR),
                 KeyDef.action(ERASE),
-                KeyDef.action(SEND),
+                KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
         ),
@@ -68,7 +70,7 @@ object Presets {
                 KeyDef.action(BACKSPACE, repeat = true),
                 KeyDef.action(CURSOR_LEFT, repeat = true),
                 KeyDef.action(CURSOR_RIGHT, repeat = true),
-                KeyDef.action(NEW_LINE, 1.4f),
+                KeyDef.action(COLOR),
                 KeyDef.action(HIDE)
             )
         )
@@ -87,7 +89,7 @@ object Presets {
                 KeyDef.action(UNDO),
                 KeyDef.action(DELETE_STROKE, repeat = true),
                 KeyDef.action(CLEAR),
-                KeyDef.action(SEND),
+                KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
         ),
@@ -116,7 +118,7 @@ object Presets {
                 1f,
                 KeyDef.action(UNDO),
                 KeyDef.action(CLEAR),
-                KeyDef.action(SEND),
+                KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
         ),
@@ -157,7 +159,7 @@ object Presets {
             RowDef.of(1f, KeyDef.action(UNDO)),
             RowDef.of(1f, KeyDef.action(REDO)),
             RowDef.of(1f, KeyDef.action(CLEAR)),
-            RowDef.of(1f, KeyDef.action(SEND)),
+            RowDef.of(1f, KeyDef.action(SAVE_IMAGE)),
             RowDef.of(1f, KeyDef.action(HIDE))
         ),
         boardRows = listOf(
@@ -194,8 +196,9 @@ object Presets {
                 KeyDef.action(UNDO),
                 KeyDef.action(DELETE_STROKE, repeat = true),
                 KeyDef.action(CLEAR),
+                KeyDef.action(COLOR),
                 KeyDef.action(ERASE),
-                KeyDef.action(SEND),
+                KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
         ),
@@ -222,7 +225,7 @@ object Presets {
                 KeyDef.action(UNDO),
                 KeyDef.action(DELETE_STROKE, repeat = true),
                 KeyDef.action(CLEAR),
-                KeyDef.action(SEND),
+                KeyDef.action(SAVE_IMAGE),
                 KeyDef.action(HIDE)
             )
         ),

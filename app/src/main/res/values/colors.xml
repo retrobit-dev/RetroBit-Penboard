@@ -1,4 +1,5 @@
 <resources>
     <color name="ink_primary">#FF3D5AFE</color>
     <color name="ic_launcher_background">#FF101828</color>
+    <color name="ime_divider">#1AFFFFFF</color>
 </resources>

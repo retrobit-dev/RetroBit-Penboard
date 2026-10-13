@@ -1,3 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Penboard</string>
+    <string name="app_subtitle">Papan tulis stylus sebagai keyboard</string>
+
+    <!-- Status -->
+    <string name="status_title">Status keyboard</string>
+    <string name="status_selected">✓ Penboard sedang dipakai sebagai keyboard.</string>
+    <string name="status_enabled_not_selected">Penboard sudah diaktifkan di sistem, tetapi belum dipilih. Ketuk “Pilih keyboard”.</string>
+    <string name="status_disabled">Penboard belum diaktifkan. Aktifkan dulu di pengaturan sistem.</string>
+    <string name="action_pick_keyboard">Pilih keyboard</string>
+    <string name="action_system_settings">Pengaturan sistem</string>
+    <string name="action_test">Uji coba</string>
+    <string name="action_edit">Ubah</string>
+    <string name="action_duplicate">Duplikat</string>
+    <string name="action_rename">Ganti nama</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_restore">Pulihkan bawaan</string>
+    <string name="action_new_profile">Tambah papan baru</string>
+    <string name="action_more">Opsi lain</string>
+    <string name="action_cancel">Batal</string>
+    <string name="action_ok">OK</string>
+    <string name="action_done">Selesai</string>
+    <string name="action_add">Tambah</string>
+    <string name="action_yes">Ya</string>
+
+    <!-- Bagian dasbor -->
+    <string name="section_active_board">Papan aktif</string>
+    <string name="section_profiles">Daftar papan</string>
+    <string name="section_profiles_summary">Ketuk untuk memakai, ketuk “Ubah” untuk mengatur tombol, ukuran, dan transparansi.</string>
+    <string name="section_preferences">Preferensi</string>
+    <string name="section_guide">Cara pakai</string>
+    <string name="badge_active">Aktif</string>
+    <string name="profile_detail">%1$d dp · %2$d baris tulis · %3$d tombol</string>
+    <string name="pref_haptics">Getar saat tombol ditekan</string>
+    <string name="pref_haptics_summary">Mengikuti pengaturan sistem bila dimatikan.</string>
+    <string name="pref_guide">Tampilkan panduan saat aplikasi dibuka</string>
+    <string name="pref_reset">Setel ulang semua pengaturan</string>
+    <string name="pref_reset_summary">Menghapus semua papan dan kembali ke preset bawaan.</string>
+    <string name="dialog_reset_title">Setel ulang semua pengaturan?</string>
+    <string name="dialog_reset_message">Semua papan buatan Anda akan dihapus dan diganti preset bawaan.</string>
+    <string name="dialog_delete_title">Hapus papan “%1$s”?</string>
+    <string name="dialog_rename_title">Nama papan</string>
+    <string name="guide_body">1. Aktifkan Penboard di Pengaturan Sistem › Sistem › Bahasa &amp; masukan › Keyboard saat ini › Penboard.\n\n2. Di aplikasi apa pun, ketuk kolom teks lalu pilih Penboard dari bilah notifikasi keyboard (atau ketuk “Pilih keyboard”).\n\n3. Tulis dengan stylus di papan. Tekanan pena ikut memengaruhi tebal garis. Tombol samping pena = urungkan, ujung penghapus pena = mode hapus.\n\n4. Atur semuanya di aplikasi: tinggi papan, jarak baris, transparansi panel, warna, serta tombol apa saja yang ingin ditampilkan beserta tata letaknya.\n\n5. Tombol “Simpan gambar” menyimpan tulisan ke Galeri › Pictures › Penboard.</string>
+    <string name="guide_first_title">Selamat datang di Penboard</string>
+    <string name="guide_dont_show">Jangan tampilkan lagi</string>
+
+    <!-- Uji coba -->
+    <string name="test_title">Uji coba</string>
+    <string name="test_hint">Ketuk kolom di bawah supaya keyboard muncul, lalu tulis di papan dengan stylus.</string>
+    <string name="test_field_hint">Tulis di sini…</string>
+
+    <!-- Editor -->
+    <string name="editor_title">Ubah papan</string>
+    <string name="editor_preview_label">Pratinjau (bisa langsung dicoba)</string>
+    <string name="tab_keys">Tombol</string>
+    <string name="tab_look">Tampilan &amp; Ukuran</string>
+    <string name="lbl_profile_name">Nama papan</string>
+    <string name="lbl_row_selector">Mengedit baris</string>
+    <string name="row_toolbar">Laci tombol %1$d</string>
+    <string name="row_board">Baris bawah papan %1$d</string>
+    <string name="btn_add_key">Tambah tombol</string>
+    <string name="btn_add_row">Tambah baris</string>
+    <string name="btn_delete_row">Hapus baris</string>
+    <string name="btn_move_up">Naik</string>
+    <string name="btn_move_down">Turun</string>
+    <string name="btn_move_left">Geser kiri</string>
+    <string name="btn_move_right">Geser kanan</string>
+    <string name="notice_min_row">Minimal satu baris tombol harus tersisa.</string>
+    <string name="key_dialog_title">Ubah tombol</string>
+    <string name="key_dialog_delete">Hapus tombol</string>
+    <string name="lbl_action">Aksi</string>
+    <string name="lbl_text">Teks yang dikirim</string>
+    <string name="sec_actions">Aksi tombol</string>
+    <string name="btn_edit_key">Ketuk untuk mengubah tombol</string>
+    <string name="lbl_row_keys">Tombol pada baris ini</string>
+    <string name="lbl_text_hint">mis. , . ? atau emoji</string>
+    <string name="lbl_width">Lebar relatif</string>
+    <string name="lbl_flex">Isi sisa ruang</string>
+    <string name="lbl_repeat">Ulangi saat ditahan</string>
+    <string name="key_empty_row">Baris ini belum punya tombol.</string>
+
+    <!-- Pengaturan tampilan -->
+    <string name="sec_size">Ukuran</string>
+    <string name="sec_opacity">Transparansi</string>
+    <string name="sec_colors">Warna</string>
+    <string name="sec_board">Papan tulis</string>
+    <string name="sec_layout">Tata letak tombol</string>
+    <string name="size_board_height">Tinggi papan</string>
+    <string name="size_line_gap">Jarak baris tulis</string>
+    <string name="size_key_height">Tinggi tombol</string>
+    <string name="size_key_corner">Sudut tombol</string>
+    <string name="size_key_text">Ukuran huruf tombol</string>
+    <string name="size_stroke">Tebal pena</string>
+    <string name="size_eraser">Ukuran penghapus</string>
+    <string name="opacity_panel">Panel keyboard</string>
+    <string name="opacity_board">Latar papan</string>
+    <string name="opacity_grid">Garis panduan</string>
+    <string name="opacity_keys">Latar tombol</string>
+    <string name="color_panel">Warna panel</string>
+    <string name="color_board">Warna latar papan</string>
+    <string name="color_grid">Warna garis</string>
+    <string name="color_ink">Warna tinta</string>
+    <string name="color_key_bg">Warna tombol</string>
+    <string name="color_key_text">Warna teks tombol</string>
+    <string name="color_accent">Warna aksen</string>
+    <string name="sw_grid">Tampilkan garis panduan</string>
+    <string name="sw_baseline">Tampilkan garis bantu putus-putus</string>
+    <string name="sw_finger">Terima sentuhan jari (tanpa stylus)</string>
+    <string name="sw_finger_summary">Matikan untuk mencegah telapak tangan ikut menulis.</string>
+    <string name="sw_autoshift">Geser papan otomatis</string>
+    <string name="sw_autoshift_summary">Saat baris bawah terisi, tulisan naik satu baris sehingga selalu ada baris kosong.</string>
+    <string name="sw_toolbar">Tampilkan laci tombol</string>
+    <string name="layout_position">Posisi laci tombol</string>
+    <string name="unit_dp">dp</string>
+    <string name="unit_percent">%</string>
+
+    <!-- Dialog warna -->
+    <string name="color_dialog_title">Pilih warna</string>
+    <string name="color_hex_label">Kode hex</string>
+
+    <!-- Pesan keyboard -->
+    <string name="ime_pen_color">Warna pena: %1$s</string>
+    <string name="ime_profile_switched">Profil: %1$s</string>
+    <string name="ime_board_empty">Papan masih kosong</string>
+    <string name="ime_saved">Gambar disimpan ke Galeri › Pictures › Penboard</string>
+    <string name="ime_save_failed">Gagal menyimpan gambar</string>
 </resources>

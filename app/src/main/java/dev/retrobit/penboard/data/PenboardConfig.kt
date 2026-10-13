@@ -30,8 +30,9 @@ enum class KeyAction(val id: String, val label: String) {
     REDO("redo", "Ulangi"),
     CURSOR_LEFT("cursorLeft", "Geser kursor ke kiri"),
     CURSOR_RIGHT("cursorRight", "Geser kursor ke kanan"),
-    SEND("send", "Kirim tulisan ke aplikasi"),
-    NEW_LINE("newLine", "Tambah baris teks"),
+    SAVE_IMAGE("saveImage", "Simpan gambar ke Galeri"),
+    COLOR("color", "Ganti warna pena"),
+    PROFILE_NEXT("profileNext", "Ganti profil papan"),
     ERASE("erase", "Alat penghapus"),
     WRITE("write", "Alat pena"),
     HIDE("hide", "Sembunyikan papan");
@@ -160,7 +161,6 @@ data class PenboardConfig(
     val eraserWidthDp: Float = 22f,
     val allowFinger: Boolean = true,
     val autoShift: Boolean = true,
-    val echoEachLine: Boolean = false,
 
     // ---------- panel & tombol ----------
     val panelColor: Int = 0xFF0B1220.toInt(),
@@ -188,8 +188,9 @@ data class PenboardConfig(
 
     fun sanitized(): PenboardConfig {
         val safeName = name.trim().ifBlank { "Papan" }.take(40)
-        val toolRows = toolbarRows.take(4).filter { it.keys.isNotEmpty() }.map { it.sanitized() }
-        val boardRowsSafe = boardRows.take(4).filter { it.keys.isNotEmpty() }.map { it.sanitized() }
+        // Baris kosong tetap dibiarkan ada supaya pengguna bisa menyusun tombol dahulu.
+        val toolRows = toolbarRows.take(4).map { it.sanitized() }
+        val boardRowsSafe = boardRows.take(4).map { it.sanitized() }
         val fallback = Presets.defaultConfig()
         return copy(
             name = safeName,
@@ -226,7 +227,6 @@ data class PenboardConfig(
         put("eraserWidthDp", eraserWidthDp.toDouble())
         put("allowFinger", allowFinger)
         put("autoShift", autoShift)
-        put("echoEachLine", echoEachLine)
         put("panelColor", panelColor)
         put("panelOpacity", panelOpacity)
         put("toolbarSide", toolbarSide.id)
@@ -269,7 +269,6 @@ data class PenboardConfig(
                 eraserWidthDp = o.optDouble("eraserWidthDp", 22.0).toFloat(),
                 allowFinger = o.optBoolean("allowFinger", true),
                 autoShift = o.optBoolean("autoShift", true),
-                echoEachLine = o.optBoolean("echoEachLine", false),
                 panelColor = o.optInt("panelColor", 0xFF0B1220.toInt()),
                 panelOpacity = o.optInt("panelOpacity", 96),
                 toolbarSide = ToolbarSide.fromId(o.optString("toolbarSide")),

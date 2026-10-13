@@ -9,19 +9,39 @@ object Colors {
         return Color.argb(a, Color.red(color), Color.green(color), Color.blue(color))
     }
 
+    /** Campur dua warna (ratio 0 = a, 1 = b). */
+    fun blend(a: Int, b: Int, ratio: Float): Int {
+        val t = ratio.coerceIn(0f, 1f)
+        val da = Color.alpha(a)
+        val db = Color.alpha(b)
+        val r = (Color.red(a) * (1 - t) + Color.red(b) * t).toInt()
+        val g = (Color.green(a) * (1 - t) + Color.green(b) * t).toInt()
+        val bl = (Color.blue(a) * (1 - t) + Color.blue(b) * t).toInt()
+        val al = (da * (1 - t) + db * t).toInt()
+        return Color.argb(al, r, g, bl)
+    }
+
+    /** Warna teks yang paling kontras untuk latar tertentu. */
+    fun contrastFor(color: Int): Int {
+        val luminance = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255.0
+        return if (luminance > 0.6) 0xFF0F172A.toInt() else 0xFFF8FAFC.toInt()
+    }
+
     fun toHex(color: Int): String = String.format("#%06X", 0xFFFFFF and color)
 
-    fun parseHex(value: String, fallback: Int): Int = try {
-        val clean = value.trim().removePrefix("#")
-        val body = when (clean.length) {
-            6 -> clean
-            8 -> clean.substring(2)
-            3 -> buildString { clean.forEach { append(it).append(it) } }
-            else -> return fallback
+    fun parseHex(value: String, fallback: Int): Int {
+        return try {
+            val clean = value.trim().removePrefix("#")
+            val body = when (clean.length) {
+                6 -> clean
+                8 -> clean.substring(2)
+                3 -> buildString { clean.forEach { append(it).append(it) } }
+                else -> return fallback
+            }
+            (0xFF000000.toInt() or body.toLong(16).toInt())
+        } catch (_: Exception) {
+            fallback
         }
-        (0xFF000000.toInt() or body.toLong(16).toInt())
-    } catch (_: Exception) {
-        fallback
     }
 
     /** Palet pilihan warna yang dipakai dialog pemilih warna. */

@@ -3,4 +3,12 @@
         <item name="colorPrimary">@color/ink_primary</item>
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorSurface</item>
     </style>
+
+    <!-- Tema jendela keyboard: latar benar-benar transparan supaya
+         tingkat transparansi panel di pengaturan terlihat apa adanya. -->
+    <style name="Theme.Penboard.Ime" parent="Theme.Penboard">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>
