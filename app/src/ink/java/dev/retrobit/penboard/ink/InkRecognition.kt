@@ -34,6 +34,9 @@ object InkRecognition {
     private var recognizer: DigitalInkRecognizer? = null
     private var recognizerLanguage: String? = null
 
+    fun offlineMessage(): String =
+        "Pengenalan tulisan tidak tersedia pada perangkat ini."
+
     /** Apakah perangkat punya Google Play services (syarat ML Kit). */
     fun isServicesAvailable(context: Context): Boolean = try {
         GoogleApiAvailability.getInstance()

@@ -14,6 +14,10 @@ object InkRecognition {
 
     fun isServicesAvailable(context: Context): Boolean = false
 
+    fun offlineMessage(): String =
+        "Pengenalan tulisan hanya ada pada varian Penboard OCR (APK bertanda \u201cink\u201d)."
+
+
     fun downloadFailureHint(): String =
         "Varian ini tanpa mesin pengenalan tulisan. Pasang APK Penboard OCR (bertanda \u201cink\u201d) untuk memakai fitur ini."
 

@@ -27,6 +27,7 @@ import dev.retrobit.penboard.R
 import dev.retrobit.penboard.board.BoardExporter
 import dev.retrobit.penboard.board.BoardView
 import dev.retrobit.penboard.board.KeyButton
+import dev.retrobit.penboard.data.BoardLayoutMode
 import dev.retrobit.penboard.data.Colors
 import dev.retrobit.penboard.data.GlobalPrefs
 import dev.retrobit.penboard.data.KeyAction
@@ -39,6 +40,7 @@ import dev.retrobit.penboard.data.ToolbarSide
 import dev.retrobit.penboard.databinding.OverlayBoardBinding
 import dev.retrobit.penboard.ime.PenboardInputService
 import dev.retrobit.penboard.ink.HandwritingInput
+import dev.retrobit.penboard.ui.KeyGridBuilder
 import dev.retrobit.penboard.ui.KeyRowsBuilder
 
 /**
@@ -79,6 +81,7 @@ class PenboardOverlayService : Service() {
             configDelayMs = { config.autoRecognizeDelayMs },
             configLines = { config.recognitionLines },
             configClearAfter = { config.clearAfterRecognize },
+            configAutoSpace = { config.autoSpaceAfterWord },
             commit = { text -> commitText(text) },
             notify = { message -> toast(message) }
         )
@@ -132,10 +135,19 @@ class PenboardOverlayService : Service() {
         viewBinding.overlayRoot.setOnClickListener { }
         viewBinding.overlayClose.setOnClickListener { stopSelf() }
         viewBinding.overlayKeyboard.setOnClickListener {
-            PenboardInputService.instance?.let { service ->
+            val service = PenboardInputService.instance
+            if (service != null) {
                 service.hideKeyboardWindow()
+                // naikkan papan melayang supaya tidak tertutup keyboard
+                layoutParams?.let { params ->
+                    params.y = 0
+                    prefs.overlayY = 0
+                    runCatching { windowManager.updateViewLayout(viewBinding.root, params) }
+                }
                 toast(getString(R.string.overlay_keyboard_hidden))
-            } ?: toast(getString(R.string.overlay_keyboard_not_active))
+            } else {
+                toast(getString(R.string.overlay_keyboard_not_active))
+            }
         }
         attachDragHandle(viewBinding)
 
@@ -229,9 +241,27 @@ class PenboardOverlayService : Service() {
         viewBinding.overlayToolbarTop.removeAllViews()
         viewBinding.overlayToolbarSide.removeAllViews()
         viewBinding.overlayToolbarBottom.removeAllViews()
+        viewBinding.overlayGrid.removeAllViews()
+
+        val gridMode = config.boardLayout == BoardLayoutMode.BOARD_LEFT_GRID
+        viewBinding.overlayGrid.visibility = if (gridMode) View.VISIBLE else View.GONE
+        viewBinding.overlayKeyRows.visibility = if (gridMode) View.GONE else View.VISIBLE
+        viewBinding.overlayToolbarTop.visibility = if (gridMode) View.GONE else View.VISIBLE
+        viewBinding.overlayToolbarBottom.visibility = if (gridMode) View.GONE else View.VISIBLE
+        viewBinding.overlayToolbarSide.visibility = if (gridMode) View.GONE else View.VISIBLE
 
         val buttons = mutableListOf<KeyButton>()
-        if (config.showToolbar && config.toolbarRows.isNotEmpty()) {
+        if (gridMode) {
+            buttons += KeyGridBuilder.populate(
+                container = viewBinding.overlayGrid,
+                config = config,
+                density = density,
+                haptics = prefs.hapticsEnabled,
+                currentTool = tool,
+                interactive = true,
+                onKey = { key -> onKey(key) }
+            )
+        } else if (config.showToolbar && config.toolbarRows.isNotEmpty()) {
             val host: LinearLayout = when (config.toolbarSide) {
                 ToolbarSide.TOP -> viewBinding.overlayToolbarTop
                 ToolbarSide.SIDE -> viewBinding.overlayToolbarSide
@@ -250,17 +280,19 @@ class PenboardOverlayService : Service() {
                 onKey = { key -> onKey(key) }
             )
         }
-        buttons += KeyRowsBuilder.populate(
-            container = viewBinding.overlayKeyRows,
-            rows = config.boardRows,
-            config = config,
-            density = density,
-            haptics = prefs.hapticsEnabled,
-            currentTool = tool,
-            fixedKeyWidthPx = null,
-            interactive = true,
-            onKey = { key -> onKey(key) }
-        )
+        if (!gridMode) {
+            buttons += KeyRowsBuilder.populate(
+                container = viewBinding.overlayKeyRows,
+                rows = config.boardRows,
+                config = config,
+                density = density,
+                haptics = prefs.hapticsEnabled,
+                currentTool = tool,
+                fixedKeyWidthPx = null,
+                interactive = true,
+                onKey = { key -> onKey(key) }
+            )
+        }
         keyButtons = buttons
         refreshToolHighlight()
     }

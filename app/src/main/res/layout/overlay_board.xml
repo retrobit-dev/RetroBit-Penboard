@@ -79,6 +79,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:orientation="vertical" />
+
+            <!-- Grid 3x3 untuk operasi cepat (tata letak "papan di kiri, tombol di kanan"). -->
+            <LinearLayout
+                android:id="@+id/overlay_grid"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout

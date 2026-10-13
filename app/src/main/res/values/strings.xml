@@ -128,6 +128,15 @@
     <string name="color_dialog_title">Pilih warna</string>
     <string name="color_hex_label">Kode hex</string>
 
+    <!-- Tata letak papan & grid tombol -->
+    <string name="sec_board_layout">Tata letak papan &amp; tombol</string>
+    <string name="board_layout_hint">Pilih “Papan di kiri, tombol grid 3×3” untuk tata letak yang paling praktis: papan tulis di sisi kiri, sembilan tombol operasi tersusun rapi di sisi kanan.</string>
+    <string name="grid_button_count">Jumlah tombol grid</string>
+    <string name="grid_keys_hint">Ketuk tombol di bawah untuk mengubah aksinya. Slot yang belum dipakai tetap kosong agar susunan tetap 3×3.</string>
+    <string name="row_key_count">Jumlah tombol pada baris ini</string>
+    <string name="auto_space">Satu tulisan = satu kata (spasi otomatis)</string>
+    <string name="auto_space_summary">Setiap tulisan yang dikenali dianggap satu kata, lalu ditambah spasi supaya kata berikutnya langsung terpisah.</string>
+
     <!-- Papan melayang (overlay) -->
     <string name="overlay_title">Penboard melayang</string>
     <string name="overlay_close">Tutup</string>

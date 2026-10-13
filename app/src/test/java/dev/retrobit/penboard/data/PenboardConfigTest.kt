@@ -21,6 +21,11 @@ class PenboardConfigTest {
             assertEquals(original.boardBgOpacity, restored.boardBgOpacity)
             assertEquals(original.strokeColor, restored.strokeColor)
             assertEquals(original.toolbarSide, restored.toolbarSide)
+            assertEquals(original.boardLayout, restored.boardLayout)
+            assertEquals(original.gridButtonCount, restored.gridButtonCount)
+            assertEquals(original.gridKeys.size, restored.gridKeys.size)
+            assertEquals(original.gridKeys.first().action, restored.gridKeys.first().action)
+            assertEquals(original.autoSpaceAfterWord, restored.autoSpaceAfterWord)
             assertEquals(original.penButtonPrimary, restored.penButtonPrimary)
             assertEquals(original.penButtonSecondary, restored.penButtonSecondary)
             assertEquals(original.autoRecognize, restored.autoRecognize)
@@ -101,6 +106,51 @@ class PenboardConfigTest {
         assertEquals(127, half ushr 24)
         val transparent = Colors.withOpacity(0xFF102030.toInt(), 0)
         assertEquals(0, transparent ushr 24)
+    }
+
+    @Test
+    fun `tata letak grid 3x3 punya sembilan slot yang selalu lengkap`() {
+        val config = PenboardConfig(gridKeys = listOf(KeyDef.text("a")), gridButtonCount = 4)
+        val safe = config.sanitized()
+        assertEquals(PenboardConfig.GRID_SLOTS, safe.gridKeys.size)
+        assertEquals(4, safe.gridButtonCount)
+        assertEquals("a", safe.gridKeys.first().text)
+        // slot sisa diisi tombol bawaan (tidak kosong)
+        assertTrue(safe.gridKeys.drop(1).all { it.action != null })
+    }
+
+    @Test
+    fun `jumlah tombol grid dibatasi satu sampai sembilan`() {
+        assertEquals(1, PenboardConfig(gridButtonCount = 0).sanitized().gridButtonCount)
+        assertEquals(9, PenboardConfig(gridButtonCount = 50).sanitized().gridButtonCount)
+        assertEquals(3, PenboardConfig(gridButtonCount = 3).sanitized().gridButtonCount)
+    }
+
+    @Test
+    fun `tata letak bawaan adalah papan di kiri dengan tombol grid`() {
+        assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, PenboardConfig().boardLayout)
+        // data lama tanpa keterangan tata letak -> memakai tata letak grid
+        assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, BoardLayoutMode.fromId(null))
+        assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, BoardLayoutMode.fromId("grid"))
+        assertEquals(BoardLayoutMode.STACKED, BoardLayoutMode.fromId("stacked"))
+        // nilai tak dikenal tetap aman
+        assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, BoardLayoutMode.fromId("aneh"))
+    }
+
+    @Test
+    fun `profil lama dipindahkan ke perilaku satu tulisan satu kata`() {
+        // JSON versi lama: belum ada schemaVersion & masih clearAfterRecognize=false
+        val old = JSONObject("""{"name":"Lama","clearAfterRecognize":false}""")
+        val migrated = PenboardConfig.fromJson(old)
+        assertTrue("tulisan harus dibersihkan setelah dikenali", migrated.clearAfterRecognize)
+        assertTrue("spasi otomatis harus aktif", migrated.autoSpaceAfterWord)
+        assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, migrated.boardLayout)
+
+        // profil baru tetap menghormati pilihan pengguna
+        val chosen = PenboardConfig(clearAfterRecognize = false, autoSpaceAfterWord = false, schemaVersion = 2)
+        val restored = PenboardConfig.fromJson(JSONObject(chosen.toJson().toString()))
+        assertFalse(restored.clearAfterRecognize)
+        assertFalse(restored.autoSpaceAfterWord)
     }
 
     @Test

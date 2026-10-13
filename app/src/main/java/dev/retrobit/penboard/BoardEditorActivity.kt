@@ -19,6 +19,7 @@ import com.google.android.material.tabs.TabLayout
 import dev.retrobit.penboard.board.KeyButton
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
+import dev.retrobit.penboard.data.BoardLayoutMode
 import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.PresetRepository
@@ -201,6 +202,35 @@ class BoardEditorActivity : AppCompatActivity() {
             getString(R.string.btn_delete_row) to { deleteRow() }
         )
         Ui.fullButton(card, getString(R.string.btn_add_key)) { showKeyDialog(null) }
+
+        val currentKeys = rowsOf(selectedIsToolbar).getOrNull(selectedRowIndex)?.keys?.size ?: 0
+        if (currentKeys > 0) {
+            Ui.sliderRow(
+                card,
+                getString(R.string.row_key_count),
+                currentKeys,
+                1,
+                MAX_KEYS_PER_ROW,
+                "tombol"
+            ) { value -> setRowKeyCount(value) }
+        }
+    }
+
+    /** Atur jumlah tombol pada baris terpilih: dikurangi = dipangkas, ditambah = tombol "." baru. */
+    private fun setRowKeyCount(count: Int) {
+        val rows = rowsOf(selectedIsToolbar).toMutableList()
+        val row = rows.getOrNull(selectedRowIndex) ?: return
+        val target = count.coerceIn(1, MAX_KEYS_PER_ROW)
+        if (target == row.keys.size) return
+        val keys = row.keys.toMutableList()
+        if (target < keys.size) {
+            while (keys.size > target) keys.removeAt(keys.lastIndex)
+        } else {
+            while (keys.size < target) keys.add(KeyDef(action = KeyAction.INSERT, text = "."))
+        }
+        rows[selectedRowIndex] = row.copy(keys = keys)
+        setRows(selectedIsToolbar, rows)
+        buildKeysTab()
     }
 
     private fun moveRow(delta: Int) {
@@ -340,6 +370,7 @@ class BoardEditorActivity : AppCompatActivity() {
         buildKeysTab()
     }
 
+    /** Ubah/tambah tombol pada baris yang sedang dipilih (tab "Tombol"). */
     private fun showKeyDialog(keyIndex: Int?) {
         val rows = rowsOf(selectedIsToolbar).toMutableList()
         val row = rows.getOrNull(selectedRowIndex) ?: return
@@ -349,7 +380,53 @@ class BoardEditorActivity : AppCompatActivity() {
         } else {
             row.keys.getOrNull(keyIndex ?: return) ?: return
         }
+        showKeyEditor(
+            original = original,
+            isNew = isNew,
+            onSave = { newKey ->
+                val keys = row.keys.toMutableList()
+                if (isNew) keys.add(newKey) else keys[keyIndex ?: 0] = newKey
+                rows[selectedRowIndex] = row.copy(keys = keys)
+                setRows(selectedIsToolbar, rows)
+                buildKeysTab()
+            },
+            onDelete = if (isNew) {
+                null
+            } else {
+                {
+                    val keys = row.keys.toMutableList()
+                    keys.removeAt((keyIndex ?: 0).coerceIn(0, keys.lastIndex))
+                    rows[selectedRowIndex] = row.copy(keys = keys)
+                    setRows(selectedIsToolbar, rows)
+                    buildKeysTab()
+                }
+            }
+        )
+    }
 
+    /** Ubah tombol pada salah satu slot grid 3x3 (tab "Tampilan"). */
+    private fun showGridKeyDialog(index: Int) {
+        val keys = PenboardConfig.withGridDefaults(config.gridKeys).toMutableList()
+        val original = keys.getOrNull(index) ?: return
+        showKeyEditor(
+            original = original,
+            isNew = false,
+            onSave = { newKey ->
+                keys[index] = newKey
+                update { it.copy(gridKeys = keys) }
+                buildLookTab()
+            },
+            onDelete = null
+        )
+    }
+
+    /** Dialog editor tombol yang dipakai bersama oleh baris tombol maupun grid 3x3. */
+    private fun showKeyEditor(
+        original: KeyDef,
+        isNew: Boolean,
+        onSave: (KeyDef) -> Unit,
+        onDelete: (() -> Unit)?
+    ) {
         var action = original.action
         var width = original.width
         var flex = original.flex
@@ -357,10 +434,19 @@ class BoardEditorActivity : AppCompatActivity() {
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(Ui.dp(this@BoardEditorActivity, 20f), Ui.dp(this@BoardEditorActivity, 8f), Ui.dp(this@BoardEditorActivity, 20f), 0)
+            setPadding(
+                Ui.dp(this@BoardEditorActivity, 20f),
+                Ui.dp(this@BoardEditorActivity, 8f),
+                Ui.dp(this@BoardEditorActivity, 20f),
+                0
+            )
         }
 
-        container.addView(TextView(this).apply { text = getString(R.string.lbl_action); textSize = 14f; alpha = 0.7f })
+        container.addView(TextView(this).apply {
+            text = getString(R.string.lbl_action)
+            textSize = 14f
+            alpha = 0.7f
+        })
 
         val actions = KeyAction.entries
         val actionSpinner = Spinner(this)
@@ -396,7 +482,7 @@ class BoardEditorActivity : AppCompatActivity() {
             (original.width * 10).roundToInt(),
             2,
             60,
-            "×0,1"
+            "\u00d70,1"
         ) { width = it / 10f }
 
         Ui.sliderRow(
@@ -414,33 +500,20 @@ class BoardEditorActivity : AppCompatActivity() {
             .setTitle(R.string.key_dialog_title)
             .setView(container)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                val newKey = original.copy(
-                    action = action,
-                    text = textInput.text.toString(),
-                    width = width,
-                    flex = flex,
-                    repeat = repeat
+                onSave(
+                    original.copy(
+                        action = action,
+                        text = textInput.text.toString(),
+                        width = width,
+                        flex = flex,
+                        repeat = repeat
+                    )
                 )
-                val keys = row.keys.toMutableList()
-                if (isNew) {
-                    keys.add(newKey)
-                } else {
-                    keys[keyIndex ?: 0] = newKey
-                }
-                rows[selectedRowIndex] = row.copy(keys = keys)
-                setRows(selectedIsToolbar, rows)
-                buildKeysTab()
             }
             .setNegativeButton(android.R.string.cancel, null)
 
-        if (!isNew) {
-            builder.setNeutralButton(R.string.key_dialog_delete) { _, _ ->
-                val keys = row.keys.toMutableList()
-                keys.removeAt(keyIndex ?: 0)
-                rows[selectedRowIndex] = row.copy(keys = keys)
-                setRows(selectedIsToolbar, rows)
-                buildKeysTab()
-            }
+        if (onDelete != null) {
+            builder.setNeutralButton(R.string.key_dialog_delete) { _, _ -> onDelete() }
         }
         builder.show()
     }
@@ -565,6 +638,49 @@ class BoardEditorActivity : AppCompatActivity() {
             override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
         }
         penButtonCard.addView(secondarySpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
+        // ------- tata letak papan & tombol grid 3x3 -------
+        val layoutCard = Ui.card(parent, getString(R.string.sec_board_layout), getString(R.string.board_layout_hint))
+        val layouts = BoardLayoutMode.entries
+        val layoutSpinner = Spinner(this)
+        layoutSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, layouts.map { it.label })
+        layoutSpinner.setSelection(layouts.indexOf(config.boardLayout).coerceAtLeast(0), false)
+        layoutSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val mode = layouts.getOrNull(position) ?: return
+                if (mode != config.boardLayout) {
+                    update { it.copy(boardLayout = mode) }
+                    buildLookTab()
+                }
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
+        }
+        layoutCard.addView(layoutSpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
+        Ui.sliderRow(
+            layoutCard,
+            getString(R.string.grid_button_count),
+            config.gridButtonCount,
+            1,
+            PenboardConfig.GRID_SLOTS,
+            "tombol"
+        ) { value -> update { it.copy(gridButtonCount = value) } }
+
+        Ui.bodyText(layoutCard, getString(R.string.grid_keys_hint))
+        val gridPreview = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+        }
+        layoutCard.addView(gridPreview, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        buildGridPreview(gridPreview)
+
+        Ui.switchRow(
+            layoutCard,
+            getString(R.string.auto_space),
+            getString(R.string.auto_space_summary),
+            config.autoSpaceAfterWord
+        ) { value -> update { it.copy(autoSpaceAfterWord = value) } }
 
         val ocrCard = Ui.card(parent, getString(R.string.sec_recognition))
         if (!InkRecognition.isSupported) {
@@ -704,6 +820,43 @@ class BoardEditorActivity : AppCompatActivity() {
         Ui.fullButton(actions, getString(R.string.action_delete), outlined = true) { confirmDelete() }
     }
 
+    /** Pratinjau grid 3x3; ketuk salah satu tombol untuk mengubah aksinya. */
+    private fun buildGridPreview(container: LinearLayout) {
+        container.removeAllViews()
+        val density = resources.displayMetrics.density
+        val spacing = Ui.dp(this, 4f)
+        val cell = Ui.dp(this, (config.keyHeightDp * 1.18f).coerceAtLeast(40f))
+        val keys = PenboardConfig.withGridDefaults(config.gridKeys)
+        val count = config.gridButtonCount.coerceIn(1, PenboardConfig.GRID_SLOTS)
+
+        for (row in 0 until 3) {
+            val rowView = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER
+            }
+            for (column in 0 until 3) {
+                val index = row * 3 + column
+                val params = LinearLayout.LayoutParams(cell, cell).apply {
+                    marginStart = spacing / 2
+                    marginEnd = spacing / 2
+                    if (row > 0) topMargin = spacing
+                }
+                if (index >= count) {
+                    rowView.addView(android.view.View(this), params)
+                    continue
+                }
+                val button = KeyButton(this).apply {
+                    key = keys[index]
+                    applyPresentation(config, density, haptics = false)
+                    isEnabled = true
+                    onTrigger = { showGridKeyDialog(index) }
+                }
+                rowView.addView(button, params)
+            }
+            container.addView(rowView, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        }
+    }
+
     private fun refreshModelStatus(view: TextView, language: String) {
         view.text = getString(R.string.ocr_status_checking)
         InkRecognition.modelStatus(language) { state ->
@@ -770,6 +923,7 @@ class BoardEditorActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_CONFIG_ID = "config_id"
         private const val MAX_ROWS = PenboardConfig.MAX_ROWS
+        private const val MAX_KEYS_PER_ROW = 10
         private const val DEFAULT_PEN_COLOR = 0xFFEF4444.toInt()
     }
 }

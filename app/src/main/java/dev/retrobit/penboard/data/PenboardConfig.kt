@@ -18,6 +18,21 @@ enum class ToolbarSide(val id: String, val label: String) {
     }
 }
 
+/**
+ * Tata letak papan tulis pada keyboard / overlay.
+ *
+ * - [STACKED]: papan di atas, tombol berbaris di bawah (atau samping) — tata letak lama.
+ * - [BOARD_LEFT_GRID]: papan tulis di **kiri**, tombol operasi dalam **grid 3x3** di kanan.
+ */
+enum class BoardLayoutMode(val id: String, val label: String) {
+    STACKED("stacked", "Papan di atas, tombol berbaris"),
+    BOARD_LEFT_GRID("grid", "Papan di kiri, tombol grid 3\u00d73");
+
+    companion object {
+        fun fromId(id: String?): BoardLayoutMode = entries.firstOrNull { it.id == id } ?: BOARD_LEFT_GRID
+    }
+}
+
 /** Aksi yang dipicu tombol samping / ujung pena. */
 enum class PenButtonAction(val id: String, val label: String) {
     NONE("none", "Tidak ada"),
@@ -201,12 +216,25 @@ data class PenboardConfig(
     val recognitionLanguage: String = "id-ID",
     /** Berapa baris terakhir yang dikenali setiap kali tombol pengenalan ditekan. */
     val recognitionLines: Int = 3,
-    /** Hapus tulisan yang sudah dikenali (agar papan siap untuk kalimat berikutnya). */
-    val clearAfterRecognize: Boolean = false,
+    /**
+     * Hapus tulisan yang sudah dikenali (agar papan siap untuk kata berikutnya).
+     * Bawaannya aktif: satu tulisan = satu kata.
+     */
+    val clearAfterRecognize: Boolean = true,
     /** Otomatis mengenali tulisan sesaat setelah pena diangkat (tanpa menekan tombol). */
     val autoRecognize: Boolean = false,
     /** Jeda sebelum pengenalan otomatis berjalan (milidetik). */
     val autoRecognizeDelayMs: Int = 900,
+    /** Tata letak papan tulis & tombol operasi. */
+    val boardLayout: BoardLayoutMode = BoardLayoutMode.BOARD_LEFT_GRID,
+    /** Tombol-tombol untuk grid 3x3 (selalu 9 slot; yang aktif diatur [gridButtonCount]). */
+    val gridKeys: List<KeyDef> = emptyList(),
+    /** Berapa tombol yang ditampilkan di grid 3x3 (1..9). */
+    val gridButtonCount: Int = 9,
+    /** Setiap tulisan dianggap satu kata; setelah dikirim otomatis ditambah spasi. */
+    val autoSpaceAfterWord: Boolean = true,
+    /** Versi data profil (untuk memindahkan pengaturan lama saat aplikasi diperbarui). */
+    val schemaVersion: Int = SCHEMA_VERSION,
     /** Aksi tombol samping pena (tekanan pertama). */
     val penButtonPrimary: PenButtonAction = PenButtonAction.RECOGNIZE,
     /** Aksi tombol pena kedua (bila stylus mengirim dua tombol). */
@@ -246,6 +274,9 @@ data class PenboardConfig(
             recognitionLanguage = recognitionLanguage.trim().ifBlank { "id-ID" }.take(12),
             recognitionLines = recognitionLines.coerceIn(1, 6),
             autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(300, 3000),
+            gridKeys = withGridDefaults(gridKeys),
+            gridButtonCount = gridButtonCount.coerceIn(1, GRID_SLOTS),
+            schemaVersion = SCHEMA_VERSION,
             toolbarRows = toolRows.ifEmpty { fallback.toolbarRows },
             boardRows = boardRowsSafe.ifEmpty { fallback.boardRows }
         )
@@ -285,6 +316,11 @@ data class PenboardConfig(
         put("clearAfterRecognize", clearAfterRecognize)
         put("autoRecognize", autoRecognize)
         put("autoRecognizeDelayMs", autoRecognizeDelayMs)
+        put("boardLayout", boardLayout.id)
+        put("gridKeys", JSONArray().also { array -> gridKeys.forEach { array.put(it.toJson()) } })
+        put("gridButtonCount", gridButtonCount)
+        put("autoSpaceAfterWord", autoSpaceAfterWord)
+        put("schemaVersion", schemaVersion)
         put("penButtonPrimary", penButtonPrimary.id)
         put("penButtonSecondary", penButtonSecondary.id)
         put("toolbarRows", JSONArray().also { a -> toolbarRows.forEach { a.put(it.toJson()) } })
@@ -292,11 +328,47 @@ data class PenboardConfig(
     }
 
     companion object {
+        /**
+         * Bila profil berasal dari versi data lama (sebelum perilaku "satu tulisan = satu kata"),
+         * terapkan nilai bawaan baru supaya tulisan langsung dikenali & dipisah spasi otomatis.
+         */
+        private fun migratedBoolean(o: JSONObject, key: String, newDefault: Boolean, migrated: Boolean): Boolean =
+            if (migrated) newDefault else o.optBoolean(key, newDefault)
+
         /** Batas jumlah baris tombol supaya keyboard tetap masuk akal di layar. */
         const val MAX_ROWS = 8
 
         /** Batas jumlah warna pena tetap per profil. */
         const val MAX_PEN_COLORS = 6
+
+        /** Jumlah slot tombol grid 3x3. */
+        const val GRID_SLOTS = 9
+
+        /** Versi skema data profil; naikkan bila nilai bawaan berubah. */
+        const val SCHEMA_VERSION = 2
+
+        /** Tombol bawaan untuk grid 3x3 (operasi yang paling sering dipakai). */
+        fun defaultGridKeys(): List<KeyDef> = listOf(
+            KeyDef.action(KeyAction.RECOGNIZE, repeat = false),
+            KeyDef.action(KeyAction.SPACE, flex = 0f),
+            KeyDef.action(KeyAction.ENTER),
+            KeyDef.action(KeyAction.BACKSPACE, repeat = true),
+            KeyDef.action(KeyAction.UNDO),
+            KeyDef.action(KeyAction.CLEAR),
+            KeyDef.action(KeyAction.DELETE_STROKE),
+            KeyDef.action(KeyAction.COLOR),
+            KeyDef.action(KeyAction.HIDE)
+        )
+
+        /** Lengkapi/pangkas daftar tombol grid menjadi tepat 9 slot. */
+        fun withGridDefaults(keys: List<KeyDef>): List<KeyDef> {
+            val result = keys.take(GRID_SLOTS).toMutableList()
+            val defaults = defaultGridKeys()
+            while (result.size < GRID_SLOTS) {
+                result.add(defaults[result.size % defaults.size])
+            }
+            return result
+        }
 
         fun fromJson(o: JSONObject): PenboardConfig {
             val toolbar = mutableListOf<RowDef>()
@@ -307,6 +379,8 @@ data class PenboardConfig(
             o.optJSONArray("boardRows")?.let { arr ->
                 for (i in 0 until arr.length()) arr.optJSONObject(i)?.let { board.add(RowDef.fromJson(it)) }
             }
+            val storedVersion = o.optInt("schemaVersion", 1)
+            val migrated = storedVersion < SCHEMA_VERSION
             return PenboardConfig(
                 id = o.optString("id").ifBlank { newId() },
                 name = o.optString("name", "Papan"),
@@ -342,7 +416,18 @@ data class PenboardConfig(
                 },
                 recognitionLanguage = o.optString("recognitionLanguage", "id-ID"),
                 recognitionLines = o.optInt("recognitionLines", 3),
-                clearAfterRecognize = o.optBoolean("clearAfterRecognize", false),
+                clearAfterRecognize = migratedBoolean(o, "clearAfterRecognize", true, migrated),
+                boardLayout = BoardLayoutMode.fromId(o.optString("boardLayout")),
+                gridKeys = buildList {
+                    o.optJSONArray("gridKeys")?.let { array ->
+                        for (i in 0 until array.length()) {
+                            array.optJSONObject(i)?.let { add(KeyDef.fromJson(it)) }
+                        }
+                    }
+                },
+                gridButtonCount = o.optInt("gridButtonCount", GRID_SLOTS),
+                autoSpaceAfterWord = o.optBoolean("autoSpaceAfterWord", true),
+                schemaVersion = o.optInt("schemaVersion", 1),
                 autoRecognize = o.optBoolean("autoRecognize", false),
                 autoRecognizeDelayMs = o.optInt("autoRecognizeDelayMs", 900),
                 penButtonPrimary = PenButtonAction.fromId(o.optString("penButtonPrimary"), PenButtonAction.RECOGNIZE),

@@ -1,5 +1,6 @@
 package dev.retrobit.penboard.ime
 
+import android.content.Intent
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.util.Log
@@ -14,6 +15,7 @@ import dev.retrobit.penboard.R
 import dev.retrobit.penboard.board.BoardExporter
 import dev.retrobit.penboard.board.KeyButton
 import dev.retrobit.penboard.data.Colors
+import dev.retrobit.penboard.data.BoardLayoutMode
 import dev.retrobit.penboard.data.GlobalPrefs
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
@@ -27,6 +29,7 @@ import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ink.InkRecognition
 import dev.retrobit.penboard.databinding.KeyboardLayoutBinding
 import dev.retrobit.penboard.overlay.PenboardOverlayService
+import dev.retrobit.penboard.ui.KeyGridBuilder
 import dev.retrobit.penboard.ui.KeyRowsBuilder
 
 /**
@@ -45,6 +48,7 @@ class PenboardInputService : InputMethodService() {
     private var tool: ToolMode = ToolMode.WRITE
     private var penColorIndex = -1
     private var loadedProfileId: String? = null
+    private lateinit var handwriting: HandwritingInput
 
     override fun onCreate() {
         super.onCreate()
@@ -57,6 +61,7 @@ class PenboardInputService : InputMethodService() {
             configDelayMs = { config.autoRecognizeDelayMs },
             configLines = { config.recognitionLines },
             configClearAfter = { config.clearAfterRecognize },
+            configAutoSpace = { config.autoSpaceAfterWord },
             commit = { text -> commitText(text); true },
             notify = { message -> toast(message) }
         )
@@ -135,7 +140,8 @@ class PenboardInputService : InputMethodService() {
         binding.panelDivider.visibility = View.VISIBLE
 
         // Batasi tinggi papan agar keyboard tidak melebihi jendela IME di layar kecil.
-        val maxBoardHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
+        val maxBoardHeight = (resources.displayMetrics.heightPixels *
+            if (config.boardLayout == BoardLayoutMode.BOARD_LEFT_GRID) 0.5f else 0.72f).toInt()
         val newBoardHeight = (config.boardHeightDp * density).toInt().coerceAtMost(maxBoardHeight)
         binding.boardView.layoutParams = binding.boardView.layoutParams.also { params ->
             params.height = newBoardHeight
@@ -160,9 +166,28 @@ class PenboardInputService : InputMethodService() {
         binding.toolbarTop.removeAllViews()
         binding.toolbarSide.removeAllViews()
         binding.toolbarBottom.removeAllViews()
+        binding.imeGrid.removeAllViews()
+
+        val gridMode = config.boardLayout == BoardLayoutMode.BOARD_LEFT_GRID
+        binding.imeGrid.visibility = if (gridMode) View.VISIBLE else View.GONE
+        binding.keyRows.visibility = if (gridMode) View.GONE else View.VISIBLE
+        binding.toolbarTop.visibility = if (gridMode) View.GONE else View.VISIBLE
+        binding.toolbarBottom.visibility = if (gridMode) View.GONE else View.VISIBLE
+        binding.toolbarSide.visibility = if (gridMode) View.GONE else View.VISIBLE
 
         val buttons = mutableListOf<KeyButton>()
-        if (config.showToolbar && config.toolbarRows.isNotEmpty()) {
+        if (gridMode) {
+            // Papan tulis di kiri, tombol operasi grid 3x3 di kanan.
+            buttons += KeyGridBuilder.populate(
+                container = binding.imeGrid,
+                config = config,
+                density = density,
+                haptics = prefs.hapticsEnabled,
+                currentTool = tool,
+                interactive = true,
+                onKey = { onKey(it) }
+            )
+        } else if (config.showToolbar && config.toolbarRows.isNotEmpty()) {
             val host: LinearLayout = when (config.toolbarSide) {
                 ToolbarSide.TOP -> binding.toolbarTop
                 ToolbarSide.SIDE -> binding.toolbarSide
@@ -186,17 +211,19 @@ class PenboardInputService : InputMethodService() {
             )
         }
 
-        buttons += KeyRowsBuilder.populate(
-            container = binding.keyRows,
-            rows = config.boardRows,
-            config = config,
-            density = density,
-            haptics = prefs.hapticsEnabled,
-            currentTool = tool,
-            fixedKeyWidthPx = null,
-            interactive = true,
-            onKey = { onKey(it) }
-        )
+        if (!gridMode) {
+            buttons += KeyRowsBuilder.populate(
+                container = binding.keyRows,
+                rows = config.boardRows,
+                config = config,
+                density = density,
+                haptics = prefs.hapticsEnabled,
+                currentTool = tool,
+                fixedKeyWidthPx = null,
+                interactive = true,
+                onKey = { onKey(it) }
+            )
+        }
 
         keyButtons = buttons
         refreshToolHighlight()

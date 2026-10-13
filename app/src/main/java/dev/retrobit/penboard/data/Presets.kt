@@ -41,12 +41,14 @@ object Presets {
         standard(), compact(), numeric(), quickTools(), light(), fullscreen(), penColors(), freeform()
     )
 
-    /** Profil default: 6 baris tulis + dua baris tombol. */
+    /** Profil default: papan di kiri + tombol grid 3x3 di kanan. */
     fun standard(): PenboardConfig = PenboardConfig(
         name = "Catatan Standar",
         builtinId = STD,
         boardHeightDp = 300,
         lineGapDp = 44,
+        boardLayout = BoardLayoutMode.BOARD_LEFT_GRID,
+        gridButtonCount = 9,
         toolbarRows = listOf(
             RowDef.of(
                 1f,
@@ -90,6 +92,8 @@ object Presets {
         boardHeightDp = 232,
         lineGapDp = 40,
         keyHeightDp = 42,
+        boardLayout = BoardLayoutMode.BOARD_LEFT_GRID,
+        gridButtonCount = 6,
         toolbarRows = listOf(
             RowDef.of(
                 1f,
@@ -116,6 +120,7 @@ object Presets {
     fun numeric(): PenboardConfig = PenboardConfig(
         name = "Angka & Simbol",
         builtinId = NUMERIC,
+        boardLayout = BoardLayoutMode.STACKED,
         boardHeightDp = 220,
         lineGapDp = 44,
         keyHeightDp = 44,
@@ -156,6 +161,7 @@ object Presets {
     fun quickTools(): PenboardConfig = PenboardConfig(
         name = "Alat Cepat (Menggambar)",
         builtinId = QUICK,
+        boardLayout = BoardLayoutMode.STACKED,
         boardHeightDp = 400,
         lineGapDp = 52,
         strokeWidthDp = 4.5f,
@@ -184,6 +190,7 @@ object Presets {
     fun light(): PenboardConfig = PenboardConfig(
         name = "Tema Terang",
         builtinId = LIGHT,
+        boardLayout = BoardLayoutMode.BOARD_LEFT_GRID,
         boardHeightDp = 288,
         lineGapDp = 44,
         boardBgColor = 0xFFFFFFFF.toInt(),
@@ -223,6 +230,7 @@ object Presets {
     fun fullscreen(): PenboardConfig = PenboardConfig(
         name = "Papan Penuh",
         builtinId = FULL,
+        boardLayout = BoardLayoutMode.STACKED,
         boardHeightDp = 520,
         lineGapDp = 52,
         toolbarSide = ToolbarSide.TOP,
@@ -255,9 +263,21 @@ object Presets {
         boardHeightDp = 300,
         lineGapDp = 44,
         strokeWidthDp = 3.6f,
+        boardLayout = BoardLayoutMode.BOARD_LEFT_GRID,
         penColors = listOf(
             0xFFF8FAFC.toInt(), 0xFF111827.toInt(), 0xFFEF4444.toInt(),
             0xFF3B82F6.toInt(), 0xFF10B981.toInt(), 0xFFF59E0B.toInt()
+        ),
+        gridKeys = listOf(
+            KeyDef.action(RECOGNIZE),
+            KeyDef.action(COLOR),
+            KeyDef.action(SPACE),
+            KeyDef.action(ENTER),
+            KeyDef.action(BACKSPACE, repeat = true),
+            KeyDef.action(UNDO),
+            KeyDef.action(CLEAR),
+            KeyDef.action(DELETE_STROKE),
+            KeyDef.action(HIDE)
         ),
         toolbarRows = listOf(
             RowDef.of(
@@ -290,6 +310,7 @@ object Presets {
     fun freeform(): PenboardConfig = PenboardConfig(
         name = "Papan Tulis Leluasa",
         builtinId = FREEFORM,
+        boardLayout = BoardLayoutMode.STACKED,
         boardHeightDp = 460,
         lineGapDp = 56,
         strokeWidthDp = 4.2f,
