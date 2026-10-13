@@ -232,10 +232,15 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
         }
     }
 
-    /** Teruskan aksi kolom isian ke keyboard Penboard; kalau tidak aktif, beri tahu. */
+    /**
+     * Teruskan aksi kolom isian: keyboard Penboard lebih dulu (paling tepat),
+     * lalu "Penboard Tulis Otomatis", kalau keduanya tidak ada beri tahu.
+     */
     private fun fieldAction(action: KeyAction) {
         val ime = PenboardInputService.current()
         if (ime != null && ime.performExternal(action)) return
+        val typing = PenboardTypingService.current()
+        if (typing != null && typing.perform(action)) return
         toast(getString(R.string.msg_needs_keyboard))
     }
 
@@ -257,10 +262,15 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
 
     // ------------------------------------------------------------------ teks
 
-    /** Kirim teks ke keyboard bila aktif; kalau tidak, salin ke papan klip. */
+    /**
+     * Kirim teks ke kolom isian: lewat keyboard Penboard bila aktif, kalau tidak
+     * lewat "Penboard Tulis Otomatis" (aksesibilitas), dan salin sebagai cadangan.
+     */
     private fun commitText(text: String): Boolean {
         val ime = PenboardInputService.current()
         if (ime != null && ime.commitFromExternal(text)) return true
+        val typing = PenboardTypingService.current()
+        if (typing != null && typing.typeText(text)) return true
         return try {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
@@ -273,11 +283,17 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
     }
 
     private fun deleteBackward() {
-        PenboardInputService.current()?.deleteBackwardFromExternal()
+        val ime = PenboardInputService.current()
+        if (ime != null && ime.deleteBackwardFromExternal()) return
+        if (PenboardTypingService.current()?.perform(KeyAction.BACKSPACE) == true) return
+        toast(getString(R.string.msg_needs_keyboard))
     }
 
     private fun deleteWord() {
-        PenboardInputService.current()?.deleteWordFromExternal()
+        val ime = PenboardInputService.current()
+        if (ime != null && ime.deleteWordFromExternal()) return
+        if (PenboardTypingService.current()?.perform(KeyAction.DELETE_WORD) == true) return
+        toast(getString(R.string.msg_needs_keyboard))
     }
 
     private fun cyclePen() {

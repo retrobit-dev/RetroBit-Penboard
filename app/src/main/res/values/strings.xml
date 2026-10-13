@@ -26,12 +26,21 @@
     <string name="action_overlay_permission">Beri izin</string>
     <string name="action_overlay_show">Tampilkan</string>
     <string name="action_overlay_hide">Sembunyikan</string>
-    <string name="overlay_note">Geser lewat pegangan kecil di atas papan. Bila keyboard Penboard aktif, teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip.</string>
+    <string name="overlay_note">Geser lewat pegangan kecil di atas papan. Teks langsung masuk ke kolom isian bila keyboard Penboard dipakai, atau bila layanan "Penboard Tulis Otomatis" (aksesibilitas) dinyalakan.</string>
+    <string name="status_typing_on">Penboard Tulis Otomatis: aktif — hasil tulisan langsung masuk ke kolom isian.</string>
+    <string name="status_typing_off">Penboard Tulis Otomatis: belum aktif — tanpa keyboard Penboard, teks hanya bisa disalin.</string>
+    <string name="action_typing_enable">Aktifkan Tulis Otomatis</string>
+    <string name="typing_note">Agar tulisan langsung masuk ke kolom isian aplikasi lain (seperti HiWrite), pilih keyboard Penboard, atau nyalakan "Penboard Tulis Otomatis" di Pengaturan > Aksesibilitas. Layanan itu hanya menuliskan teks ke kolom yang sedang fokus.</string>
     <string name="overlay_title">Papan tulis Penboard</string>
     <string name="overlay_channel">Papan melayang</string>
     <string name="overlay_channel_desc">Notifikasi papan tulis melayang Penboard.</string>
     <string name="overlay_notification_text">Papan tulis sedang melayang di atas aplikasi lain.</string>
-    <string name="overlay_copied">Teks disalin ke papan klip. Buka keyboard Penboard untuk langsung menempel.</string>
+    <string name="overlay_copied">Teks disalin ke papan klip. Agar langsung masuk ke kolom isian: pilih keyboard Penboard atau nyalakan "Penboard Tulis Otomatis".</string>
+    <string name="msg_typing_settings">Pilih "Penboard Tulis Otomatis" di daftar, lalu nyalakan.</string>
+    <string name="msg_typing_settings_failed">Tidak bisa membuka pengaturan aksesibilitas. Buka Pengaturan &gt; Aksesibilitas secara manual.</string>
+    <string name="typing_service_label">Penboard Tulis Otomatis</string>
+    <string name="typing_service_summary">Menulis ke kolom isian dari papan melayang</string>
+    <string name="typing_service_description">Hasil tulisan tangan Penboard langsung dituliskan ke kolom isian aplikasi lain saat memakai papan melayang, walau keyboard Penboard tidak sedang dipakai.</string>
     <string name="overlay_permission_missing">Izin "tampil di atas aplikasi lain" belum diberikan.</string>
     <string name="msg_overlay_started">Papan melayang dinyalakan.</string>
     <string name="msg_overlay_stopped">Papan melayang dimatikan.</string>
@@ -164,7 +173,7 @@
     <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
     <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau pakai tombol Hapus.</string>
     <string name="flash_unreadable">✗ tidak terbaca</string>
-    <string name="msg_needs_keyboard">Tombol ini bekerja saat keyboard Penboard aktif (papan melayang hanya menulis dan menyalin teks).</string>
+    <string name="msg_needs_keyboard">Tombol ini butuh kolom isian. Pakai keyboard Penboard, atau nyalakan "Penboard Tulis Otomatis" (Pengaturan > Aksesibilitas).</string>
     <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
     <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
 

@@ -32,6 +32,7 @@ import dev.retrobit.penboard.ink.InkRecognition
 import dev.retrobit.penboard.ink.ModelStatus
 import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.overlay.PenboardOverlayService
+import dev.retrobit.penboard.overlay.PenboardTypingService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
@@ -173,7 +174,29 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.action_overlay_permission) to { requestOverlayPermission() }
             )
         }
+
+        // Cara agar tulisan langsung masuk ke kolom isian tanpa keyboard Penboard.
+        val typing = PenboardTypingService.isEnabled(this)
+        Ui.divider(card)
+        Ui.statusText(card, getString(if (typing) R.string.status_typing_on else R.string.status_typing_off))
+        if (!typing) {
+            Ui.buttonRow(
+                card,
+                getString(R.string.action_typing_enable) to { openAccessibilitySettings() }
+            )
+        }
+        Ui.body(card, getString(R.string.typing_note))
         Ui.body(card, getString(R.string.overlay_note))
+    }
+
+    /** Buka daftar layanan aksesibilitas agar "Penboard Tulis Otomatis" bisa dinyalakan. */
+    private fun openAccessibilitySettings() {
+        try {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            toast(getString(R.string.msg_typing_settings))
+        } catch (error: Throwable) {
+            toast(getString(R.string.msg_typing_settings_failed))
+        }
     }
 
     /** Panduan tiga langkah + pemeriksaan perangkat. */

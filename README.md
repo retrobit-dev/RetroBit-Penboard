@@ -2,7 +2,16 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.3** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.4** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.4
+
+- **Hasil tulisan langsung masuk ke kolom isian, tidak lagi sekadar tersalin.** Papan melayang bisa menulis lewat dua jalan:
+  1. **keyboard Penboard** dipilih sebagai keyboard aktif (cara paling tepat), atau
+  2. layanan aksesibilitas **"Penboard Tulis Otomatis"** — dipakai bila Anda memakai keyboard lain (mis. keyboard Huawei) atau tidak memakai keyboard sama sekali. Penboard menyisipkan teks pada posisi kursor tanpa menghapus isi kolom, dan kalau kolomnya tidak mendukung, memakai tempel dengan isi papan klip dikembalikan seperti semula.
+- Kartu **Papan melayang** sekarang menampilkan status "Penboard Tulis Otomatis" + tombol untuk membukanya di Pengaturan > Aksesibilitas.
+- Tombol kursor, hapus, dan papan klip juga bekerja lewat layanan itu, jadi papan melayang bisa dipakai sendiri tanpa keyboard Penboard.
+- Pesan saat teks hanya bisa disalin sekarang menjelaskan **apa yang harus dinyalakan**.
 
 ## Yang baru di 3.0.3
 
@@ -119,7 +128,9 @@ Semua data tetap di ponsel. Tidak ada tulisan yang dikirim ke server mana pun; h
 - Perlu izin *tampil di atas aplikasi lain*.
 - Bisa digeser lewat pegangan kecil di atas papan; posisinya diingat.
 - Transparansinya mengikuti pengaturan tema (panel/papan/tombol).
-- Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip dan diumumkan lewat pesan singkat.
+- Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian.
+- Bila Anda memakai keyboard lain (mis. keyboard Huawei) atau tidak memakai keyboard sama sekali, nyalakan layanan aksesibilitas **Penboard Tulis Otomatis** (kartu Papan melayang → Aktifkan Tulis Otomatis). Dengan begitu tulisan tetap langsung masuk ke kolom isian yang sedang fokus.
+- Bila keduanya belum ada, teks disalin ke papan klip dan pesannya menjelaskan apa yang perlu dinyalakan.
 - Berjalan sebagai foreground service dengan notifikasi biasa.
 
 ## Bangun sendiri
