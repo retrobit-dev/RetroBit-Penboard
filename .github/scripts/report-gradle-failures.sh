@@ -6,6 +6,7 @@ set -uo pipefail
 
 log_file="${1:-}"
 label="${2:-build}"
+skip="${3:-0}"
 
 if [ -z "$log_file" ] || [ ! -f "$log_file" ]; then
   echo "::error title=${label}::berkas log tidak ditemukan"
@@ -21,7 +22,8 @@ emit_annotation() {
   printf '::error title=%s::%s\n' "$label" "${line:0:900}"
 }
 
-mapfile -t important < <(grep -E "$pattern" "$log_file" | head -n 60)
+mapfile -t all_lines < <(grep -E "$pattern" "$log_file" | head -n 200)
+mapfile -t important < <(printf '%s\n' "${all_lines[@]:$skip}")
 
 if [ "${#important[@]}" -eq 0 ]; then
   mapfile -t important < <(tail -n 20 "$log_file")

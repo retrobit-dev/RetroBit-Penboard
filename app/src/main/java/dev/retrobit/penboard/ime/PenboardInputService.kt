@@ -5,7 +5,7 @@ import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodService
+import android.inputmethodservice.InputMethodService
 import android.widget.LinearLayout
 import android.widget.Toast
 import dev.retrobit.penboard.R
@@ -229,7 +229,8 @@ class PenboardInputService : InputMethodService() {
         val profiles = repository.profiles()
         if (profiles.isEmpty()) return
         val currentIndex = profiles.indexOfFirst { it.id == repository.activeId() }
-        val next = profiles[(currentIndex + 1).mod(profiles.size)]
+        val nextIndex = if (currentIndex + 1 >= profiles.size) 0 else currentIndex + 1
+        val next = profiles[nextIndex]
         repository.setActive(next.id)
         prefs.lastUsedProfileId = next.id
         config = next

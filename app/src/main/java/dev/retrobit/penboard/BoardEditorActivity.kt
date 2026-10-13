@@ -132,7 +132,7 @@ class BoardEditorActivity : AppCompatActivity() {
         val input = EditText(this).apply {
             setText(config.name)
             setSelection(text.length)
-            singleLine = true
+            setSingleLine(true)
             hint = getString(R.string.lbl_profile_name)
         }
         input.addTextChangedListener(object : TextWatcher {

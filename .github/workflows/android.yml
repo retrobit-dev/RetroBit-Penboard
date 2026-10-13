@@ -45,6 +45,15 @@ jobs:
           fi
           exit "$status"
 
+      - name: Laporan error lanjutan (bila gagal)
+        if: failure()
+        run: |
+          for f in /tmp/unit-tests.log /tmp/build.log; do
+            if [ -f "$f" ]; then
+              bash .github/scripts/report-gradle-failures.sh "$f" "error lanjutan" 11
+            fi
+          done
+
       - name: Build debug + release APK
         run: |
           set +e

@@ -24,7 +24,7 @@ class PresetRepository(context: Context) {
         val stored = prefs.getString(KEY_ACTIVE, null)
         val list = profiles()
         if (stored != null && list.any { it.id == stored }) return stored
-        val fallback = list.firstOrNull() ?: Presets.defaultConfig().also { add(it) }
+        val fallback = list.firstOrNull() ?: Presets.defaultConfig().also { presets -> add(presets) }
         prefs.edit().putString(KEY_ACTIVE, fallback.id).apply()
         return fallback.id
     }
@@ -114,12 +114,6 @@ class PresetRepository(context: Context) {
         val json = JSONObject().put("profiles", arr).toString()
         prefs.edit().putString(KEY_PROFILES, json).apply()
         cache = list.toMutableList()
-    }
-
-    private fun add(config: PenboardConfig) {
-        val list = profiles()
-        list.add(config)
-        persist(list)
     }
 
     companion object {
