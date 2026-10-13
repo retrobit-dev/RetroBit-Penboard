@@ -640,14 +640,14 @@ class BoardEditorActivity : AppCompatActivity() {
         penButtonCard.addView(secondarySpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
 
         // ------- tata letak papan & tombol grid 3x3 -------
-        val layoutCard = Ui.card(parent, getString(R.string.sec_board_layout), getString(R.string.board_layout_hint))
-        val layouts = BoardLayoutMode.entries
-        val layoutSpinner = Spinner(this)
-        layoutSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, layouts.map { it.label })
-        layoutSpinner.setSelection(layouts.indexOf(config.boardLayout).coerceAtLeast(0), false)
-        layoutSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        val boardLayoutCard = Ui.card(parent, getString(R.string.sec_board_layout), getString(R.string.board_layout_hint))
+        val layoutModes = BoardLayoutMode.entries
+        val boardLayoutSpinner = Spinner(this)
+        boardLayoutSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, layoutModes.map { it.label })
+        boardLayoutSpinner.setSelection(layoutModes.indexOf(config.boardLayout).coerceAtLeast(0), false)
+        boardLayoutSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parentView: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val mode = layouts.getOrNull(position) ?: return
+                val mode = layoutModes.getOrNull(position) ?: return
                 if (mode != config.boardLayout) {
                     update { it.copy(boardLayout = mode) }
                     buildLookTab()
@@ -656,10 +656,10 @@ class BoardEditorActivity : AppCompatActivity() {
 
             override fun onNothingSelected(parentView: AdapterView<*>?) = Unit
         }
-        layoutCard.addView(layoutSpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        boardLayoutCard.addView(boardLayoutSpinner, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
 
         Ui.sliderRow(
-            layoutCard,
+            boardLayoutCard,
             getString(R.string.grid_button_count),
             config.gridButtonCount,
             1,
@@ -667,16 +667,16 @@ class BoardEditorActivity : AppCompatActivity() {
             "tombol"
         ) { value -> update { it.copy(gridButtonCount = value) } }
 
-        Ui.bodyText(layoutCard, getString(R.string.grid_keys_hint))
+        Ui.bodyText(boardLayoutCard, getString(R.string.grid_keys_hint))
         val gridPreview = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = android.view.Gravity.CENTER
         }
-        layoutCard.addView(gridPreview, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        boardLayoutCard.addView(gridPreview, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         buildGridPreview(gridPreview)
 
         Ui.switchRow(
-            layoutCard,
+            boardLayoutCard,
             getString(R.string.auto_space),
             getString(R.string.auto_space_summary),
             config.autoSpaceAfterWord
