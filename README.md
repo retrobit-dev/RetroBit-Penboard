@@ -2,7 +2,18 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.6** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.7** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.7
+
+**Penting untuk perangkat Huawei/Honor tanpa Google Play services.** Mesin pengenalan Penboard (ML Kit) memang **tidak bisa berjalan tanpa Google Play services** — dan di perangkat seperti itu setiap tulisan berakhir dengan pesan "tidak terbaca" yang membingungkan (atau tidak ada pesan sama sekali). Sekarang alurnya jelas:
+
+- **Pemeriksaan perangkat** menyebutkan keadaan Google Play services apa adanya — *tidak terpasang*, *perlu diperbarui*, *dinonaktifkan*, *tidak sah*, atau *sedang diperbarui* — bukan hanya "tidak tersedia".
+- **Google Play services versi lama tidak lagi dianggap mati**: Penboard tetap mencoba mengenali, karena GMS versi lama umumnya masih bisa. Kalau ternyata memang perlu diperbarui, muncul tombol **"Perbarui Google Play services"** (membuka Play Store).
+- Selalu ada tombol **"Buka keyboard tulisan tangan perangkat"** (pemilih keyboard) supaya Anda bisa berpindah ke tulisan tangan Huawei/Celia — dan papan melayang pun menawarkan itu otomatis saat mesinnya tidak ada.
+- Papan tidak lagi menulis "tidak terbaca" untuk masalah mesin: kilasannya **"✗ mesin tidak ada"**, disertai penyebab + saran langkah yang bisa dilakukan.
+- Bahasa yang belum didukung mesin diberi pesan sendiri ("pilih bahasa lain di kartu Pengenalan tulisan"), bukan disamakan dengan tulisan yang tidak terbaca.
+- Panggilan ke ML Kit dibungkus pengaman: perangkat tanpa GMS tidak lagi bisa membuat aplikasi berhenti atau menggantung.
 
 ## Yang baru di 3.0.6
 

@@ -15,6 +15,7 @@ import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizerOption
 import com.google.mlkit.vision.digitalink.recognition.Ink
 import com.google.mlkit.vision.digitalink.recognition.RecognitionContext
 import com.google.mlkit.vision.digitalink.recognition.WritingArea
+import dev.retrobit.penboard.util.GmsStatus
 import dev.retrobit.penboard.util.LanguageTags
 
 enum class ModelStatus { READY, NOT_DOWNLOADED, MISSING, UNKNOWN }
@@ -91,13 +92,24 @@ object InkRecognition {
         lastInk = ink
     }
 
-    /** ML Kit butuh Google Play services; sebagian perangkat (Huawei tanpa GMS) tidak punya. */
-    fun isServicesAvailable(context: Context): Boolean = try {
-        GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+    /**
+     * Keadaan Google Play services. ML Kit membutuhkannya; perangkat Huawei tanpa
+     * GMS tidak bisa memakai mesin bawaan, sedangkan GMS **versi lama** biasanya
+     * masih bisa — karena itu keadaannya dibedakan, bukan hanya ada/tidak ada.
+     */
+    fun servicesStatus(context: Context): GmsStatus = try {
+        val code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
+        GmsStatus.from(code)
     } catch (error: Throwable) {
         Log.w(TAG, "Gagal memeriksa Google Play services", error)
-        false
+        GmsStatus.UNKNOWN
     }
+
+    /** ML Kit butuh Google Play services yang siap dipakai. */
+    fun isServicesAvailable(context: Context): Boolean = servicesStatus(context).canAttempt
+
+    /** Mesin benar-benar siap (GMS ok). Dipakai untuk pesan yang lebih tepat. */
+    fun engineReady(context: Context): Boolean = servicesStatus(context) == GmsStatus.READY
 
     fun modelStatus(language: String, onStatus: (ModelStatus) -> Unit) {
         val model = buildModel(language)
@@ -121,13 +133,19 @@ object InkRecognition {
             onDone(false)
             return
         }
-        remoteModelManager.download(model, DownloadConditions.Builder().build())
-            .addOnSuccessListener { onDone(true) }
-            .addOnFailureListener { error ->
-                Log.w(TAG, "Gagal mengunduh model", error)
-                lastMessage = describe(error)
-                onDone(false)
-            }
+        try {
+            remoteModelManager.download(model, DownloadConditions.Builder().build())
+                .addOnSuccessListener { onDone(true) }
+                .addOnFailureListener { error ->
+                    Log.w(TAG, "Gagal mengunduh model", error)
+                    lastMessage = describe(error)
+                    onDone(false)
+                }
+        } catch (error: Throwable) {
+            Log.w(TAG, "Unduhan model tidak bisa dijalankan", error)
+            lastMessage = describe(error)
+            onDone(false)
+        }
     }
 
     /**
@@ -157,20 +175,35 @@ object InkRecognition {
             onResult(null, RecognitionFailure.MODEL_MISSING)
             return
         }
+        val gms = servicesStatus(context)
+        if (!gms.canAttempt) {
+            // Tanpa Google Play services mesin bawaan memang tidak bisa jalan:
+            // ini bukan "tulisan tidak terbaca", jadi pesannya dibedakan.
+            lastMessage = gms.summary
+            onResult(null, RecognitionFailure.MODEL_MISSING)
+            return
+        }
         val context = preContext?.trim()?.takeLast(PRE_CONTEXT_LENGTH)
-        remoteModelManager.isModelDownloaded(model)
-            .addOnSuccessListener { downloaded ->
-                if (downloaded) {
-                    attempt(ladder, 0, language, context, onDownloading, allowDownload = false, onResult)
-                } else {
-                    downloadThenRecognize(model, ladder, language, context, onDownloading, onResult)
+        try {
+            remoteModelManager.isModelDownloaded(model)
+                .addOnSuccessListener { downloaded ->
+                    if (downloaded) {
+                        attempt(ladder, 0, language, context, onDownloading, allowDownload = false, onResult)
+                    } else {
+                        downloadThenRecognize(model, ladder, language, context, onDownloading, onResult)
+                    }
                 }
-            }
-            .addOnFailureListener { error ->
-                // Status model tidak terbaca: coba saja dulu, unduhan ditangani bila gagal.
-                Log.w(TAG, "Gagal memeriksa model, mencoba mengenali langsung", error)
-                attempt(ladder, 0, language, context, onDownloading, allowDownload = true, onResult)
-            }
+                .addOnFailureListener { error ->
+                    // Status model tidak terbaca: coba saja dulu, unduhan ditangani bila gagal.
+                    Log.w(TAG, "Gagal memeriksa model, mencoba mengenali langsung", error)
+                    attempt(ladder, 0, language, context, onDownloading, allowDownload = true, onResult)
+                }
+        } catch (error: Throwable) {
+            // Tanpa Google Play services pemanggilan ini bisa langsung gagal.
+            Log.w(TAG, "Pemeriksaan model tidak bisa dijalankan", error)
+            lastMessage = describe(error)
+            onResult(null, RecognitionFailure.MODEL_NOT_DOWNLOADED)
+        }
     }
 
     fun close() {
@@ -307,11 +340,18 @@ object InkRecognition {
         val existing = recognizer
         if (existing != null && recognizerLanguage.equals(language, ignoreCase = true)) return existing
         val model = buildModel(language) ?: return null
-        existing?.close()
-        val created = DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(model).build())
-        recognizer = created
-        recognizerLanguage = language
-        return created
+        return try {
+            existing?.close()
+            val created = DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(model).build())
+            recognizer = created
+            recognizerLanguage = language
+            created
+        } catch (error: Throwable) {
+            // Mis. perangkat tanpa Google Play services: jangan sampai aplikasi berhenti.
+            Log.w(TAG, "Gagal membuat mesin pengenalan", error)
+            lastMessage = "mesin pengenalan tidak bisa dibuat: " + (error.message ?: error.javaClass.simpleName)
+            null
+        }
     }
 
     /** Apakah kegagalan ini soal model (belum ada / unduhan), bukan soal tulisannya. */

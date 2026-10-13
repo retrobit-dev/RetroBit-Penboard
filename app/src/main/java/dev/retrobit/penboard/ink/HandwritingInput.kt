@@ -89,11 +89,13 @@ class HandwritingInput(
             return
         }
         if (!InkRecognition.isServicesAvailable(context)) {
-            // Mesin bawaan tidak ada: tawarkan pengalihan sekali saat otomatis,
-            // atau setiap kali pengguna menekan tombol "Teks" sendiri.
+            // Mesin bawaan tidak bisa dipakai (biasanya Google Play services).
+            // Sebutkan keadaannya, bukan sekadar "tidak terbaca".
             if (announce || !fallbackOffered) {
                 fallbackOffered = true
-                onUnavailable(context.getString(R.string.msg_engine_missing))
+                board.showFlash(context.getString(R.string.flash_no_engine))
+                val status = InkRecognition.servicesStatus(context)
+                onUnavailable(context.getString(R.string.msg_engine_missing_detail, status.summary))
             }
             return
         }
@@ -151,9 +153,16 @@ class HandwritingInput(
         }
         when (failure) {
             RecognitionFailure.MODEL_MISSING -> {
-                onUnavailable(context.getString(R.string.msg_model_missing))
-                InkRecognition.downloadModel(language) { ok ->
-                    notify(context.getString(if (ok) R.string.msg_model_ready else R.string.msg_model_failed))
+                if (!InkRecognition.engineReady(context)) {
+                    // Mesinnya yang tidak ada — bukan soal tulisan atau model.
+                    board.showFlash(context.getString(R.string.flash_no_engine))
+                    val status = InkRecognition.servicesStatus(context)
+                    notify(context.getString(R.string.msg_engine_missing_detail, status.summary))
+                    onUnavailable(context.getString(R.string.msg_engine_missing_detail, status.summary))
+                } else {
+                    // Mesin siap, tetapi bahasa ini tidak dikenal mesin.
+                    board.showFlash(context.getString(R.string.flash_no_model))
+                    notify(context.getString(R.string.msg_language_unsupported, language))
                 }
             }
             RecognitionFailure.EMPTY -> if (announce) notify(context.getString(R.string.msg_board_empty))

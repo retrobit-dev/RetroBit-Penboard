@@ -37,6 +37,7 @@ import dev.retrobit.penboard.overlay.PenboardTypingService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
+import dev.retrobit.penboard.util.GmsStatus
 import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.StylusCompat
 import dev.retrobit.penboard.util.SystemHandwriting
@@ -193,6 +194,25 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.overlay_note))
     }
 
+    /** Buka halaman Google Play services di Play Store (untuk memperbaruinya). */
+    private fun openPlayStoreForGms() {
+        val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.gms"))
+        try {
+            startActivity(market)
+        } catch (error: Throwable) {
+            try {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.gms")
+                    )
+                )
+            } catch (inner: Throwable) {
+                toast(getString(R.string.msg_engine_no_services))
+            }
+        }
+    }
+
     /** Buka daftar layanan aksesibilitas agar "Penboard Tulis Otomatis" bisa dinyalakan. */
     private fun openAccessibilitySettings() {
         try {
@@ -217,8 +237,22 @@ class MainActivity : AppCompatActivity() {
         )
 
         Ui.divider(card)
+        val gms = InkRecognition.servicesStatus(this)
         val engineReady = InkRecognition.isServicesAvailable(this)
         Ui.statusText(card, getString(if (engineReady) R.string.check_engine_ok else R.string.check_engine_no))
+        // Perangkat Huawei tanpa GMS / GMS versi lama: sebutkan keadaannya yang sebenarnya.
+        if (gms != GmsStatus.READY) {
+            Ui.statusText(card, getString(R.string.check_gms_detail, gms.summary))
+            Ui.buttonRow(
+                card,
+                *buildList {
+                    if (gms == GmsStatus.UPDATE_REQUIRED) {
+                        add(getString(R.string.action_update_gms) to { openPlayStoreForGms() })
+                    }
+                    add(getString(R.string.action_open_handwriting_keyboard) to { showKeyboardPicker() })
+                }.toTypedArray()
+            )
+        }
         val deviceInk = SystemHandwriting.pickBest(SystemHandwriting.candidates(this), packageName)
         Ui.statusText(
             card,
@@ -577,8 +611,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderHuaweiCard() {
-        if (!isHuaweiFamily()) return
+        val huawei = isHuaweiFamily()
+        val gms = InkRecognition.servicesStatus(this)
+        // Perangkat Huawei tanpa/bermasalah Google Play services: mesin bawaan
+        // Penboard memang tidak bisa dipakai, jadi panduannya harus jelas.
+        if (!huawei && gms == GmsStatus.READY) return
         val card = Ui.card(content, getString(R.string.card_huawei), getString(R.string.card_huawei_sub))
+        if (gms != GmsStatus.READY) {
+            Ui.statusText(card, getString(R.string.check_gms_detail, gms.summary))
+            Ui.body(card, getString(R.string.msg_engine_no_services))
+        }
         Ui.body(card, getString(R.string.huawei_body))
         Ui.buttonRow(
             card,
@@ -765,8 +807,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             manager.showInputMethodPicker()
+            toast(getString(R.string.msg_handwriting_picker))
         } catch (error: Throwable) {
-            toast(getString(R.string.msg_picker_failed))
+            toast(getString(R.string.msg_handwriting_picker_failed))
         }
     }
 

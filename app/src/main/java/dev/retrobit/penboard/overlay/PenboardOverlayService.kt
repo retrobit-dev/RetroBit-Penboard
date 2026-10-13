@@ -29,6 +29,7 @@ import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.ime.PenboardInputService
 import dev.retrobit.penboard.ink.HandwritingInput
+import dev.retrobit.penboard.ink.InkRecognition
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.util.SystemHandwriting
 
@@ -244,6 +245,17 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
         val typing = PenboardTypingService.current()
         if (typing != null && typing.perform(action)) return
         toast(getString(R.string.msg_needs_keyboard))
+    }
+
+    /**
+     * Tulisan tidak bisa dikenali karena mesinnya. Bila Google Play services tidak
+     * ada/hangus, tawarkan keyboard tulisan tangan perangkat supaya pengguna tetap
+     * bisa menulis — bukan sekadar memberi tahu.
+     */
+    private fun handleEngineUnavailable(message: String) {
+        toast(message)
+        if (InkRecognition.servicesStatus(this).canAttempt) return
+        SystemHandwriting.openPicker(this)
     }
 
     override fun onStrokeStarted() {
