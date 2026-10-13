@@ -19,7 +19,7 @@ class LanguageTagsTest {
     fun `tag tanpa wilayah dipakai apa adanya`() {
         assertEquals(listOf("id"), LanguageTags.candidates("id"))
         assertEquals(listOf("ar"), LanguageTags.candidates("ar"))
-        assertEquals(listOf("ja"), LanguageTags.candidates("ja-JP").last())
+        assertEquals("ja", LanguageTags.candidates("ja-JP").last())
         assertEquals(listOf("ja-JP", "ja"), LanguageTags.candidates("ja-JP"))
     }
 
