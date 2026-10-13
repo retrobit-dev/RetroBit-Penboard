@@ -15,6 +15,9 @@ import dev.retrobit.penboard.data.PenboardConfig
  *   dikenali dan diinput sebagai teks. Setiap goresan baru mengulang hitungan.
  * - **Manual**: tombol "Teks" atau tombol samping pena.
  * - Tulisan dianggap satu kata, lalu satu spasi ditambahkan untuk kata berikutnya.
+ * - Bila mesin pengenalan bawaan tidak tersedia (mis. perangkat Huawei tanpa
+ *   Google Play services), host diberi tahu lewat [onUnavailable] supaya bisa
+ *   mengalihkan pengguna ke keyboard tulisan tangan perangkat.
  */
 class HandwritingInput(
     private val context: Context,
@@ -32,6 +35,9 @@ class HandwritingInput(
 
     @Volatile
     private var busy = false
+
+    /** Pengalihan ke keyboard bawaan hanya ditawarkan sekali per sesi. */
+    private var fallbackOffered = false
 
     /** Dipanggil setiap goresan selesai: mulai hitungan jeda input otomatis. */
     fun onStrokeCommitted() {
@@ -59,7 +65,12 @@ class HandwritingInput(
             return
         }
         if (!InkRecognition.isServicesAvailable(context)) {
-            if (announce) onUnavailable(context.getString(R.string.msg_engine_missing))
+            // Mesin bawaan tidak ada: tawarkan pengalihan sekali saat otomatis,
+            // atau setiap kali pengguna menekan tombol "Teks" sendiri.
+            if (announce || !fallbackOffered) {
+                fallbackOffered = true
+                onUnavailable(context.getString(R.string.msg_engine_missing))
+            }
             return
         }
         val strokes = InkNormalizer.normalize(board.contentStrokes(), board.lineGapPx)

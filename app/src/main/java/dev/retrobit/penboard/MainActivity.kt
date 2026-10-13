@@ -308,7 +308,12 @@ class MainActivity : AppCompatActivity() {
         }
         Ui.divider(card)
         Ui.outlinedButton(card, getString(R.string.action_grid_default)) {
-            store.update { it.copy(gridKeys = PenboardConfig.defaultGridKeys(), gridButtonCount = PenboardConfig.MAX_GRID_KEYS) }
+            store.update {
+                it.copy(
+                    gridKeys = PenboardConfig.defaultGridKeys(),
+                    gridButtonCount = PenboardConfig.MAX_GRID_KEYS
+                )
+            }
             render()
         }
     }
@@ -341,6 +346,13 @@ class MainActivity : AppCompatActivity() {
             store.update { it.copy(recognitionLanguage = languages[position].first) }
             render()
         }
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_auto_switch),
+            getString(R.string.setting_auto_switch_sub),
+            config.autoSwitchToSystemHandwriting
+        ) { value -> store.update { it.copy(autoSwitchToSystemHandwriting = value) } }
+
         val status = Ui.statusText(card, getString(R.string.status_model_checking))
         showModelStatus(status)
         Ui.buttonRow(card, getString(R.string.action_download_model) to { downloadModel(status) })

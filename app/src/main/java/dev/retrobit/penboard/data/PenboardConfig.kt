@@ -110,7 +110,13 @@ data class PenboardConfig(
     val autoRecognizeDelayMs: Int = 2000,
     val autoSpace: Boolean = true,
     val clearAfterRecognize: Boolean = true,
-    val recognitionLanguage: String = RecognitionLanguages.DEFAULT
+    val recognitionLanguage: String = RecognitionLanguages.DEFAULT,
+    /**
+     * Bila mesin pengenalan bawaan tidak bisa dipakai (mis. perangkat Huawei tanpa
+     * Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan
+     * perangkat supaya pengguna tetap bisa menulis.
+     */
+    val autoSwitchToSystemHandwriting: Boolean = true
 ) {
 
     /** Warna pena yang sedang dipakai. */
@@ -153,6 +159,7 @@ data class PenboardConfig(
         put("autoSpace", autoSpace)
         put("clearAfterRecognize", clearAfterRecognize)
         put("recognitionLanguage", recognitionLanguage)
+        put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
     }
 
     /** Semua angka dipangkas ke rentang yang masuk akal. */
@@ -261,7 +268,11 @@ data class PenboardConfig(
                 autoRecognizeDelayMs = json.optInt("autoRecognizeDelayMs", base.autoRecognizeDelayMs),
                 autoSpace = json.optBoolean("autoSpace", base.autoSpace),
                 clearAfterRecognize = json.optBoolean("clearAfterRecognize", base.clearAfterRecognize),
-                recognitionLanguage = json.optString("recognitionLanguage", base.recognitionLanguage)
+                recognitionLanguage = json.optString("recognitionLanguage", base.recognitionLanguage),
+                autoSwitchToSystemHandwriting = json.optBoolean(
+                    "autoSwitchToSystemHandwriting",
+                    base.autoSwitchToSystemHandwriting
+                )
             ).sanitized()
         }
 

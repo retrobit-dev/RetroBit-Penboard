@@ -6,11 +6,11 @@ Anda menulis di papan, tulisan diubah menjadi teks dan langsung masuk ke kolom i
 Susunannya sederhana dan sesuai permintaan:
 
 ```
-┌────────────────────────────────┬───────────┐
-│                                │ [ Teks ]  [ Spasi ] [ Baris ]   │
-│        papan tulis             │ [  ⌫  ]  [  ↶  ]  [ Bersih ]    │
-│        (sampai ke tombol)      │ [ Gores] [Huawei] [ Tutup ]     │
-└────────────────────────────────┴───────────┘
+┌────────────────────────────────┬────────────────────────────┐
+│                                │ [ Teks ] [ Spasi ] [ Baris ]│
+│        papan tulis             │ [  ⌫   ] [  ↶   ] [ Bersih] │
+│        (sampai ke tombol)      │ [ Gores] [Huawei] [ Tutup ] │
+└────────────────────────────────┴────────────────────────────┘
      kiri: area menulis              kanan: grid tombol 3×3
 ```
 
@@ -44,7 +44,7 @@ Ada juga **papan melayang**: papan tulis yang muncul di atas aplikasi lain
 | **Papan tulis** | tinggi papan (120–340 dp), jarak garis panduan (28–76 dp), ketebalan pena (1–12 dp), sampai **6 warna pena** (warna apa pun, ada pengatur transparansi tiap warna), tampil/sembunyi garis, izinkan jari menulis, getar |
 | **Tombol samping pena** | primer & sekunder: jadikan teks, batal goresan, hapus goresan terakhir, bersihkan papan, tulisan tangan Huawei, papan melayang |
 | **Grid tombol 3×3** | jumlah tombol **1–9**, tiap slot bisa diganti aksi + nama + teks sendiri, tombol bisa mengulang bila ditahan |
-| **Pengenalan tulisan** | input otomatis on/off, jeda 0,5–5 detik, spasi otomatis, bersihkan papan setelah diinput, 14 bahasa (bawaan **Indonesia**) |
+| **Pengenalan tulisan** | input otomatis on/off, jeda 0,5–5 detik, spasi otomatis, bersihkan papan setelah diinput, 14 bahasa (bawaan **Indonesia**), pindah otomatis ke tulisan tangan perangkat bila mesin bawaan tidak ada |
 | **Transparansi & warna** | transparansi panel/papan/tombol 0–100 %, warna panel, papan, garis, tombol, tulisan tombol, garis tepi, kebulatan sudut |
 
 Semua pengaturan tersimpan otomatis dan bisa dikembalikan ke bawaan
@@ -66,9 +66,11 @@ HMS Core hanya menyediakan OCR gambar (teks dari foto), bukan mesin digital ink 
 Karena itu Penboard:
 
 - memakai **ML Kit Digital Ink** bawaan sendiri (berjalan di perangkat, luring setelah model
-  terunduh ±20 MB, sama seperti yang dipakai keyboard Google), dan
+  terunduh ±20 MB, sama seperti yang dipakai keyboard Google),
 - menyediakan tombol **Huawei** sebagai **jembatan**: sekali ketuk, Anda berpindah ke keyboard
-  tulisan tangan perangkat untuk memakai mesinnya, lalu kembali ke Penboard.
+  tulisan tangan perangkat untuk memakai mesinnya, lalu kembali ke Penboard, dan
+- **berpindah sendiri** ke keyboard tulisan tangan perangkat bila mesin pengenalan bawaan tidak
+  bisa dipakai (mis. perangkat Huawei tanpa Google Play services) — bisa dimatikan di pengaturan.
 
 Supaya tidak bertabrakan dengan bantalan tulisan tangan bawaan perangkat, Penboard
 **menolak mode tulisan tangan stylus sistem** (`supportsStylusHandwriting="false"`) sehingga

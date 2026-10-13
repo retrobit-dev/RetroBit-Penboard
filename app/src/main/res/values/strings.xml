@@ -95,6 +95,8 @@
     <string name="setting_clear_after">Bersihkan papan setelah diinput</string>
     <string name="setting_clear_after_sub">Papan langsung siap untuk kata berikutnya.</string>
     <string name="setting_language">Bahasa tulisan</string>
+    <string name="setting_auto_switch">Pindah otomatis ke tulisan tangan perangkat</string>
+    <string name="setting_auto_switch_sub">Bila mesin pengenalan bawaan tidak tersedia (mis. perangkat Huawei tanpa Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan perangkat agar Anda tetap bisa menulis.</string>
     <string name="status_model_checking">Memeriksa model bahasa…</string>
     <string name="status_model_downloading">Menyiapkan model bahasa…</string>
     <string name="status_model_ready">Model bahasa siap dipakai.</string>
@@ -122,7 +124,7 @@
     <!-- Huawei/Honor -->
     <string name="card_huawei">Catatan untuk Huawei/Honor</string>
     <string name="card_huawei_sub">Tulisan tangan stylus bawaan perangkat bisa bertabrakan dengan Penboard.</string>
-    <string name="huawei_body">1. Penboard menolak mode tulisan tangan sistem, jadi bantalan tulisan tangan bawaan tidak muncul saat Anda menulis di papan Penboard.\n\n2. Mesin tulisan tangan Huawei/Celia tidak bisa dipanggil langsung oleh aplikasi lain (tidak ada API untuk itu). Bila Anda ingin memakai mesin tersebut, ketuk tombol \u201CHuawei\u201D pada grid — Penboard berpindah ke keyboard tulisan tangan perangkat, dan Anda bisa kembali ke Penboard setelah selesai.\n\n3. Bila panel tulisan tangan bawaan tetap muncul sendiri, buka setelan keyboard bawaan (Celia/Huawei) lalu matikan opsi tulisan tangan dan pengalihan keyboard otomatis.</string>
+    <string name="huawei_body">1. Penboard menolak mode tulisan tangan sistem, jadi bantalan tulisan tangan bawaan tidak muncul saat Anda menulis di papan Penboard.\n\n2. Mesin tulisan tangan Huawei/Celia tidak bisa dipanggil langsung oleh aplikasi lain (tidak ada API untuk itu). Bila Anda ingin memakai mesin tersebut, ketuk tombol \u201CHuawei\u201D pada grid — Penboard berpindah ke keyboard tulisan tangan perangkat, dan Anda bisa kembali ke Penboard setelah selesai.\n\n3. Bila mesin pengenalan bawaan Penboard tidak tersedia di perangkat ini (tanpa Google Play services), Penboard otomatis menawarkan pindah ke keyboard tulisan tangan perangkat saat Anda selesai menulis.</string>
 
     <!-- Tentang -->
     <string name="card_about">Tentang</string>
@@ -153,7 +155,6 @@
     <string name="msg_model_missing">Model bahasa belum siap — sedang disiapkan.</string>
     <string name="msg_model_ready">Model bahasa siap dipakai.</string>
     <string name="msg_model_failed">Model bahasa gagal diunduh.</string>
-    <string name="system_handwriting_hint">Tombol \u201CHuawei\u201D pada grid memindahkan Anda ke keyboard tulisan tangan perangkat.</string>
     <string name="system_handwriting_switched">Beralih ke %1$s. Setelah selesai, pilih lagi Penboard dari daftar keyboard.</string>
     <string name="system_handwriting_picker">Pilih keyboard tulisan tangan bawaan (mis. Celia/Huawei) dari daftar.</string>
 </resources>

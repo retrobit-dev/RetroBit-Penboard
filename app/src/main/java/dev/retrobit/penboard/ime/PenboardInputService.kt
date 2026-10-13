@@ -55,9 +55,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             config = { store.config },
             commit = { text -> commitText(text) },
             notify = { message -> toast(message) },
-            onUnavailable = { message ->
-                toast(message + " " + getString(R.string.system_handwriting_hint))
-            }
+            onUnavailable = { message -> handleEngineUnavailable(message) }
         )
         store.addListener(configListener)
         return created.root
@@ -183,6 +181,21 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             toast(getString(R.string.system_handwriting_switched, target.label))
         } else {
             toast(getString(R.string.system_handwriting_picker))
+        }
+    }
+
+    /**
+     * Mesin pengenalan bawaan tidak bisa dipakai (mis. perangkat Huawei tanpa Google
+     * Play services). Bila pengguna mengizinkan, Penboard memindahkan dirinya ke
+     * keyboard tulisan tangan perangkat supaya pengguna tetap bisa menulis.
+     */
+    private fun handleEngineUnavailable(message: String) {
+        toast(message)
+        if (!store.config.autoSwitchToSystemHandwriting) return
+        val target = SystemHandwriting.pickBest(SystemHandwriting.candidates(this), packageName) ?: return
+        val switched = SystemHandwriting.switchFromIme(this)
+        if (switched != null) {
+            toast(getString(R.string.system_handwriting_switched, target.label))
         }
     }
 

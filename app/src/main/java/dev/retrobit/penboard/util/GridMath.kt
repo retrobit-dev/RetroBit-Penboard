@@ -13,7 +13,7 @@ object GridMath {
     const val ROWS = 3
     const val MAX_WIDTH_FRACTION = 0.34f
 
-    /** Jarak antar tombol (dp) — dipakai pemanggil untuk menghitung [spacingPx]. */
+    /** Jarak antar tombol (dp) — dipakai pemanggil untuk menghitung spacingPx. */
     const val SPACING_DP = 3f
 
     /**

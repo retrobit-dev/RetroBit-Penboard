@@ -21,7 +21,7 @@ enum class RecognitionFailure { EMPTY, MODEL_MISSING, FAILED }
 /**
  * Mesin pengenalan tulisan tangan Penboard: ML Kit Digital Ink.
  *
- * Berjalan di perangkat dan luring setelah model bahasa terunduh (~20 MB per bahasa).
+ * Berjalan di perangkat dan luring setelah model bahasa terunduh (±20 MB per bahasa).
  * Model diunduh otomatis saat pertama kali dipakai.
  */
 object InkRecognition {

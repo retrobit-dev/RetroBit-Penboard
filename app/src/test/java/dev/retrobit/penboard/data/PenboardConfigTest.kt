@@ -15,6 +15,7 @@ class PenboardConfigTest {
         assertEquals("jeda 2 detik", 2000, config.autoRecognizeDelayMs)
         assertTrue("spasi otomatis antar kata", config.autoSpace)
         assertTrue("tulisan dibersihkan setelah diinput", config.clearAfterRecognize)
+        assertTrue("pindah otomatis ke tulisan tangan perangkat", config.autoSwitchToSystemHandwriting)
         assertEquals("id-ID", config.recognitionLanguage)
         assertEquals(PenboardConfig.MAX_GRID_KEYS, config.gridButtonCount)
         assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
@@ -39,6 +40,7 @@ class PenboardConfigTest {
             autoRecognizeDelayMs = 3200,
             autoSpace = false,
             clearAfterRecognize = false,
+            autoSwitchToSystemHandwriting = false,
             recognitionLanguage = "en-US",
             gridButtonCount = 4,
             showLines = false,
@@ -60,6 +62,7 @@ class PenboardConfigTest {
         assertEquals(original.autoRecognizeDelayMs, restored.autoRecognizeDelayMs)
         assertEquals(original.autoSpace, restored.autoSpace)
         assertEquals(original.clearAfterRecognize, restored.clearAfterRecognize)
+        assertEquals(original.autoSwitchToSystemHandwriting, restored.autoSwitchToSystemHandwriting)
         assertEquals(original.recognitionLanguage, restored.recognitionLanguage)
         assertEquals(original.gridButtonCount, restored.gridButtonCount)
         assertEquals(original.showLines, restored.showLines)
@@ -106,6 +109,7 @@ class PenboardConfigTest {
         assertTrue(migrated.autoRecognize)
         assertEquals(2000, migrated.autoRecognizeDelayMs)
         assertTrue(migrated.autoSpace)
+        assertTrue(migrated.autoSwitchToSystemHandwriting)
         assertEquals("id-ID", migrated.recognitionLanguage)
         assertEquals(PenboardConfig.GRID_SLOTS, migrated.gridKeys.size)
     }

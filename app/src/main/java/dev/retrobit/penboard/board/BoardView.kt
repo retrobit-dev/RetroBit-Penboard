@@ -198,7 +198,7 @@ class BoardView @JvmOverloads constructor(
         backgroundDrawable.cornerRadii = floatArrayOf(left, left, radius, radius, radius, radius, left, left)
         backgroundDrawable.setColor(withAlpha(boardColor, boardAlpha))
         backgroundDrawable.setStroke(
-            (density).toInt().coerceAtLeast(1),
+            density.toInt().coerceAtLeast(1),
             withAlpha(lineColor, 110)
         )
         background = backgroundDrawable
