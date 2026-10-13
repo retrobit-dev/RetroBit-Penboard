@@ -190,6 +190,12 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.action_typing_enable) to { openAccessibilitySettings() }
             )
         }
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_hide_keyboard),
+            getString(R.string.setting_hide_keyboard_sub),
+            store.config.hideSystemKeyboard
+        ) { value -> store.update { it.copy(hideSystemKeyboard = value) } }
         Ui.body(card, getString(R.string.typing_note))
         Ui.body(card, getString(R.string.overlay_note))
     }

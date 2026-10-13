@@ -2,7 +2,13 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.7** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.8
+
+- **Tidak lagi ada dua keyboard.** Saat papan melayang dipakai, keyboard sistem ditutup otomatis — keyboard Penboard menutup dirinya sendiri, dan keyboard lain (mis. Huawei) ditutup lewat layanan **Penboard Tulis Otomatis**. Pengaturan baru **"Sembunyikan keyboard sistem"** di kartu Papan melayang (bawaan: nyala) bisa dimatikan bila Anda ingin keyboard tetap terbuka.
+- **Geser papan melayang sudah benar arahnya**: menarik pegangan **ke atas menaikkan papan**, ke bawah menurunkan — sebelumnya terbalik karena `y` diukur dari tepi bawah layar (`Gravity.BOTTOM`).
+- **Papan tidak bisa lagi nyangkut di luar layar**: posisi saat digeser dan posisi yang tersimpan dari sesi sebelumnya selalu dibatasi agar papan tetap terlihat penuh (hitungan di `util/OverlayMath.kt`, diuji unit).
 
 ## Yang baru di 3.0.7
 

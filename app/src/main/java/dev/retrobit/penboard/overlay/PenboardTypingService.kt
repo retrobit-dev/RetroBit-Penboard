@@ -74,6 +74,29 @@ class PenboardTypingService : AccessibilityService() {
         return pasteText(node, text)
     }
 
+    /** Apakah keyboard sistem sedang tampil di layar. */
+    fun isKeyboardVisible(): Boolean = try {
+        windows.any { window -> window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+    } catch (error: Throwable) {
+        Log.w(TAG, "Gagal memeriksa keyboard", error)
+        false
+    }
+
+    /**
+     * Tutup keyboard sistem (kalau sedang tampil) dengan menekan tombol kembali.
+     * Hanya dilakukan bila keyboard benar-benar ada, supaya tombol kembali tidak
+     * malah keluar dari aplikasi yang sedang dipakai.
+     */
+    fun hideKeyboard(): Boolean {
+        if (!isKeyboardVisible()) return false
+        return try {
+            performGlobalAction(GLOBAL_ACTION_BACK)
+        } catch (error: Throwable) {
+            Log.w(TAG, "Gagal menutup keyboard", error)
+            false
+        }
+    }
+
     /** Beberapa huruf sebelum kursor pada kolom yang sedang fokus (boleh null). */
     fun textBeforeCursor(limit: Int): String? {
         val node = focusedEditable() ?: return null

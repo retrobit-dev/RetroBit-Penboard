@@ -148,7 +148,12 @@ data class PenboardConfig(
      * Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan
      * perangkat supaya pengguna tetap bisa menulis.
      */
-    val autoSwitchToSystemHandwriting: Boolean = true
+    val autoSwitchToSystemHandwriting: Boolean = true,
+    /**
+     * Saat papan melayang dipakai, sembunyikan keyboard sistem supaya yang tampil
+     * hanya papan melayang (bukan dua keyboard sekaligus).
+     */
+    val hideSystemKeyboard: Boolean = true
 ) {
 
     /** Warna pena yang sedang dipakai. */
@@ -243,6 +248,7 @@ data class PenboardConfig(
         put("clearAfterRecognize", clearAfterRecognize)
         put("recognitionLanguage", recognitionLanguage)
         put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
+        put("hideSystemKeyboard", hideSystemKeyboard)
     }
 
     /** Semua angka dipangkas ke rentang yang masuk akal. */
@@ -400,7 +406,8 @@ data class PenboardConfig(
                 autoSwitchToSystemHandwriting = json.optBoolean(
                     "autoSwitchToSystemHandwriting",
                     base.autoSwitchToSystemHandwriting
-                )
+                ),
+                hideSystemKeyboard = json.optBoolean("hideSystemKeyboard", base.hideSystemKeyboard)
             ).sanitized()
         }
 

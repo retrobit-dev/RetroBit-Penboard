@@ -127,6 +127,18 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `penyembunyian keyboard sistem tersimpan`() {
+        // Bawaannya: papan melayang menutup keyboard lain supaya tidak ada dua keyboard.
+        assertTrue(PenboardConfig().hideSystemKeyboard)
+        val off = PenboardConfig(hideSystemKeyboard = false)
+        assertEquals(false, PenboardConfig.fromJson(off.toJson()).hideSystemKeyboard)
+        val on = PenboardConfig(hideSystemKeyboard = true)
+        assertEquals(true, PenboardConfig.fromJson(on.toJson()).hideSystemKeyboard)
+        // Berkas lama (tanpa kunci ini) tetap memakai bawaan.
+        assertEquals(true, PenboardConfig.fromJson(JSONObject("{}")).hideSystemKeyboard)
+    }
+
+    @Test
     fun `penyimpanan bolak-balik tidak mengubah pengaturan`() {
         val config = PenboardConfig(
             boardHeightDp = 220,

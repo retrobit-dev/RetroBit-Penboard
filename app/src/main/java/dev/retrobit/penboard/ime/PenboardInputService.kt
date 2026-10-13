@@ -140,6 +140,14 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     /** Kirim teks ke kolom isian. Dipakai juga oleh papan melayang. */
     fun commitFromExternal(text: String): Boolean = commitText(text)
 
+    /** Tutup keyboard Penboard (dipakai papan melayang agar tidak ada dua keyboard). */
+    fun hideKeyboardFromExternal(): Boolean = try {
+        requestHideSelf(0)
+        true
+    } catch (error: Throwable) {
+        false
+    }
+
     fun deleteBackwardFromExternal(): Boolean {
         if (currentInputConnection == null) return false
         deleteBackward()

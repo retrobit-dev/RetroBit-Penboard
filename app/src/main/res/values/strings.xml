@@ -26,6 +26,8 @@
     <string name="action_overlay_permission">Beri izin</string>
     <string name="action_overlay_show">Tampilkan</string>
     <string name="action_overlay_hide">Sembunyikan</string>
+    <string name="setting_hide_keyboard">Sembunyikan keyboard sistem</string>
+    <string name="setting_hide_keyboard_sub">Saat papan melayang dipakai, keyboard lain ditutup supaya yang tampil hanya papan melayang. Untuk keyboard selain Penboard, ini memakai layanan "Penboard Tulis Otomatis".</string>
     <string name="overlay_note">Geser lewat pegangan kecil di atas papan. Teks langsung masuk ke kolom isian bila keyboard Penboard dipakai, atau bila layanan "Penboard Tulis Otomatis" (aksesibilitas) dinyalakan.</string>
     <string name="status_typing_on">Penboard Tulis Otomatis: aktif — hasil tulisan langsung masuk ke kolom isian.</string>
     <string name="status_typing_off">Penboard Tulis Otomatis: belum aktif — tanpa keyboard Penboard, teks hanya bisa disalin.</string>

@@ -31,14 +31,21 @@ import dev.retrobit.penboard.ime.PenboardInputService
 import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ink.InkRecognition
 import dev.retrobit.penboard.ui.BoardPanel
+import dev.retrobit.penboard.util.OverlayMath
 import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
  * Papan tulis melayang di atas aplikasi lain.
  *
- * Memakai susunan yang sama dengan keyboard (papan di kiri, grid 3x3 di kanan) dan
- * bisa digeser lewat pegangan di atasnya. Bila keyboard Penboard sedang aktif,
- * teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip.
+ * Memakai susunan yang sama dengan keyboard (papan di kiri, grid tombol di kanan) dan
+ * bisa digeser lewat pegangan di atasnya — **jari naik berarti papan naik**.
+ *
+ * Saat papan dipakai, keyboard sistem disembunyikan (bila pengaturan
+ * "Sembunyikan keyboard sistem" menyala) supaya yang tampil hanya papan melayang:
+ * keyboard Penboard ditutup sendiri, atau lewat layanan "Penboard Tulis Otomatis".
+ *
+ * Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian; bila
+ * tidak, lewat layanan Tulis Otomatis; cadangan terakhir: salin ke papan klip.
  */
 class PenboardOverlayService : Service(), BoardPanel.Listener {
 
@@ -129,7 +136,15 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.START
             x = prefs.getInt(KEY_X, 0)
-            y = prefs.getInt(KEY_Y, dp(110f))
+            // Posisi dari sesi sebelumnya dibatasi lagi supaya papan tidak nyangkut
+            // di luar layar (mis. setelah putaran layar atau papan diubah tingginya).
+            y = OverlayMath.defaultY(
+                boardHeightPx = created.root.height.takeIf { it > 0 } ?: dp(200f),
+                screenHeightPx = screenHeight(),
+                preferredY = prefs.getInt(KEY_Y, dp(110f)),
+                topInsetPx = dp(24f),
+                bottomInsetPx = dp(16f)
+            )
         }
         layoutParams = params
         try {
@@ -143,6 +158,8 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
         created.handle?.setOnTouchListener(dragListener())
         store.addListener(configListener)
         running = true
+        // Keyboard yang sudah terbuka sebelum papan dipakai ikut ditutup.
+        created.root.postDelayed({ hideSystemKeyboardIfEnabled() }, HIDE_KEYBOARD_DELAY_MS)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -159,7 +176,16 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
             }
             MotionEvent.ACTION_MOVE -> {
                 params.x = windowStartX + (event.rawX.toInt() - dragStartX)
-                params.y = windowStartY + (event.rawY.toInt() - dragStartY)
+                // Gravitasi BAWAH: jari naik (rawY mengecil) harus menaikkan papan,
+                // jadi arahnya dibalik dari perpindahan jari. Hitungannya diuji unit.
+                val desiredY = OverlayMath.dragY(windowStartY, dragStartY.toFloat(), event.rawY)
+                params.y = OverlayMath.clampY(
+                    desiredY,
+                    screenHeight(),
+                    panel?.root?.height ?: 0,
+                    topInsetPx = dp(24f),
+                    bottomInsetPx = dp(16f)
+                )
                 try {
                     windowManager.updateViewLayout(root, params)
                 } catch (error: Throwable) {
@@ -173,6 +199,24 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
             }
             else -> false
         }
+    }
+
+    /** Tinggi layar saat ini (px). */
+    private fun screenHeight(): Int {
+        val metrics = resources.displayMetrics
+        return if (metrics.heightPixels > 0) metrics.heightPixels else 1920
+    }
+
+    /**
+     * Sembunyikan keyboard sistem supaya yang tampil hanya papan melayang.
+     * Dijalankan hanya bila pengaturannya menyala. Keyboard Penboard ditutup oleh
+     * dirinya sendiri; keyboard lain ditutup lewat layanan Tulis Otomatis.
+     */
+    fun hideSystemKeyboardIfEnabled() {
+        if (!store.config.hideSystemKeyboard) return
+        val ime = PenboardInputService.current()
+        if (ime != null && ime.hideKeyboardFromExternal()) return
+        PenboardTypingService.current()?.hideKeyboard()
     }
 
     private fun buildNotification(): Notification {
@@ -210,6 +254,8 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
     // ------------------------------------------------------------------ aksi tombol
 
     override fun onKey(key: KeyDef, action: KeyAction) {
+        // Papan sedang dipakai: keyboard sistem tidak perlu ikut tampil.
+        hideSystemKeyboardIfEnabled()
         when (action) {
             KeyAction.TEXT -> commitText(key.text.ifBlank { " " })
             KeyAction.SPACE -> commitText(" ")
@@ -259,6 +305,8 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
     }
 
     override fun onStrokeStarted() {
+        // Pena mulai menulis: keyboard sistem tidak perlu ikut tampil.
+        hideSystemKeyboardIfEnabled()
         handwriting?.onStrokeStarted()
     }
 
@@ -338,6 +386,9 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
     private fun dp(value: Float): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {
+        /** Jeda sebelum keyboard sistem ditutup saat papan baru tampil (ms). */
+        private const val HIDE_KEYBOARD_DELAY_MS = 420L
+
         const val ACTION_START = "dev.retrobit.penboard.action.SHOW_OVERLAY"
         const val ACTION_STOP = "dev.retrobit.penboard.action.HIDE_OVERLAY"
 
