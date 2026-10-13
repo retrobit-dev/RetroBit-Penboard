@@ -8,7 +8,7 @@ import dev.retrobit.penboard.board.BoardView
 import dev.retrobit.penboard.data.PenboardConfig
 
 /**
- * Logika bersama keyboard dan papan melayang:
+ * Logika pengenalan tulisan pada keyboard Penboard:
  *
  * - **Input otomatis**: bila tidak ada goresan baru selama
  *   [PenboardConfig.autoRecognizeDelayMs] (bawaan 2 detik), tulisan langsung

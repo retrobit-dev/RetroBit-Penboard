@@ -91,7 +91,7 @@ class PenboardConfigTest {
             autoSpace = false,
             autoRecognizeDelayMs = 4500,
             recognitionLanguage = "en-US",
-            penButtonPrimary = PenButtonAction.OVERLAY_TOGGLE
+            penButtonPrimary = PenButtonAction.SYSTEM_HANDWRITING
         )
 
         val preset = custom.withHiWritePreset()
@@ -120,22 +120,10 @@ class PenboardConfigTest {
 
         // Pengaturan pribadi dibiarkan.
         assertEquals("en-US", preset.recognitionLanguage)
-        assertEquals(PenButtonAction.OVERLAY_TOGGLE, preset.penButtonPrimary)
+        assertEquals(PenButtonAction.SYSTEM_HANDWRITING, preset.penButtonPrimary)
 
         // Hasilnya sudah bersih: dipanggil lagi tidak mengubah apa pun.
         assertEquals(preset, preset.withHiWritePreset())
-    }
-
-    @Test
-    fun `penyembunyian keyboard sistem tersimpan`() {
-        // Bawaannya: papan melayang menutup keyboard lain supaya tidak ada dua keyboard.
-        assertTrue(PenboardConfig().hideSystemKeyboard)
-        val off = PenboardConfig(hideSystemKeyboard = false)
-        assertEquals(false, PenboardConfig.fromJson(off.toJson()).hideSystemKeyboard)
-        val on = PenboardConfig(hideSystemKeyboard = true)
-        assertEquals(true, PenboardConfig.fromJson(on.toJson()).hideSystemKeyboard)
-        // Berkas lama (tanpa kunci ini) tetap memakai bawaan.
-        assertEquals(true, PenboardConfig.fromJson(JSONObject("{}")).hideSystemKeyboard)
     }
 
     @Test
@@ -277,5 +265,35 @@ class PenboardConfigTest {
         val g = (color shr 8) and 0xFF
         val b = color and 0xFF
         return maxOf(r, g, b) - minOf(r, g, b)
+    }
+
+    @Test
+    fun `aksi papan melayang sudah tidak ada`() {
+        assertEquals(
+            listOf(
+                "text", "recognize", "clear", "deleteStroke", "undo", "redo", "cyclePen",
+                "space", "enter", "backspace", "deleteWord", "deleteForward", "tab",
+                "cursorLeft", "cursorRight", "cursorUp", "cursorDown", "cursorHome", "cursorEnd",
+                "selectAll", "cut", "copy", "paste",
+                "systemHandwriting", "keyboardPicker", "hide"
+            ),
+            KeyAction.entries.map { it.id }
+        )
+    }
+
+    @Test
+    fun `pengaturan lama tetap terbaca setelah papan melayang dihapus`() {
+        val json = JSONObject(
+            """{"gridRows":3,"gridButtonCount":2,"gridKeys":[{"action":"hide"},{"action":"overlay"}]}"""
+        )
+        val config = PenboardConfig.fromJson(json)
+        assertEquals(3, config.gridRows)
+        // Tombol lama "overlay" (papan melayang) jatuh ke SPACE, bukan menggagalkan pembacaan.
+        assertEquals(KeyAction.HIDE, config.gridKeys.first().action)
+        assertEquals(KeyAction.SPACE, config.gridKeys[1].action)
+        assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
+        assertEquals(KeyAction.SPACE, KeyAction.fromId("overlay"))
+        // Id tombol Penboard sekarang tidak ada yang menyebut papan melayang.
+        assertFalse(KeyAction.entries.map { it.id }.contains("overlay"))
     }
 }

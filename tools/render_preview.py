@@ -9,11 +9,13 @@ Digambar dari angka yang sama dengan aplikasi:
 from PIL import Image, ImageDraw, ImageFont
 
 D = 1.375                      # density efektif (2.75 xxhdpi diperkecil 50%)
+APP_MOCK_H = 250
 PANEL_W = 540                  # lebar panel (px gambar, setara 1080 px asli / 2)
 PANEL_PADDING = int(3 * D)
 SPACING = int(3 * D)           # GridMath.SPACING_DP
 MIN_CELL = int(44 * D)
 COLUMNS = 3
+IME_ROWS_H = int(176 * D) + 2 * PANEL_PADDING
 
 COL_PANEL = (0x0B, 0x0B, 0x0B)
 COL_PAPER = (0xED, 0xED, 0xED)
@@ -37,7 +39,7 @@ DEFAULT_KEYS = [
     "BACKSPACE", "RECOGNIZE", "CLEAR",
     "DELETE_WORD", "UNDO", "REDO",
     "DELETE_FORWARD", "TAB", "CYCLE_PEN",
-    "SYSTEM_HANDWRITING", "OVERLAY_TOGGLE", "HIDE",
+    "SYSTEM_HANDWRITING", "KEYBOARD_PICKER", "HIDE",
 ]
 
 
@@ -114,12 +116,13 @@ def glyph(draw, action, cx, cy, size):
         path([(19, 8), (19, 14)]); path([(16, 11), (19, 15), (22, 11)])
     elif action == "SYSTEM_HANDWRITING":
         path([(4, 16), (7, 10), (10, 15), (13, 9), (16, 14), (20, 12)])
-    elif action == "OVERLAY_TOGGLE":
-        r = max(2, int(12 * u))
-        draw.rounded_rectangle([p(3, 8)[0], p(3, 8)[1], p(13, 18)[0], p(13, 18)[1]], r,
+    elif action == "KEYBOARD_PICKER":
+        r = max(2, int(3 * u))
+        draw.rounded_rectangle([p(3, 7)[0], p(3, 7)[1], p(21, 17)[0], p(21, 17)[1]], r,
                                outline=COL_TEXT, width=w)
-        draw.rounded_rectangle([p(10, 6)[0], p(10, 6)[1], p(20, 16)[0], p(20, 16)[1]], r,
-                               outline=COL_TEXT, width=w)
+        for x in (6, 11, 16):
+            path([(x, 10.5), (x + 2, 10.5)])
+        path([(8, 14), (16, 14)])
     elif action == "HIDE":
         path([(12, 4), (12, 13)]); path([(7, 9), (12, 14), (17, 9)]); path([(5, 18), (19, 18)])
 
@@ -152,28 +155,23 @@ def draw_board_ink(draw, left, top, right, line_gap):
     stroke([(7.2, 0.3), (7.0, -0.4), (7.9, -0.6), (8.3, 0.1), (7.8, 0.5), (7.3, 0.2)])
 
 
-def draw_panel(rows, board_height_dp, keys, flash=None, pending=None, handle=False):
-    handle_h = 20 if handle else 0
+def draw_panel(rows, board_height_dp, keys, flash=None, pending=None):
     board_h = int(board_height_dp * D)
     cell = cell_size(board_h, PANEL_W, SPACING, MIN_CELL, rows)
     grid_w = cell * COLUMNS + SPACING * (COLUMNS - 1)
     board_w = PANEL_W - 2 * PANEL_PADDING - grid_w - SPACING
-    panel_h = board_h + 2 * PANEL_PADDING + handle_h
+    panel_h = board_h + 2 * PANEL_PADDING
 
     img = Image.new("RGBA", (PANEL_W, panel_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     radius = int(RADIUS_DP * D)
-    if handle:
-        hw = 46
-        draw.rounded_rectangle([PANEL_W / 2 - hw, 8, PANEL_W / 2 + hw, 13], 3,
-                               fill=alpha(COL_ACCENT, 170))
 
     draw.rounded_rectangle([0, 0, PANEL_W - 1, panel_h - 1], radius,
                            fill=alpha(COL_PANEL, 255 * PANEL_OPACITY),
                            outline=alpha(COL_ACCENT, 120), width=1)
     draw_scanlines(img, (0, 0, PANEL_W - 1, panel_h - 1), radius, COL_ACCENT)
 
-    bl, bt = PANEL_PADDING, PANEL_PADDING + handle_h
+    bl, bt = PANEL_PADDING, PANEL_PADDING
     br, bb = bl + board_w, bt + board_h
     draw.rounded_rectangle([bl, bt, br, bb], radius, fill=alpha(COL_PAPER, 255 * BOARD_OPACITY),
                            outline=alpha(COL_LINE, 110), width=1)
@@ -243,16 +241,16 @@ def main():
         ("2. Preset HiWrite - 6 baris (18 tombol)",
          "geser 'jumlah baris' 1-6 di Pengaturan > Area tombol",
          ("plain", draw_panel(6, 200, DEFAULT_KEYS))),
-        ("3. Papan melayang 60% transparan di atas aplikasi lain",
-         "tarik bilah pegangan di atas papan untuk memindahkannya",
-         "floating"),
+        ("3. Keyboard Penboard tampil di atas aplikasi lain",
+         "papan tulis menempel sebagai keyboard di aplikasi apa pun",
+         "ime"),
     ]
     heights = [header]
     for _, _, item in panels:
         if isinstance(item, tuple):
             heights.append(52 + item[1].height + 60)
-        elif item == "floating":
-            heights.append(275 + 60)
+        elif item == "ime":
+            heights.append(APP_MOCK_H + IME_ROWS_H + 60)
         else:
             heights.append(item.height + 60)
     canvas = Image.new("RGBA", (width, sum(heights) + 40), alpha((0x12, 0x12, 0x12), 255))
@@ -265,17 +263,19 @@ def main():
     for caption, sub, item in panels:
         y = section(canvas, y, caption, sub)
         img = item[1] if isinstance(item, tuple) else item
-        if item == "floating":
-            # contoh "aplikasi lain" di belakang papan melayang
-            floating = draw_panel(6, 200, DEFAULT_KEYS, handle=True)
-            block = Image.new("RGBA", (PANEL_W, floating.height + 16), (0x2A, 0x2A, 0x2A, 255))
+        if item == "ime":
+            # aplikasi lain di belakang, keyboard Penboard menempel di bawah
+            ime = draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
+            block = Image.new("RGBA", (PANEL_W, APP_MOCK_H + ime.height), (0x2A, 0x2A, 0x2A, 255))
             bd = ImageDraw.Draw(block)
-            for i in range(7):
-                bd.rounded_rectangle([24, 30 + i * 38, PANEL_W - 24 - (i % 3) * 90, 50 + i * 38], 6,
+            bd.rounded_rectangle([24, 24, PANEL_W - 24, 46], 8, fill=(0x33, 0x33, 0x33, 255),
+                                 outline=alpha(COL_ACCENT, 70), width=1)
+            bd.text((36, 30), "aplikasi lain", font=LABEL_FONT, fill=alpha(COL_ACCENT, 170))
+            for i in range(5):
+                bd.rounded_rectangle([24, 70 + i * 34, PANEL_W - 24 - (i % 3) * 90, 88 + i * 34], 6,
                                      fill=(0x3E, 0x3E, 0x3E, 255))
-            a = floating.getchannel("A").point(lambda v: int(v * 0.60))
-            floating.putalpha(a)
-            block.alpha_composite(floating, (0, 8))
+            bd.line([(0, APP_MOCK_H), (PANEL_W, APP_MOCK_H)], fill=alpha(COL_ACCENT, 60), width=1)
+            block.alpha_composite(ime, (0, APP_MOCK_H))
             canvas.alpha_composite(block, (pad, y))
             y += block.height + 34
         elif isinstance(item, tuple) and item[0] == "field":

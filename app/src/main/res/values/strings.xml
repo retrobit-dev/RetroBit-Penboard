@@ -7,7 +7,7 @@
     <string name="card_preset">Mulai cepat: preset HiWrite</string>
     <string name="card_preset_sub">Satu ketukan untuk menyetel semuanya seperti HiWrite (Huawei).</string>
     <string name="action_preset_huawei">Terapkan preset HiWrite</string>
-    <string name="preset_note">Papan tulis 200 dp, 6 baris tombol berikon (18 tombol), tema retro cyberpunk grayscale ePaper, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan, tombol samping pena, dan penempatan papan melayang tidak diubah.</string>
+    <string name="preset_note">Papan tulis 200 dp, 6 baris tombol berikon (18 tombol), tema retro cyberpunk grayscale ePaper, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan dan tombol samping pena tidak diubah.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
@@ -16,38 +16,15 @@
     <string name="status_keyboard_inactive">Keyboard Penboard belum aktif.</string>
     <string name="action_pick_keyboard">Pilih keyboard</string>
     <string name="action_keyboard_settings">Pengaturan keyboard</string>
-
-    <!-- Kartu: papan melayang -->
-    <string name="card_overlay">Papan melayang</string>
-    <string name="card_overlay_sub">Papan yang melayang di atas aplikasi lain.</string>
-    <string name="status_overlay_permission_missing">Izin "tampil di atas aplikasi lain" belum diberikan.</string>
-    <string name="status_overlay_ready">Izin sudah ada, papan melayang siap dinyalakan.</string>
-    <string name="status_overlay_running">Papan melayang sedang tampil.</string>
-    <string name="action_overlay_permission">Beri izin</string>
-    <string name="action_overlay_show">Tampilkan</string>
-    <string name="action_overlay_hide">Sembunyikan</string>
-    <string name="setting_hide_keyboard">Sembunyikan keyboard sistem</string>
-    <string name="setting_hide_keyboard_sub">Saat papan melayang dipakai, keyboard lain ditutup supaya yang tampil hanya papan melayang. Untuk keyboard selain Penboard, ini memakai layanan "Penboard Tulis Otomatis".</string>
-    <string name="overlay_note">Geser lewat pegangan kecil di atas papan. Teks langsung masuk ke kolom isian bila keyboard Penboard dipakai, atau bila layanan "Penboard Tulis Otomatis" (aksesibilitas) dinyalakan.</string>
-    <string name="status_typing_on">Penboard Tulis Otomatis: aktif — hasil tulisan langsung masuk ke kolom isian.</string>
-    <string name="status_typing_off">Penboard Tulis Otomatis: belum aktif — tanpa keyboard Penboard, teks hanya bisa disalin.</string>
+    <string name="status_typing_on">Penboard Tulis Otomatis: aktif (cadangan).</string>
+    <string name="status_typing_off">Penboard Tulis Otomatis: tidak aktif (tidak wajib; keyboard Penboard sudah cukup).</string>
     <string name="action_typing_enable">Aktifkan Tulis Otomatis</string>
-    <string name="typing_note">Agar tulisan langsung masuk ke kolom isian aplikasi lain (seperti HiWrite), pilih keyboard Penboard, atau nyalakan "Penboard Tulis Otomatis" di Pengaturan > Aksesibilitas. Layanan itu hanya menuliskan teks ke kolom yang sedang fokus.</string>
-    <string name="overlay_title">Papan tulis Penboard</string>
-    <string name="overlay_channel">Papan melayang</string>
-    <string name="overlay_channel_desc">Notifikasi papan tulis melayang Penboard.</string>
-    <string name="overlay_notification_text">Papan tulis sedang melayang di atas aplikasi lain.</string>
-    <string name="overlay_copied">Teks disalin ke papan klip. Agar langsung masuk ke kolom isian: pilih keyboard Penboard atau nyalakan "Penboard Tulis Otomatis".</string>
+    <string name="typing_note">Layanan aksesibilitas "Penboard Tulis Otomatis" adalah cadangan: Penboard sendiri menulis lewat keyboard yang sedang aktif, jadi tidak wajib dinyalakan.</string>
     <string name="msg_typing_settings">Pilih "Penboard Tulis Otomatis" di daftar, lalu nyalakan.</string>
     <string name="msg_typing_settings_failed">Tidak bisa membuka pengaturan aksesibilitas. Buka Pengaturan &gt; Aksesibilitas secara manual.</string>
     <string name="typing_service_label">Penboard Tulis Otomatis</string>
-    <string name="typing_service_summary">Menulis ke kolom isian dari papan melayang</string>
-    <string name="typing_service_description">Hasil tulisan tangan Penboard langsung dituliskan ke kolom isian aplikasi lain saat memakai papan melayang, walau keyboard Penboard tidak sedang dipakai.</string>
-    <string name="overlay_permission_missing">Izin "tampil di atas aplikasi lain" belum diberikan.</string>
-    <string name="msg_overlay_started">Papan melayang dinyalakan.</string>
-    <string name="msg_overlay_stopped">Papan melayang dimatikan.</string>
-    <string name="msg_overlay_failed">Papan melayang gagal dinyalakan.</string>
-    <string name="msg_overlay_permission_failed">Tidak bisa membuka pengaturan izin.</string>
+    <string name="typing_service_summary">Cadangan untuk menulis ke kolom isian</string>
+    <string name="typing_service_description">Menuliskan hasil tulisan Penboard ke kolom isian aplikasi lain sebagai cadangan, mis. bila keyboard yang aktif bukan keyboard Penboard.</string>
 
     <!-- Kartu: panduan pemasangan + pemeriksaan perangkat -->
     <string name="card_check">Panduan pemasangan</string>
@@ -61,8 +38,6 @@
     <string name="check_engine_no">Mesin pengenalan Penboard: tidak tersedia (perangkat ini tanpa Google Play services). Pakai tombol tulisan tangan perangkat.</string>
     <string name="check_device_ink_ok">Tulisan tangan perangkat: %1$s tersedia.</string>
     <string name="check_device_ink_no">Tulisan tangan perangkat: tidak ditemukan. Penboard memakai mesin pengenalan bawaannya.</string>
-    <string name="check_overlay_ok">Izin papan melayang: sudah diberikan.</string>
-    <string name="check_overlay_no">Izin papan melayang: belum diberikan.</string>
 
     <!-- Kartu: pratinjau -->
     <string name="card_preview">Pratinjau</string>
@@ -144,7 +119,8 @@
     <string name="hint_cycle_pen">ganti warna pena</string>
     <string name="hint_recognize">ubah tulisan menjadi teks</string>
     <string name="hint_system_handwriting">pindah ke tulisan tangan perangkat</string>
-    <string name="hint_overlay">nyalakan papan melayang</string>
+    <string name="hint_keyboard_picker">pilih keyboard lain (mis. Huawei)</string>
+    <string name="msg_keyboard_picker">Pilih keyboard yang ingin dipakai.</string>
     <string name="hint_hide">sembunyikan keyboard</string>
 
     <!-- Kartu: pengenalan tulisan -->
@@ -197,7 +173,6 @@
     <string name="msg_model_downloading_auto">Model bahasa sedang diunduh sekali saja (±20 MB). Tulisan Anda tetap di papan; tunggu sebentar.</string>
     <string name="flash_unreadable">✗ tidak terbaca</string>
     <string name="flash_no_model">✗ model bahasa belum ada</string>
-    <string name="msg_needs_keyboard">Tombol ini butuh kolom isian. Pakai keyboard Penboard, atau nyalakan "Penboard Tulis Otomatis" (Pengaturan > Aksesibilitas).</string>
     <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
     <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
 

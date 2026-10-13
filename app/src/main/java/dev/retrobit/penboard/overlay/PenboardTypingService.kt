@@ -13,7 +13,6 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.accessibility.AccessibilityWindowInfo
 import dev.retrobit.penboard.R
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.util.AccessibilityIds
@@ -24,9 +23,9 @@ import dev.retrobit.penboard.util.TextInsert
  * isian aplikasi lain, **tanpa** Penboard harus menjadi keyboard aktif.
  *
  * Keyboard biasa hanya bisa mengetik ketika ia yang dipilih sebagai keyboard; papan
- * melayang Penboard sering dipakai bersama keyboard lain (mis. keyboard Huawei),
- * sehingga teksnya hanya tersalin ke papan klip. Layanan aksesibilitas ini menutup
- * celah itu:
+ * keyboard Penboard sering dipakai bersama keyboard lain (mis. keyboard Huawei),
+ * sehingga teks hanya bisa tersalin ke papan klip. Layanan aksesibilitas ini
+ * menutup celah itu sebagai cadangan:
  *
  *  1. menyisipkan teks pada posisi kursor lewat `ACTION_SET_TEXT`
  *     (hitungannya di [TextInsert] supaya bisa diuji unit),
@@ -73,29 +72,6 @@ class PenboardTypingService : AccessibilityService() {
             return true
         }
         return pasteText(node, text)
-    }
-
-    /** Apakah keyboard sistem sedang tampil di layar. */
-    fun isKeyboardVisible(): Boolean = try {
-        windows.any { window -> window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-    } catch (error: Throwable) {
-        Log.w(TAG, "Gagal memeriksa keyboard", error)
-        false
-    }
-
-    /**
-     * Tutup keyboard sistem (kalau sedang tampil) dengan menekan tombol kembali.
-     * Hanya dilakukan bila keyboard benar-benar ada, supaya tombol kembali tidak
-     * malah keluar dari aplikasi yang sedang dipakai.
-     */
-    fun hideKeyboard(): Boolean {
-        if (!isKeyboardVisible()) return false
-        return try {
-            performGlobalAction(GLOBAL_ACTION_BACK)
-        } catch (error: Throwable) {
-            Log.w(TAG, "Gagal menutup keyboard", error)
-            false
-        }
     }
 
     /** Beberapa huruf sebelum kursor pada kolom yang sedang fokus (boleh null). */
@@ -227,7 +203,7 @@ class PenboardTypingService : AccessibilityService() {
         @Volatile
         private var active: PenboardTypingService? = null
 
-        /** Layanan yang sedang tersambung (untuk papan melayang). */
+        /** Layanan yang sedang tersambung. */
         fun current(): PenboardTypingService? = active
 
         /** Apakah layanan "Penboard Tulis Otomatis" menyala di pengaturan aksesibilitas. */

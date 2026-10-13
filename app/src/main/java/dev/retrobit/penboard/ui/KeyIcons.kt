@@ -135,9 +135,13 @@ object KeyIcons {
             cubicTo(8f, 8f, 10f, 8f, 12f, 13f)
             cubicTo(14f, 18f, 16f, 18f, 19f, 10f)
         }
-        KeyAction.OVERLAY_TOGGLE -> strokePath {
-            moveTo(3f, 8f); lineTo(15f, 8f); lineTo(15f, 19f); lineTo(3f, 19f); close()
-            moveTo(8f, 8f); lineTo(8f, 4f); lineTo(20f, 4f); lineTo(20f, 15f); lineTo(15f, 15f)
+        KeyAction.KEYBOARD_PICKER -> strokePath {
+            // papan tombol kecil: bingkai, tiga tombol pendek, satu tombol panjang
+            moveTo(3f, 7f); lineTo(21f, 7f); lineTo(21f, 17f); lineTo(3f, 17f); close()
+            moveTo(6f, 10.5f); lineTo(8f, 10.5f)
+            moveTo(11f, 10.5f); lineTo(13f, 10.5f)
+            moveTo(16f, 10.5f); lineTo(18f, 10.5f)
+            moveTo(8f, 14f); lineTo(16f, 14f)
         }
         KeyAction.HIDE -> strokePath {
             moveTo(6f, 9f); lineTo(12f, 15f); lineTo(18f, 9f)

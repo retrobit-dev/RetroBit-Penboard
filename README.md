@@ -2,13 +2,23 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.9
+
+**Papan melayang dihapus.** Papan tulis utama tetap bisa dipakai di atas aplikasi lain — sekarang lewat satu jalan saja, yaitu sebagai **keyboard**: pilih Penboard sebagai keyboard, dan panelnya menempel di bawah layar aplikasi apa pun, tanpa izin *tampil di atas aplikasi lain*, tanpa foreground service, dan tanpa notifikasi.
+
+- Papan melayang yang lama tidak hilang fungsinya: yang dihapus hanya jendela kedua yang harus digeser-geser sendiri.
+- Ikon **dua jendela** pada grid (dulu untuk menyalakan papan melayang) diganti ikon **papan tombol kecil**: sekali ketuk membuka pemilih keyboard Android, jadi Anda bisa pindah ke tulisan tangan Huawei/Celia dan kembali ke Penboard dengan cepat.
+- Layanan aksesibilitas **Penboard Tulis Otomatis** tetap ada sebagai cadangan (kartu **Keyboard Penboard** → Aktifkan Tulis Otomatis) untuk saat keyboard yang aktif bukan Penboard.
+- Pengaturan **"Sembunyikan keyboard sistem"** ikut dihapus — dulu hanya perlu karena ada dua papan sekaligus.
+- Pratinjau di halaman pengaturan tidak lagi punya bilah pegangan.
 
 ## Yang baru di 3.0.8
 
 - **Tidak lagi ada dua keyboard.** Saat papan melayang dipakai, keyboard sistem ditutup otomatis — keyboard Penboard menutup dirinya sendiri, dan keyboard lain (mis. Huawei) ditutup lewat layanan **Penboard Tulis Otomatis**. Pengaturan baru **"Sembunyikan keyboard sistem"** di kartu Papan melayang (bawaan: nyala) bisa dimatikan bila Anda ingin keyboard tetap terbuka.
 - **Geser papan melayang sudah benar arahnya**: menarik pegangan **ke atas menaikkan papan**, ke bawah menurunkan — sebelumnya terbalik karena `y` diukur dari tepi bawah layar (`Gravity.BOTTOM`).
-- **Papan tidak bisa lagi nyangkut di luar layar**: posisi saat digeser dan posisi yang tersimpan dari sesi sebelumnya selalu dibatasi agar papan tetap terlihat penuh (hitungan di `util/OverlayMath.kt`, diuji unit).
+- **Papan tidak bisa lagi nyangkut di luar layar**: posisi saat digeser dan posisi yang tersimpan dari sesi sebelumnya selalu dibatasi agar papan tetap terlihat penuh.
 
 ## Yang baru di 3.0.7
 
@@ -52,12 +62,12 @@ Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/Retro
 
 ## Yang baru di 3.0.2
 
-- **Preset HiWrite satu ketukan** (kartu "Mulai cepat" di halaman utama): langsung menyetel papan tinggi, 6 baris tombol berikon, tema retro grayscale ePaper, dan input otomatis 2 detik. Bahasa tulisan, tombol samping pena, dan letak papan melayang tidak diubah.
+- **Preset HiWrite satu ketukan** (kartu "Mulai cepat" di halaman utama): langsung menyetel papan tinggi, 6 baris tombol berikon, tema retro grayscale ePaper, dan input otomatis 2 detik. Bahasa tulisan dan tombol samping pena tidak diubah.
 
 ## Yang baru di 3.0.1
 
 - **Area tombol bertambah sampai 6 baris** (3 kolom tetap) — jadi sampai **18 tombol** yang semuanya bisa diatur, bukan lagi 12.
-- Bawaan baris 5 dan 6 kini terisi: tab, hapus huruf di depan kursor, ganti warna pena, tulisan tangan perangkat (Huawei/Celia), papan melayang, dan sembunyikan keyboard — siap dipakai atau tinggal diganti.
+- Bawaan baris 5 dan 6 kini terisi: tab, hapus huruf di depan kursor, ganti warna pena, tulisan tangan perangkat (Huawei/Celia), pemilih keyboard, dan sembunyikan keyboard — siap dipakai atau tinggal diganti. (Sejak 3.0.9 tidak ada lagi tombol papan melayang.)
 - Ukuran tombol tetap otomatis: makin banyak baris, makin kecil tombolnya, tetapi papan tulis tidak pernah kalah lebar (maksimal 34% layar untuk kolom tombol).
 
 ## Yang baru di 3.0.0
@@ -76,11 +86,11 @@ Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/Retro
 2. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
 3. Butuh memindahkan kursor atau menambah spasi/enter? Pakai tombol ikon di kanan papan.
 4. Ingin memaksa jadi teks sekarang? Ketuk tombol ikon **"A + percikan"** (Teks), atau tekan **tombol samping M-Pen**.
-5. Ingin menulis di atas aplikasi lain? Beri izin *tampil di atas aplikasi lain*, lalu nyalakan **Papan melayang**.
+5. Ingin menulis di atas aplikasi lain? Penboard sudah keyboard: panelnya menempel di atas aplikasi apa pun yang sedang dipakai. Mau pindah ke tulisan tangan Huawei dan kembali? Ketuk tombol ikon **papan tombol kecil** (pemilih keyboard).
 
 ## Susunan papan
 
-![Pratinjau susunan panel: keyboard 3 baris, preset HiWrite 6 baris, dan papan melayang 60% transparan](docs/preview.png)
+![Pratinjau susunan panel: keyboard 3 baris, preset HiWrite 6 baris, dan keyboard yang menempel di atas aplikasi lain](docs/preview.png)
 
 ```
 +----------------------------------------------+----------------+
@@ -89,7 +99,7 @@ Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/Retro
 |      dari tepi kiri sampai ke tombol         |   [x] [A+] [tmr] |  baris 3
 |                                              |   [x2][u] [r]    |  baris 4
 |                                              |   [x>][tab][wrn] |  baris 5
-|                                              |   [tw][lay][tut] |  baris 6
+|                                              |   [tw][pkb][tut] |  baris 6
 +----------------------------------------------+----------------+
 ```
 
@@ -119,7 +129,7 @@ Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/Retro
 | penghapus | hapus goresan terakhir |
 | panah melengkung | batal (undo) / ulangi (redo) |
 | coretan tangan | pindah ke tulisan tangan perangkat (Huawei/Celia) |
-| dua jendela | nyalakan papan melayang |
+| papan tombol kecil | buka pemilih keyboard (mis. pindah ke tulisan tangan Huawei) |
 | panah bawah | sembunyikan keyboard |
 
 ## Pengaturan yang tersedia
@@ -132,7 +142,7 @@ Versi terbaru: **3.0.8** (lihat [Releases](https://github.com/retrobit-dev/Retro
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 
-Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif (karena memerlukan kolom isian); papan melayang menulis dan menyalin teks.
+Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 
 ## Mesin pengenalan
 
@@ -155,15 +165,15 @@ Mesin tulisan tangan Huawei (Celia) **tidak bisa dipanggil oleh aplikasi lain** 
 
 Semua data tetap di ponsel. Tidak ada tulisan yang dikirim ke server mana pun; hanya unduhan model bahasa yang menyentuh internet, itu pun sekali per bahasa.
 
-## Papan melayang
+## Menulis di atas aplikasi lain
 
-- Perlu izin *tampil di atas aplikasi lain*.
-- Bisa digeser lewat pegangan kecil di atas papan; posisinya diingat.
-- Transparansinya mengikuti pengaturan tema (panel/papan/tombol).
-- Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian.
-- Bila Anda memakai keyboard lain (mis. keyboard Huawei) atau tidak memakai keyboard sama sekali, nyalakan layanan aksesibilitas **Penboard Tulis Otomatis** (kartu Papan melayang → Aktifkan Tulis Otomatis). Dengan begitu tulisan tetap langsung masuk ke kolom isian yang sedang fokus.
-- Bila keduanya belum ada, teks disalin ke papan klip dan pesannya menjelaskan apa yang perlu dinyalakan.
-- Berjalan sebagai foreground service dengan notifikasi biasa.
+Penboard adalah keyboard, jadi papan tulisnya sudah menempel di atas aplikasi apa pun yang sedang dipakai — tidak perlu izin khusus.
+
+- **Keyboard Penboard aktif** (cara utama): tulis di papan, teks masuk ke kolom isian yang sedang fokus.
+- **Keyboard lain yang aktif** (mis. keyboard Huawei): nyalakan layanan aksesibilitas **Penboard Tulis Otomatis** (kartu *Keyboard Penboard* → *Aktifkan Tulis Otomatis*). Layanan ini menuliskan hasil tulisan ke kolom isian aplikasi lain tanpa Penboard harus menjadi keyboard.
+- **Belum ada keduanya**: teks disalin ke papan klip, dan pesannya menjelaskan apa yang perlu dinyalakan.
+
+Layanan aksesibilitas hanya menulis teks; ia tidak membaca layar untuk hal lain dan tidak mengirim data ke mana pun.
 
 ## Bangun sendiri
 
@@ -192,7 +202,7 @@ app/src/main/java/dev/retrobit/penboard/
 ├── board/                     BoardView (kanvas stylus), Stroke
 ├── data/                      PenboardConfig + ConfigStore (JSON)
 ├── ime/                       PenboardInputService (keyboard)
-├── overlay/                   PenboardOverlayService (papan melayang)
+├── overlay/                   PenboardTypingService (layanan aksesibilitas cadangan)
 ├── ink/                       InkRecognition (ML Kit), InkNormalizer, RecognitionText, RecognitionLanguages
 ├── ui/                        BoardPanel, KeyButton, KeyIcons, ScanlineDrawable, Ui, ColorPicker
 └── util/                      BoardMath, GridMath, StylusCompat, SystemHandwriting

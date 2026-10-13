@@ -1,9 +1,7 @@
 package dev.retrobit.penboard
 
-import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
@@ -32,7 +30,6 @@ import dev.retrobit.penboard.ink.InkRecognition
 import dev.retrobit.penboard.ink.InkReport
 import dev.retrobit.penboard.ink.ModelStatus
 import dev.retrobit.penboard.ink.RecognitionLanguages
-import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.overlay.PenboardTypingService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.ColorPicker
@@ -42,7 +39,7 @@ import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.StylusCompat
 import dev.retrobit.penboard.util.SystemHandwriting
 
-/** Layar pengaturan: mengaktifkan keyboard, papan melayang, dan seluruh pilihan tampilan. */
+/** Layar pengaturan: mengaktifkan keyboard Penboard dan seluruh pilihan tampilan. */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var store: ConfigStore
@@ -87,24 +84,12 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_NOTIFICATIONS && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            startOverlay()
-        }
-    }
-
     // ------------------------------------------------------------------ tata letak
 
     private fun render() {
         content.removeAllViews()
         renderHeader()
         renderKeyboardCard()
-        renderOverlayCard()
         renderDiagnosticsCard()
         renderPreviewCard()
         renderTestCard()
@@ -145,42 +130,8 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.action_pick_keyboard) to { showKeyboardPicker() },
             getString(R.string.action_keyboard_settings) to { openKeyboardSettings() }
         )
-    }
 
-    private fun renderOverlayCard() {
-        val card = Ui.card(content, getString(R.string.card_overlay), getString(R.string.card_overlay_sub))
-        val canDraw = Settings.canDrawOverlays(this)
-        Ui.statusText(
-            card,
-            getString(
-                when {
-                    !canDraw -> R.string.status_overlay_permission_missing
-                    PenboardOverlayService.running -> R.string.status_overlay_running
-                    else -> R.string.status_overlay_ready
-                }
-            )
-        )
-        if (canDraw) {
-            val running = PenboardOverlayService.running
-            Ui.buttonRow(
-                card,
-                getString(if (running) R.string.action_overlay_hide else R.string.action_overlay_show) to {
-                    if (running) {
-                        PenboardOverlayService.stop(this)
-                    } else {
-                        requestOverlayStart()
-                    }
-                    content.postDelayed({ render() }, 500)
-                }
-            )
-        } else {
-            Ui.buttonRow(
-                card,
-                getString(R.string.action_overlay_permission) to { requestOverlayPermission() }
-            )
-        }
-
-        // Cara agar tulisan langsung masuk ke kolom isian tanpa keyboard Penboard.
+        // Penboard menulis lewat keyboard yang aktif; layanan aksesibilitas tetap tersedia.
         val typing = PenboardTypingService.isEnabled(this)
         Ui.divider(card)
         Ui.statusText(card, getString(if (typing) R.string.status_typing_on else R.string.status_typing_off))
@@ -190,14 +141,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.action_typing_enable) to { openAccessibilitySettings() }
             )
         }
-        Ui.switchRow(
-            card,
-            getString(R.string.setting_hide_keyboard),
-            getString(R.string.setting_hide_keyboard_sub),
-            store.config.hideSystemKeyboard
-        ) { value -> store.update { it.copy(hideSystemKeyboard = value) } }
         Ui.body(card, getString(R.string.typing_note))
-        Ui.body(card, getString(R.string.overlay_note))
     }
 
     /** Buka halaman Google Play services di Play Store (untuk memperbaruinya). */
@@ -268,11 +212,6 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.check_device_ink_no)
             }
         )
-        Ui.statusText(
-            card,
-            getString(if (Settings.canDrawOverlays(this)) R.string.check_overlay_ok else R.string.check_overlay_no)
-        )
-
         // Bahasa & model: penyebab paling umum tulisan "tidak terbaca".
         if (engineReady) {
             val language = RecognitionLanguages.label(store.config.recognitionLanguage)
@@ -345,7 +284,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderPreviewCard() {
         val card = Ui.card(content, getString(R.string.card_preview), getString(R.string.card_preview_sub))
-        val panel = previewPanel ?: BoardPanel(this, showHandle = true).also { previewPanel = it }
+        val panel = previewPanel ?: BoardPanel(this).also { previewPanel = it }
         detach(panel.root)
         panel.listener = object : BoardPanel.Listener {
             override fun onKey(key: KeyDef, action: KeyAction) {
@@ -745,7 +684,7 @@ class MainActivity : AppCompatActivity() {
             KeyAction.CYCLE_PEN -> R.string.hint_cycle_pen
             KeyAction.RECOGNIZE -> R.string.hint_recognize
             KeyAction.SYSTEM_HANDWRITING -> R.string.hint_system_handwriting
-            KeyAction.OVERLAY_TOGGLE -> R.string.hint_overlay
+            KeyAction.KEYBOARD_PICKER -> R.string.hint_keyboard_picker
             KeyAction.HIDE -> R.string.hint_hide
         }
     )
@@ -827,38 +766,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun requestOverlayPermission() {
-        try {
-            startActivity(
-                Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-            )
-        } catch (error: Throwable) {
-            toast(getString(R.string.msg_overlay_permission_failed))
-        }
-    }
-
-    private fun requestOverlayStart() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
-            return
-        }
-        startOverlay()
-    }
-
-    private fun startOverlay() {
-        try {
-            PenboardOverlayService.start(this)
-            toast(getString(R.string.msg_overlay_started))
-        } catch (error: Throwable) {
-            toast(getString(R.string.msg_overlay_failed))
-        }
-    }
-
     private fun openRepo() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.repo_url))))
@@ -888,7 +795,4 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    companion object {
-        private const val REQUEST_NOTIFICATIONS = 40
-    }
 }

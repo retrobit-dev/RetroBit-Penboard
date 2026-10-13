@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Penyimpanan satu profil pengaturan (JSON di SharedPreferences) + pemberitahuan
- * perubahan supaya keyboard dan papan melayang langsung memakai pengaturan terbaru.
+ * perubahan supaya keyboard langsung memakai pengaturan terbaru.
  */
 class ConfigStore private constructor(context: Context) {
 

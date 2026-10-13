@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Papan tulis melayang di atas aplikasi lain (opsional, diminta pengguna). -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -26,16 +20,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Papan melayang: bisa dipakai walau keyboard Penboard tidak aktif. -->
-        <service
-            android:name=".overlay.PenboardOverlayService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse"
-            android:label="@string/overlay_title">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="papan tulis melayang yang dipakai pengguna untuk menulis dengan stylus di atas aplikasi lain" />
-        </service>
 
         <!-- Keyboard papan tulis. -->
         <service
@@ -53,7 +37,7 @@
                 android:resource="@xml/method" />
         </service>
 
-        <!-- Menuliskan hasil tulisan ke kolom isian aplikasi lain (papan melayang). -->
+        <!-- Cadangan: menuliskan teks ke kolom isian aplikasi lain. -->
         <service
             android:name=".overlay.PenboardTypingService"
             android:exported="true"

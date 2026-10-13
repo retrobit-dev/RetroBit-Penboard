@@ -1,7 +1,6 @@
 package dev.retrobit.penboard.ui
 
 import android.content.Context
-import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -22,10 +21,9 @@ import dev.retrobit.penboard.util.GridMath
  *   cyberpunk grayscale ePaper, dan label teks hanya dipakai bila aksinya tidak punya ikon.
  *
  * Dipakai bersama oleh keyboard ([dev.retrobit.penboard.ime.PenboardInputService])
- * dan papan melayang ([dev.retrobit.penboard.overlay.PenboardOverlayService]),
  * dibuat sepenuhnya dari kode supaya tidak ada berkas tata letak yang perlu disamakan.
  */
-class BoardPanel(private val context: Context, private val showHandle: Boolean) {
+class BoardPanel(private val context: Context) {
 
     interface Listener {
         fun onKey(key: KeyDef, action: KeyAction)
@@ -47,7 +45,6 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
 
     val root = FrameLayout(context)
     val board = BoardView(context)
-    val handle: View?
 
     init {
         board.onStrokeStarted = { listener?.onStrokeStarted() }
@@ -84,8 +81,6 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
             )
         )
 
-        handle = if (showHandle) buildHandle() else null
-        handle?.let { panel.addView(it) }
         panel.addView(
             panelRow,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -175,20 +170,4 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
         ).apply { marginStart = spacing }
     }
 
-    private fun buildHandle(): View {
-        val container = FrameLayout(context)
-        container.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (18 * density).toInt()
-        )
-        val bar = View(context)
-        bar.layoutParams = FrameLayout.LayoutParams((46 * density).toInt(), (5 * density).toInt(), Gravity.CENTER)
-        bar.background = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = 3f * density
-            setColor(0x66FFFFFF)
-        }
-        container.addView(bar)
-        return container
-    }
 }

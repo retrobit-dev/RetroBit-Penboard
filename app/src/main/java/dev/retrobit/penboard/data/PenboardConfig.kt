@@ -45,7 +45,7 @@ enum class KeyAction(val id: String, val label: String) {
 
     // Jembatan ke perangkat
     SYSTEM_HANDWRITING("systemHandwriting", "Huawei"),
-    OVERLAY_TOGGLE("overlay", "Layang"),
+    KEYBOARD_PICKER("keyboardPicker", "Pilih keyboard"),
     HIDE("hide", "Tutup");
 
     companion object {
@@ -62,7 +62,7 @@ enum class PenButtonAction(val id: String, val label: String, val key: KeyAction
     DELETE_STROKE("deleteStroke", "Hapus goresan terakhir", KeyAction.DELETE_STROKE),
     CLEAR("clear", "Bersihkan papan", KeyAction.CLEAR),
     SYSTEM_HANDWRITING("systemHandwriting", "Tulisan tangan Huawei", KeyAction.SYSTEM_HANDWRITING),
-    OVERLAY_TOGGLE("overlay", "Papan melayang", KeyAction.OVERLAY_TOGGLE);
+    KEYBOARD_PICKER("keyboardPicker", "Pilih keyboard", KeyAction.KEYBOARD_PICKER);
 
     companion object {
         fun fromId(id: String?): PenButtonAction =
@@ -148,12 +148,7 @@ data class PenboardConfig(
      * Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan
      * perangkat supaya pengguna tetap bisa menulis.
      */
-    val autoSwitchToSystemHandwriting: Boolean = true,
-    /**
-     * Saat papan melayang dipakai, sembunyikan keyboard sistem supaya yang tampil
-     * hanya papan melayang (bukan dua keyboard sekaligus).
-     */
-    val hideSystemKeyboard: Boolean = true
+    val autoSwitchToSystemHandwriting: Boolean = true
 ) {
 
     /** Warna pena yang sedang dipakai. */
@@ -186,7 +181,7 @@ data class PenboardConfig(
      * retro cyberpunk grayscale ePaper, dan input otomatis 2 detik.
      *
      * Pengaturan pribadi yang tidak berhubungan dibiarkan apa adanya: bahasa tulisan,
-     * tombol samping pena, dan penempatan papan melayang.
+     * tombol samping pena, dan tinggi papan tulis.
      */
     fun withHiWritePreset(): PenboardConfig = withRetroTheme().copy(
         // Papan tulis: lebih tinggi supaya enak ditulis, pena 3 dp.
@@ -248,7 +243,6 @@ data class PenboardConfig(
         put("clearAfterRecognize", clearAfterRecognize)
         put("recognitionLanguage", recognitionLanguage)
         put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
-        put("hideSystemKeyboard", hideSystemKeyboard)
     }
 
     /** Semua angka dipangkas ke rentang yang masuk akal. */
@@ -349,9 +343,9 @@ data class PenboardConfig(
             KeyDef(KeyAction.DELETE_FORWARD, repeatOnHold = true),
             KeyDef(KeyAction.TAB),
             KeyDef(KeyAction.CYCLE_PEN),
-            // Baris 6 - papan melayang & tulisan tangan perangkat
+            // Baris 6 - tulisan tangan perangkat & pemilih keyboard
             KeyDef(KeyAction.SYSTEM_HANDWRITING),
-            KeyDef(KeyAction.OVERLAY_TOGGLE),
+            KeyDef(KeyAction.KEYBOARD_PICKER),
             KeyDef(KeyAction.HIDE)
         )
 
@@ -406,8 +400,7 @@ data class PenboardConfig(
                 autoSwitchToSystemHandwriting = json.optBoolean(
                     "autoSwitchToSystemHandwriting",
                     base.autoSwitchToSystemHandwriting
-                ),
-                hideSystemKeyboard = json.optBoolean("hideSystemKeyboard", base.hideSystemKeyboard)
+                )
             ).sanitized()
         }
 

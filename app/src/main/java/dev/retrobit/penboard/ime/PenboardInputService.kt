@@ -1,19 +1,16 @@
 package dev.retrobit.penboard.ime
 
-import android.content.Intent
 import android.inputmethodservice.InputMethodService
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import dev.retrobit.penboard.R
 import dev.retrobit.penboard.data.ConfigStore
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.ink.HandwritingInput
-import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.util.SystemHandwriting
 
@@ -45,7 +42,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     }
 
     override fun onCreateInputView(): View {
-        val created = BoardPanel(this, showHandle = false)
+        val created = BoardPanel(this)
         created.listener = this
         created.applyConfig(store.config)
         panel = created
@@ -130,23 +127,15 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             KeyAction.CYCLE_PEN -> cyclePen()
             KeyAction.RECOGNIZE -> handwriting?.recognize(announce = true)
             KeyAction.SYSTEM_HANDWRITING -> bridgeToSystemHandwriting()
-            KeyAction.OVERLAY_TOGGLE -> toggleOverlay()
+            KeyAction.KEYBOARD_PICKER -> openKeyboardPicker()
             KeyAction.HIDE -> requestHideSelf(0)
         }
     }
 
     // ------------------------------------------------------------------ teks
 
-    /** Kirim teks ke kolom isian. Dipakai juga oleh papan melayang. */
+    /** Kirim teks ke kolom isian. */
     fun commitFromExternal(text: String): Boolean = commitText(text)
-
-    /** Tutup keyboard Penboard (dipakai papan melayang agar tidak ada dua keyboard). */
-    fun hideKeyboardFromExternal(): Boolean = try {
-        requestHideSelf(0)
-        true
-    } catch (error: Throwable) {
-        false
-    }
 
     fun deleteBackwardFromExternal(): Boolean {
         if (currentInputConnection == null) return false
@@ -154,7 +143,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         return true
     }
 
-    /** Hapus satu kata utuh dari papan melayang (bukan satu huruf demi satu huruf). */
+    /** Hapus satu kata utuh dari kolom isian (bukan satu huruf demi satu huruf). */
     fun deleteWordFromExternal(): Boolean {
         if (currentInputConnection == null) return false
         deleteWord()
@@ -162,7 +151,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     }
 
     /**
-     * Jalankan aksi tombol dari papan melayang (panah kursor, tab, papan klip).
+     * Jalankan aksi tombol untuk kolom isian (panah kursor, tab, papan klip).
      * Mengembalikan false bila tidak ada kolom isian yang sedang aktif.
      */
     fun performExternal(action: KeyAction): Boolean {
@@ -269,20 +258,10 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         }
     }
 
-    private fun toggleOverlay() {
-        if (PenboardOverlayService.running) {
-            PenboardOverlayService.stop(this)
-            toast(getString(R.string.msg_overlay_stopped))
-        } else {
-            val intent = Intent(this, PenboardOverlayService::class.java)
-                .setAction(PenboardOverlayService.ACTION_START)
-            try {
-                ContextCompat.startForegroundService(this, intent)
-                toast(getString(R.string.msg_overlay_started))
-            } catch (error: Throwable) {
-                toast(getString(R.string.msg_overlay_failed))
-            }
-        }
+    /** Buka pemilih keyboard Android (untuk berpindah ke keyboard lain dan kembali). */
+    private fun openKeyboardPicker() {
+        SystemHandwriting.openPicker(this)
+        toast(getString(R.string.msg_keyboard_picker))
     }
 
     private fun toast(message: String) {
@@ -297,7 +276,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         @Volatile
         private var active: PenboardInputService? = null
 
-        /** Keyboard Penboard yang sedang aktif (untuk papan melayang). */
+        /** Keyboard Penboard yang sedang aktif. */
         fun current(): PenboardInputService? = active
 
         private fun setActive(service: PenboardInputService?) {
