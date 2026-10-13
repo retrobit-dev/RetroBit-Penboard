@@ -110,6 +110,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
         board.penColor = config.currentPenColor
         board.penWidthPx = config.penWidthDp * density
         board.allowFinger = config.allowFinger
+        board.pressureEnabled = config.pressureEnabled
         board.showLines = config.showLines
         board.haptics = config.haptics
         board.edgeToEdge = true
@@ -117,6 +118,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
         board.boardColor = config.boardColor
         board.boardAlpha = config.boardOpacity * 255 / 100
         board.lineColor = config.lineColor
+        board.accentColor = config.accentColor
 
         val defaults = PenboardConfig.defaultGridKeys()
         gridRows.forEachIndexed { rowIndex, row ->

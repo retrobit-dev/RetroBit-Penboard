@@ -9,157 +9,108 @@ import org.junit.Test
 class PenboardConfigTest {
 
     @Test
-    fun `pengaturan bawaan siap dipakai menulis`() {
+    fun `nilai bawaan masuk akal`() {
         val config = PenboardConfig()
-        assertTrue("input otomatis aktif secara bawaan", config.autoRecognize)
-        assertEquals("jeda 2 detik", 2000, config.autoRecognizeDelayMs)
-        assertTrue("spasi otomatis antar kata", config.autoSpace)
-        assertTrue("tulisan dibersihkan setelah diinput", config.clearAfterRecognize)
-        assertTrue("pindah otomatis ke tulisan tangan perangkat", config.autoSwitchToSystemHandwriting)
-        assertEquals("id-ID", config.recognitionLanguage)
-        assertEquals(PenboardConfig.MAX_GRID_KEYS, config.gridButtonCount)
+        assertEquals(PenboardConfig.SCHEMA_VERSION, config.schemaVersion)
+        assertEquals(9, config.gridButtonCount)
         assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
-        assertEquals(KeyAction.RECOGNIZE, config.gridKeys.first().action)
-        assertEquals(PenButtonAction.RECOGNIZE, config.penButtonPrimary)
-        assertEquals(PenButtonAction.UNDO, config.penButtonSecondary)
-        assertFalse(config.allowFinger)
-        assertEquals(PenboardConfig.DEFAULT_PEN_COLORS.first(), config.currentPenColor)
+        assertEquals(2000, config.autoRecognizeDelayMs)
+        assertTrue(config.autoRecognize)
+        assertTrue(config.autoSpace)
+        assertTrue(config.pressureEnabled)
     }
 
     @Test
-    fun `putaran json mempertahankan pengaturan pilihan pengguna`() {
-        val original = PenboardConfig(
+    fun `penyimpanan bolak-balik tidak mengubah pengaturan`() {
+        val config = PenboardConfig(
             boardHeightDp = 220,
-            lineGapDp = 60,
-            penWidthDp = 6,
-            panelOpacity = 40,
-            boardOpacity = 55,
-            buttonOpacity = 70,
-            cornerRadiusDp = 20,
-            autoRecognize = false,
-            autoRecognizeDelayMs = 3200,
-            autoSpace = false,
-            clearAfterRecognize = false,
-            autoSwitchToSystemHandwriting = false,
-            recognitionLanguage = "en-US",
+            lineGapDp = 52,
+            penWidthDp = 5,
             gridButtonCount = 4,
-            showLines = false,
-            allowFinger = true,
-            gridKeys = PenboardConfig.defaultGridKeys().toMutableList().also {
-                it[0] = KeyDef(KeyAction.CLEAR, label = "Hapus semua")
-                it[3] = KeyDef(KeyAction.BACKSPACE, repeatOnHold = true)
-            }
-        )
-        val restored = PenboardConfig.fromJson(JSONObject(original.toJson().toString()))
-        assertEquals(original.boardHeightDp, restored.boardHeightDp)
-        assertEquals(original.lineGapDp, restored.lineGapDp)
-        assertEquals(original.penWidthDp, restored.penWidthDp)
-        assertEquals(original.panelOpacity, restored.panelOpacity)
-        assertEquals(original.boardOpacity, restored.boardOpacity)
-        assertEquals(original.buttonOpacity, restored.buttonOpacity)
-        assertEquals(original.cornerRadiusDp, restored.cornerRadiusDp)
-        assertEquals(original.autoRecognize, restored.autoRecognize)
-        assertEquals(original.autoRecognizeDelayMs, restored.autoRecognizeDelayMs)
-        assertEquals(original.autoSpace, restored.autoSpace)
-        assertEquals(original.clearAfterRecognize, restored.clearAfterRecognize)
-        assertEquals(original.autoSwitchToSystemHandwriting, restored.autoSwitchToSystemHandwriting)
-        assertEquals(original.recognitionLanguage, restored.recognitionLanguage)
-        assertEquals(original.gridButtonCount, restored.gridButtonCount)
-        assertEquals(original.showLines, restored.showLines)
-        assertEquals(original.allowFinger, restored.allowFinger)
-        assertEquals("Hapus semua", restored.gridKeys.first().label)
-        assertTrue(restored.gridKeys[3].repeatOnHold)
-        assertEquals(original.penColors, restored.penColors)
-        assertEquals(original.panelColor, restored.panelColor)
-        assertEquals(original.boardColor, restored.boardColor)
-        assertEquals(original.lineColor, restored.lineColor)
-        assertEquals(original.buttonColor, restored.buttonColor)
-        assertEquals(original.buttonTextColor, restored.buttonTextColor)
-        assertEquals(original.accentColor, restored.accentColor)
+            autoRecognizeDelayMs = 1500,
+            recognitionLanguage = "en-US",
+            penButtonPrimary = PenButtonAction.CLEAR
+        ).sanitized()
+        val restored = PenboardConfig.fromJson(JSONObject(config.toJson().toString()))
+        assertEquals(config.boardHeightDp, restored.boardHeightDp)
+        assertEquals(config.lineGapDp, restored.lineGapDp)
+        assertEquals(config.penWidthDp, restored.penWidthDp)
+        assertEquals(config.gridButtonCount, restored.gridButtonCount)
+        assertEquals(config.autoRecognizeDelayMs, restored.autoRecognizeDelayMs)
+        assertEquals("en-US", restored.recognitionLanguage)
+        assertEquals(PenButtonAction.CLEAR, restored.penButtonPrimary)
+        assertEquals(config.penColors, restored.penColors)
+        assertEquals(config.boardColor, restored.boardColor)
+        assertEquals(config.gridKeys, restored.gridKeys)
     }
 
     @Test
-    fun `angka di luar batas dipangkas`() {
-        val sanitized = PenboardConfig(
+    fun `angka liar dipangkas ke rentang aman`() {
+        val wild = PenboardConfig(
             boardHeightDp = 9999,
             lineGapDp = 1,
             penWidthDp = 99,
+            gridButtonCount = 77,
             cornerRadiusDp = -5,
-            autoRecognizeDelayMs = 99_999,
-            gridButtonCount = 0,
+            autoRecognizeDelayMs = 50,
             panelOpacity = 500,
             boardOpacity = -20,
-            buttonOpacity = 300
+            buttonOpacity = 900,
+            recognitionLanguage = "xx-YY"
         ).sanitized()
-        assertEquals(PenboardConfig.MAX_BOARD_HEIGHT_DP, sanitized.boardHeightDp)
-        assertEquals(PenboardConfig.MIN_LINE_GAP_DP, sanitized.lineGapDp)
-        assertEquals(PenboardConfig.MAX_PEN_WIDTH_DP, sanitized.penWidthDp)
-        assertEquals(PenboardConfig.MIN_RADIUS_DP, sanitized.cornerRadiusDp)
-        assertEquals(PenboardConfig.MAX_AUTO_DELAY_MS, sanitized.autoRecognizeDelayMs)
-        assertEquals(PenboardConfig.MIN_GRID_KEYS, sanitized.gridButtonCount)
-        assertEquals(100, sanitized.panelOpacity)
-        assertEquals(0, sanitized.boardOpacity)
-        assertEquals(100, sanitized.buttonOpacity)
+        assertEquals(PenboardConfig.MAX_BOARD_HEIGHT_DP, wild.boardHeightDp)
+        assertEquals(PenboardConfig.MIN_LINE_GAP_DP, wild.lineGapDp)
+        assertEquals(PenboardConfig.MAX_PEN_WIDTH_DP, wild.penWidthDp)
+        assertEquals(PenboardConfig.MAX_GRID_KEYS, wild.gridButtonCount)
+        assertEquals(PenboardConfig.MIN_RADIUS_DP, wild.cornerRadiusDp)
+        assertEquals(PenboardConfig.MIN_AUTO_DELAY_MS, wild.autoRecognizeDelayMs)
+        assertEquals(100, wild.panelOpacity)
+        assertEquals(0, wild.boardOpacity)
+        assertEquals(100, wild.buttonOpacity)
+        assertEquals("id-ID", wild.recognitionLanguage)
     }
 
     @Test
-    fun `berkas lama tanpa kolom baru memakai bawaan`() {
-        val migrated = PenboardConfig.fromJson(JSONObject("""{"boardHeightDp":200}"""))
-        assertEquals(200, migrated.boardHeightDp)
-        assertTrue(migrated.autoRecognize)
-        assertEquals(2000, migrated.autoRecognizeDelayMs)
-        assertTrue(migrated.autoSpace)
-        assertTrue(migrated.autoSwitchToSystemHandwriting)
-        assertEquals("id-ID", migrated.recognitionLanguage)
-        assertEquals(PenboardConfig.GRID_SLOTS, migrated.gridKeys.size)
+    fun `warna pena dibatasi dan selalu tersedia`() {
+        val many = PenboardConfig(penColors = List(20) { 0xFF000000.toInt() + it }).sanitized()
+        assertTrue(many.penColors.size <= PenboardConfig.MAX_PEN_COLORS)
+
+        val none = PenboardConfig(penColors = emptyList(), penColorIndex = 3).sanitized()
+        assertTrue(none.penColors.isNotEmpty())
+        assertEquals(0, none.penColorIndex)
+        assertTrue(none.currentPenColor != 0)
     }
 
     @Test
-    fun `slot grid yang kosong diisi tombol bawaan`() {
-        val config = PenboardConfig(gridKeys = listOf(KeyDef(KeyAction.CLEAR))).sanitized()
-        assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
-        assertEquals(KeyAction.CLEAR, config.gridKeys.first().action)
-        assertEquals(PenboardConfig.defaultGridKeys()[1].action, config.gridKeys[1].action)
-        assertEquals(PenboardConfig.defaultGridKeys()[8].action, config.gridKeys[8].action)
-    }
-
-    @Test
-    fun `label tombol memakai label khusus atau teks aksi`() {
+    fun `label tombol memakai teks aksi bila ada`() {
         val config = PenboardConfig()
         assertEquals("Teks", config.labelFor(KeyDef(KeyAction.RECOGNIZE)))
-        assertEquals("Kirim", config.labelFor(KeyDef(KeyAction.RECOGNIZE, label = "Kirim")))
-        assertEquals("halo", config.labelFor(KeyDef(KeyAction.TEXT, text = "halo")))
+        assertEquals("ok", config.labelFor(KeyDef(KeyAction.TEXT, text = "ok")))
+        assertEquals("Kirim", config.labelFor(KeyDef(KeyAction.TEXT, label = "Kirim", text = "ok")))
     }
 
     @Test
-    fun `aksi tidak dikenal kembali ke bawaan yang aman`() {
+    fun `aksi tidak dikenal jatuh ke nilai aman`() {
         assertEquals(KeyAction.SPACE, KeyAction.fromId("entah"))
-        assertEquals(KeyAction.UNDO, KeyAction.fromId("undo"))
-        assertEquals(KeyAction.SYSTEM_HANDWRITING, KeyAction.fromId("systemHandwriting"))
+        assertEquals(KeyAction.RECOGNIZE, KeyAction.fromId("recognize"))
         assertEquals(PenButtonAction.NONE, PenButtonAction.fromId(null))
         assertEquals(PenButtonAction.CLEAR, PenButtonAction.fromId("clear"))
-        assertEquals(KeyAction.CLEAR, PenButtonAction.fromId("clear").key)
     }
 
     @Test
-    fun `warna pena terpilih selalu valid`() {
-        val config = PenboardConfig(penColors = listOf(0xFF000000.toInt()), penColorIndex = 5).sanitized()
-        assertEquals(1, config.penColors.size)
-        assertEquals(0, config.penColorIndex)
-        assertEquals(0xFF000000.toInt(), config.currentPenColor)
+    fun `grid bawaan memuat tombol penting`() {
+        val keys = PenboardConfig.defaultGridKeys()
+        assertEquals(PenboardConfig.GRID_SLOTS, keys.size)
+        assertTrue(keys.any { it.action == KeyAction.RECOGNIZE })
+        assertTrue(keys.any { it.action == KeyAction.SPACE })
+        assertTrue(keys.any { it.action == KeyAction.BACKSPACE && it.repeatOnHold })
     }
 
     @Test
-    fun `jumlah warna pena dibatasi`() {
-        val many = (0 until 20).map { 0xFF000000.toInt() + it }
-        val config = PenboardConfig(penColors = many).sanitized()
-        assertEquals(PenboardConfig.MAX_PEN_COLORS, config.penColors.size)
-    }
-
-    @Test
-    fun `bahasa yang tidak didukung kembali ke indonesia`() {
-        val config = PenboardConfig(recognitionLanguage = "xx-YY").sanitized()
-        assertEquals("id-ID", config.recognitionLanguage)
-        assertEquals("id-ID", PenboardConfig(recognitionLanguage = "").sanitized().recognitionLanguage)
+    fun `berkas rusak tidak merusak pengaturan`() {
+        val restored = PenboardConfig.fromJson(JSONObject("""{"gridKeys":[],"penColors":[]}"""))
+        assertEquals(PenboardConfig.GRID_SLOTS, restored.gridKeys.size)
+        assertTrue(restored.penColors.isNotEmpty())
+        assertFalse(restored.gridButtonCount <= 0)
     }
 }

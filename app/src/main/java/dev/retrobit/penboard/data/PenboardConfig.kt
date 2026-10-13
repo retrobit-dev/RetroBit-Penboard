@@ -85,6 +85,8 @@ data class PenboardConfig(
     val penColorIndex: Int = 0,
     val showLines: Boolean = true,
     val allowFinger: Boolean = false,
+    /** Ketebalan goresan mengikuti tekanan stylus (M-Pen dan pena sejenis). */
+    val pressureEnabled: Boolean = true,
 
     // Grid tombol 3x3
     val gridButtonCount: Int = 9,
@@ -139,6 +141,7 @@ data class PenboardConfig(
         put("penColorIndex", penColorIndex)
         put("showLines", showLines)
         put("allowFinger", allowFinger)
+        put("pressureEnabled", pressureEnabled)
         put("gridButtonCount", gridButtonCount)
         put("gridKeys", JSONArray().apply { gridKeys.forEach { put(it.toJson()) } })
         put("penButtonPrimary", penButtonPrimary.id)
@@ -249,6 +252,7 @@ data class PenboardConfig(
                 penColorIndex = json.optInt("penColorIndex", base.penColorIndex),
                 showLines = json.optBoolean("showLines", base.showLines),
                 allowFinger = json.optBoolean("allowFinger", base.allowFinger),
+                pressureEnabled = json.optBoolean("pressureEnabled", base.pressureEnabled),
                 gridButtonCount = json.optInt("gridButtonCount", base.gridButtonCount),
                 gridKeys = keys,
                 penButtonPrimary = PenButtonAction.fromId(json.optString("penButtonPrimary", base.penButtonPrimary.id)),

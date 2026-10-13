@@ -1,6 +1,7 @@
 package dev.retrobit.penboard.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BoardMathTest {
@@ -32,5 +33,19 @@ class BoardMathTest {
         assertEquals(1, BoardMath.lineCount(0, 80f))
         assertEquals(1, BoardMath.lineCount(40, 80f))
         assertEquals(5, BoardMath.lineCount(400, 80f))
+    }
+
+    @Test
+    fun `tekanan pena mengubah ketebalan dalam batas aman`() {
+        assertEquals(0.75f, BoardMath.pressureScale(0f), 0.001f)
+        assertEquals(1.0f, BoardMath.pressureScale(0.5f), 0.001f)
+        assertEquals(1.25f, BoardMath.pressureScale(1f), 0.001f)
+    }
+
+    @Test
+    fun `tekanan di luar rentang tetap aman`() {
+        assertEquals(0.75f, BoardMath.pressureScale(-3f), 0.001f)
+        assertEquals(1.25f, BoardMath.pressureScale(9f), 0.001f)
+        assertTrue(BoardMath.pressureScale(0.25f) in 0.75f..1.25f)
     }
 }

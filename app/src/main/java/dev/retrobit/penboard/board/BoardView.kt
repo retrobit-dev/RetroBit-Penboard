@@ -5,11 +5,15 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import dev.retrobit.penboard.util.BoardMath
 import kotlin.math.abs
 import kotlin.math.hypot
 
@@ -17,9 +21,12 @@ import kotlin.math.hypot
  * Papan tulis stylus.
  *
  * - Menulis dengan stylus (atau jari bila [allowFinger] aktif).
+ * - Ketebalan goresan mengikuti tekanan pena bila [pressureEnabled] aktif.
  * - Tombol samping pena: primer = [onPenButtonPrimary], sekunder = [onPenButtonSecondary].
  * - Ujung penghapus stylus (bila ada) menghapus goresan yang tersentuh.
  * - [edgeToEdge] membuat papan menempel tepi kiri (mode "papan di kiri, tombol di kanan").
+ * - [beginPending] menampilkan garis hitung mundur "menunggu jadi teks",
+ *   [showFlash] menampilkan kilasan teks hasil input di bawah papan.
  */
 class BoardView @JvmOverloads constructor(
     context: Context,
@@ -48,7 +55,9 @@ class BoardView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = density
     }
+    private val flashPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val backgroundDrawable = GradientDrawable()
+    private val flashBox = RectF()
 
     /** Jarak baris panduan (px). */
     var lineGapPx: Float = DEFAULT_LINE_GAP_DP * density
@@ -78,6 +87,9 @@ class BoardView @JvmOverloads constructor(
 
     /** Bila false, hanya stylus yang bisa menulis (sentuhan jari diabaikan). */
     var allowFinger: Boolean = false
+
+    /** Ketebalan goresan mengikuti tekanan stylus (M-Pen dan pena sejenis). */
+    var pressureEnabled: Boolean = true
 
     var haptics: Boolean = true
 
@@ -109,6 +121,13 @@ class BoardView @JvmOverloads constructor(
         }
 
     var lineColor: Int = 0xFF94A3B8.toInt()
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** Warna aksen: dipakai indikator menunggu dan kilasan hasil input. */
+    var accentColor: Int = 0xFF0EA5E9.toInt()
         set(value) {
             field = value
             invalidate()
@@ -163,19 +182,75 @@ class BoardView @JvmOverloads constructor(
         return changed
     }
 
+    // ------------------------------------------------------------------ indikator
+
+    private var pendingFraction = 0f
+    private var pendingStarted = 0L
+    private var pendingDuration = 0L
+
+    private val pendingTick = object : Runnable {
+        override fun run() {
+            val elapsed = SystemClock.uptimeMillis() - pendingStarted
+            if (elapsed >= pendingDuration) {
+                pendingFraction = 0f
+                invalidate()
+                return
+            }
+            pendingFraction = (elapsed.toFloat() / pendingDuration).coerceIn(0f, 1f)
+            invalidate()
+            postDelayed(this, TICK_MS)
+        }
+    }
+
+    /** Mulai garis hitung mundur "menunggu jadi teks" selama [durationMs]. */
+    fun beginPending(durationMs: Int) {
+        removeCallbacks(pendingTick)
+        pendingDuration = durationMs.toLong().coerceAtLeast(1L)
+        pendingStarted = SystemClock.uptimeMillis()
+        pendingFraction = 0.01f
+        invalidate()
+        postDelayed(pendingTick, TICK_MS)
+    }
+
+    /** Hentikan hitung mundur (mis. karena tulisan sudah jadi teks). */
+    fun cancelPending() {
+        removeCallbacks(pendingTick)
+        if (pendingFraction == 0f) return
+        pendingFraction = 0f
+        invalidate()
+    }
+
+    private var flashText: String? = null
+    private var flashStarted = 0L
+    private var flashDuration = 0L
+
+    private val flashTick = object : Runnable {
+        override fun run() {
+            if (SystemClock.uptimeMillis() - flashStarted >= flashDuration) {
+                flashText = null
+                invalidate()
+                return
+            }
+            invalidate()
+            postDelayed(this, TICK_MS)
+        }
+    }
+
+    /** Tampilkan kilasan teks hasil input di bawah papan (mis. "✓ halo"). */
+    fun showFlash(text: String) {
+        if (text.isBlank()) return
+        flashText = text
+        flashDuration = FLASH_MS
+        flashStarted = SystemClock.uptimeMillis()
+        removeCallbacks(flashTick)
+        post(flashTick)
+    }
+
     // ------------------------------------------------------------------ menggambar
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (showLines) {
-            val left = if (edgeToEdge) 0f else insetH
-            val right = if (edgeToEdge) width.toFloat() else width - insetH
-            var y = lineGapPx
-            while (y < height - 1f) {
-                canvas.drawLine(left, y, right, y, linePaint)
-                y += lineGapPx
-            }
-        }
+        drawGuideLines(canvas)
         for (index in strokePaths.indices) {
             val stroke = strokes.getOrNull(index) ?: continue
             strokePaint.color = stroke.color
@@ -187,6 +262,61 @@ class BoardView @JvmOverloads constructor(
             strokePaint.strokeWidth = stroke.widthPx
             canvas.drawPath(currentPath, strokePaint)
         }
+        drawPending(canvas)
+        drawFlash(canvas)
+    }
+
+    private fun drawGuideLines(canvas: Canvas) {
+        if (!showLines) return
+        val left = if (edgeToEdge) 0f else insetH
+        val right = if (edgeToEdge) width.toFloat() else width - insetH
+        var y = lineGapPx
+        while (y < height - 1f) {
+            canvas.drawLine(left, y, right, y, linePaint)
+            y += lineGapPx
+        }
+    }
+
+    private fun drawPending(canvas: Canvas) {
+        if (pendingFraction <= 0f) return
+        val barHeight = 3f * density
+        val top = height - barHeight
+        strokePaint.style = Paint.Style.FILL
+        strokePaint.color = withAlpha(lineColor, 60)
+        canvas.drawRect(0f, top, width.toFloat(), height.toFloat(), strokePaint)
+        strokePaint.color = withAlpha(accentColor, 220)
+        canvas.drawRect(0f, top, width * pendingFraction, height.toFloat(), strokePaint)
+        strokePaint.style = Paint.Style.STROKE
+    }
+
+    private fun drawFlash(canvas: Canvas) {
+        val text = flashText ?: return
+        val elapsed = SystemClock.uptimeMillis() - flashStarted
+        val fadeStart = (flashDuration * 0.6f).toLong()
+        val alpha = if (elapsed <= fadeStart) {
+            1f
+        } else {
+            (1f - (elapsed - fadeStart).toFloat() / (flashDuration - fadeStart).coerceAtLeast(1L)).coerceIn(0f, 1f)
+        }
+
+        val textSize = 13f * density
+        flashPaint.textSize = textSize
+        flashPaint.typeface = Typeface.DEFAULT_BOLD
+        val padding = 9f * density
+        val boxHeight = textSize * 1.9f
+        val left = 6f * density
+        val bottomOffset = if (pendingFraction > 0f) 8f * density else 5f * density
+        val top = height - boxHeight - bottomOffset
+        flashBox.set(left, top, left + flashPaint.measureText(text) + padding * 2f, top + boxHeight)
+
+        flashPaint.style = Paint.Style.FILL
+        flashPaint.color = withAlpha(accentColor, (240 * alpha).toInt())
+        val radius = boxHeight / 2f
+        canvas.drawRoundRect(flashBox, radius, radius, flashPaint)
+
+        flashPaint.color = withAlpha(0xFFFFFFFF.toInt(), (255 * alpha).toInt())
+        val baseline = flashBox.centerY() - (flashPaint.descent() + flashPaint.ascent()) / 2f
+        canvas.drawText(text, flashBox.left + padding, baseline, flashPaint)
     }
 
     private val insetH: Float get() = if (edgeToEdge) 3f * density else 12f * density
@@ -236,7 +366,10 @@ class BoardView @JvmOverloads constructor(
         }
 
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> startStroke(event.x, event.y)
+            MotionEvent.ACTION_DOWN -> {
+                val factor = if (isStylus && pressureEnabled) BoardMath.pressureScale(event.pressure) else 1f
+                startStroke(event.x, event.y, factor)
+            }
             MotionEvent.ACTION_MOVE -> {
                 for (index in 0 until event.historySize) {
                     extendStroke(event.getHistoricalX(index), event.getHistoricalY(index))
@@ -249,10 +382,10 @@ class BoardView @JvmOverloads constructor(
         return true
     }
 
-    private fun startStroke(x: Float, y: Float) {
+    private fun startStroke(x: Float, y: Float, widthFactor: Float) {
         parent?.requestDisallowInterceptTouchEvent(true)
         if (haptics) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-        val stroke = Stroke(color = penColor, widthPx = penWidthPx)
+        val stroke = Stroke(color = penColor, widthPx = penWidthPx * widthFactor)
         stroke.points.add(InkPoint(x, y))
         current = stroke
         currentPath.reset()
@@ -302,6 +435,12 @@ class BoardView @JvmOverloads constructor(
 
     companion object {
         const val DEFAULT_LINE_GAP_DP = 44f
+
+        /** Selang gambar indikator (ms). */
+        private const val TICK_MS = 40L
+
+        /** Lama kilasan teks hasil input (ms). */
+        private const val FLASH_MS = 1600L
 
         /** Warna dengan alfa diubah (0-255). */
         fun withAlpha(color: Int, alpha: Int): Int =

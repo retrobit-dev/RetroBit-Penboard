@@ -1,140 +1,109 @@
-# Penboard 2 — papan tulis stylus sebagai keyboard
+# Penboard
 
-**Penboard bukan keyboard QWERTY.** Ini adalah **papan tulis** untuk stylus (mis. Huawei M-Pen):
-Anda menulis di papan, tulisan diubah menjadi teks dan langsung masuk ke kolom isian.
+Papan tulis stylus untuk Android. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Ini **bukan keyboard QWERTY** — papan tulisnya lebar di kiri, tombol-tombol operasinya kecil dan rapi 3x3 di kanan.
 
-Susunannya sederhana dan sesuai permintaan:
+Versi terbaru: **2.0.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Cara pakai singkat
+
+1. Pasang APK, buka Penboard.
+2. **Keyboard Penboard**: ketuk *Pilih keyboard* lalu pilih **Penboard**. Setelah itu, di aplikasi mana pun, papan tulis muncul saat mengetuk kolom isian.
+3. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis diubah menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
+4. Ingin memaksa jadi teks sekarang? Ketuk tombol **Teks**, atau tekan **tombol samping M-Pen**.
+5. Ingin menulis di atas aplikasi lain? Beri izin *tampil di atas aplikasi lain*, lalu nyalakan **Papan melayang**.
+
+## Susunan papan
 
 ```
-┌────────────────────────────────┬────────────────────────────┐
-│                                │ [ Teks ] [ Spasi ] [ Baris ]│
-│        papan tulis             │ [  ⌫   ] [  ↶   ] [ Bersih] │
-│        (sampai ke tombol)      │ [ Gores] [Huawei] [ Tutup ] │
-└────────────────────────────────┴────────────────────────────┘
-     kiri: area menulis              kanan: grid tombol 3×3
++----------------------------------------------+---------------+
+|                                              |   [1] [2] [3] |
+|            PAPAN TULIS (kiri)                |   [4] [5] [6] |
+|      dari tepi kiri sampai ke tombol         |   [7] [8] [9] |
++----------------------------------------------+---------------+
 ```
 
-Semua bisa diatur: **tinggi papan**, **tingkat transparansi** (panel, papan, tombol),
-**warna** apa pun, **berapa tombol** yang ada, dan **aksi tiap tombol**.
+- Papan tulis memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol).
+- Sebelah kanan berisi grid tombol **3 baris x 3 kolom**.
+- Jumlah tombol bisa diatur 1 sampai 9, dan **setiap tombol bebas dipilih fungsinya** serta labelnya.
 
----
+## Pengaturan yang tersedia
 
-## Cara pakai (5 langkah)
+| Bagian | Isi |
+| --- | --- |
+| Papan tulis | tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan, ketebalan ikut tekanan stylus, izinkan jari, getaran |
+| Tombol 3x3 | jumlah tombol (1–9), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
+| Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
+| Tampilan | transparansi panel/papan/tombol (0–100%), warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
+| Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan: tidak ada, jadikan teks, batal goresan, hapus goresan, bersihkan papan, tulisan tangan perangkat, papan melayang |
 
-1. Pasang APK dari **[Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases)**.
-2. Buka aplikasi **Penboard** → kartu **1. Aktifkan keyboard Penboard** →
-   **Pilih keyboard** → pilih **Penboard**.
-3. Buka aplikasi apa pun yang punya kolom isian (catatan, chat, pencarian).
-   Keyboard Penboard muncul: papan tulis di kiri, tombol 3×3 di kanan.
-4. **Tulis satu kata** di papan dengan stylus. Diam sejenak (bawaan **2 detik**) →
-   tulisan langsung diinput sebagai teks dan **satu spasi** ditambahkan untuk kata berikutnya.
-5. Mau memakai mesin tulisan tangan Huawei? Ketuk tombol **Huawei** pada grid —
-   Penboard berpindah ke keyboard tulisan tangan perangkat. Setelah selesai,
-   pilih lagi Penboard dari daftar keyboard.
+Panel dan papan dibuat tembus pandang supaya tulisan di aplikasi lain tetap terbaca.
 
-Ada juga **papan melayang**: papan tulis yang muncul di atas aplikasi lain
-(kartu **2. Papan melayang**), bisa digeser lewat pegangan di atasnya.
+## Fungsi tombol
 
----
+`abc` (teks tertentu) · Spasi · Baris · Hapus satu huruf · Hapus satu kata · Batal (undo) · Ulangi (redo) · Bersihkan · Hapus gores · Warna · Teks (ubah jadi teks) · Huawei (pindah ke tulisan tangan perangkat) · Layang (papan melayang) · Tutup (sembunyikan keyboard).
 
-## Yang bisa diatur
+Umpan balik saat menulis:
 
-| Bagian | Pilihan |
-|---|---|
-| **Papan tulis** | tinggi papan (120–340 dp), jarak garis panduan (28–76 dp), ketebalan pena (1–12 dp), sampai **6 warna pena** (warna apa pun, ada pengatur transparansi tiap warna), tampil/sembunyi garis, izinkan jari menulis, getar |
-| **Tombol samping pena** | primer & sekunder: jadikan teks, batal goresan, hapus goresan terakhir, bersihkan papan, tulisan tangan Huawei, papan melayang |
-| **Grid tombol 3×3** | jumlah tombol **1–9**, tiap slot bisa diganti aksi + nama + teks sendiri, tombol bisa mengulang bila ditahan |
-| **Pengenalan tulisan** | input otomatis on/off, jeda 0,5–5 detik, spasi otomatis, bersihkan papan setelah diinput, 14 bahasa (bawaan **Indonesia**), pindah otomatis ke tulisan tangan perangkat bila mesin bawaan tidak ada |
-| **Transparansi & warna** | transparansi panel/papan/tombol 0–100 %, warna panel, papan, garis, tombol, tulisan tombol, garis tepi, kebulatan sudut |
+- Garis **hitung mundur** di papan menunjukkan kapan input otomatis akan berjalan.
+- Setelah teks terkirim, muncul **kilasan tanda centang + teks** yang baru masuk, jadi kelihatan hasil pengenalannya.
+- **Tekanan M-Pen** membuat goresan lebih tebal atau tipis (bisa dimatikan).
+- **Ujung penghapus stylus** menghapus goresan yang ada di sekitar sentuhan itu.
 
-Semua pengaturan tersimpan otomatis dan bisa dikembalikan ke bawaan
-(**Kembalikan semua pengaturan**).
+## Mesin pengenalan
 
-### Aksi tombol yang tersedia
+Pengenalan memakai **ML Kit Digital Ink Recognition** (Google) yang berjalan **di dalam ponsel dan luring** setelah model bahasanya terunduh. Bawaan: bahasa Indonesia (`id-ID`, sekitar 20 MB). Tersedia juga English US/UK, Melayu, Jawa, Sunda, 中文, 日本語, 한국어, العربية, Русский, हिन्दी, ไทย, Tiếng Việt.
 
-`abc` (ketik teks sendiri) · Spasi · Baris · `⌫` hapus huruf · `⌫⌫` hapus kata ·
-`↶` batal · `↷` ulangi · Bersih · Hapus gores · Warna (ganti pena) ·
-Teks (jadikan teks sekarang) · Huawei (pindah ke tulisan tangan perangkat) ·
-Layang (papan melayang) · Tutup (sembunyikan keyboard).
+### Soal Huawei
 
----
+Mesin tulisan tangan Huawei (Celia) **tidak bisa dipanggil oleh aplikasi lain** — Huawei hanya menyediakannya lewat keyboard bawaannya, dan HMS ML Kit hanya menyediakan OCR gambar (bukan tulisan tangan). Karena itu Penboard:
 
-## Soal tulisan tangan Huawei (jujur apa adanya)
+1. memakai tombol samping M-Pen sebagai pemicu teks sehingga tidak bentrok dengan pintasan keyboard Huawei;
+2. menyediakan tombol **Huawei** pada grid untuk berpindah ke keyboard tulisan tangan bawaan, dan bisa kembali ke Penboard kapan saja;
+3. mematikan tulisan tangan sistem pada kolom **Uji tulis** (agar goresan tidak muncul dua kali);
+4. punya pilihan **pindah otomatis** ke keyboard tulisan tangan perangkat bila mesin pengenalan bawaan tidak ada (mis. perangkat Huawei tanpa Google Play services).
 
-Huawei/Honor **tidak menyediakan API** pengenalan tulisan tangan untuk aplikasi pihak ketiga —
-HMS Core hanya menyediakan OCR gambar (teks dari foto), bukan mesin digital ink keyboard Celia.
-Karena itu Penboard:
+Semua data tetap di ponsel. Tidak ada tulisan yang dikirim ke server mana pun; hanya unduhan model bahasa yang menyentuh internet, itu pun sekali per bahasa.
 
-- memakai **ML Kit Digital Ink** bawaan sendiri (berjalan di perangkat, luring setelah model
-  terunduh ±20 MB, sama seperti yang dipakai keyboard Google),
-- menyediakan tombol **Huawei** sebagai **jembatan**: sekali ketuk, Anda berpindah ke keyboard
-  tulisan tangan perangkat untuk memakai mesinnya, lalu kembali ke Penboard, dan
-- **berpindah sendiri** ke keyboard tulisan tangan perangkat bila mesin pengenalan bawaan tidak
-  bisa dipakai (mis. perangkat Huawei tanpa Google Play services) — bisa dimatikan di pengaturan.
+## Papan melayang
 
-Supaya tidak bertabrakan dengan bantalan tulisan tangan bawaan perangkat, Penboard
-**menolak mode tulisan tangan stylus sistem** (`supportsStylusHandwriting="false"`) sehingga
-yang muncul selalu papan Penboard, bukan panel bawaan Huawei/Celia.
+- Perlu izin *tampil di atas aplikasi lain*.
+- Bisa digeser lewat pegangan kecil di atas papan; posisinya diingat.
+- Bila keyboard Penboard sedang aktif, teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip dan diumumkan lewat pesan singkat.
+- Berjalan sebagai foreground service dengan notifikasi biasa.
 
----
-
-## Membangun sendiri
-
-Butuh JDK 17 + Android SDK (compileSdk 35). Tidak perlu Android Studio.
+## Bangun sendiri
 
 ```bash
-./gradlew :app:assembleDebug          # APK debug
-./gradlew :app:testDebugUnitTest      # pengujian unit
-./gradlew :app:assembleRelease        # APK rilis (ditandatangani kunci debug bila
-                                      # keystore.properties tidak ada)
+./gradlew assembleDebug     # APK debug
+./gradlew assembleRelease   # APK rilis (dipakai CI)
+./gradlew test              # pengujian unit
 ```
 
-Sidik jari rilis: buat `keystore.properties` di akar proyek:
+Butuh JDK 17 dan Android SDK dengan platform 35. Rilis ditandatangani kunci debug kecuali berkas `keystore.properties` disediakan:
 
 ```properties
-storeFile=/path/keystore.jks
-storePassword=…
-keyAlias=…
-keyPassword=…
+storeFile=...
+storePassword=...
+keyAlias=...
+keyPassword=...
 ```
 
-APK siap pakai juga dibuat otomatis oleh GitHub Actions
-(`.github/workflows/android.yml`) pada setiap push; tag `v*` menerbitkan Release
-beserta APK-nya.
-
----
+Teknologi: Kotlin 2.0, AGP 8.7, Gradle 8.11, `minSdk 26`, `targetSdk 35`, satu modul `app`, tanpa berkas tata letak XML (seluruh tampilan dibuat dari kode).
 
 ## Struktur berkas
 
 ```
 app/src/main/java/dev/retrobit/penboard/
-├── board/    Stroke.kt (titik & goresan), BoardView.kt (papan tulis, tombol pena, penghapus)
-├── data/     PenboardConfig.kt (semua pengaturan + pembersihan angka), ConfigStore.kt (penyimpanan)
-├── ime/      PenboardInputService.kt (keyboard papan tulis)
-├── ink/      InkNormalizer.kt, RecognitionText.kt, RecognitionLanguages.kt,
-│             InkRecognition.kt (ML Kit), HandwritingInput.kt (input otomatis 2 detik)
-├── overlay/  PenboardOverlayService.kt (papan melayang)
-├── ui/       BoardPanel.kt (papan kiri + grid 3×3), KeyButton.kt, Ui.kt, ColorPicker.kt
-└── util/     GridMath.kt, BoardMath.kt, StylusCompat.kt, SystemHandwriting.kt (jembatan Huawei)
+├── MainActivity.kt            pengaturan + pratinjau + uji tulis
+├── board/                     BoardView (kanvas stylus), Stroke
+├── data/                      PenboardConfig + ConfigStore (JSON)
+├── ime/                       PenboardInputService (keyboard)
+├── overlay/                   PenboardOverlayService (papan melayang)
+├── ink/                       InkRecognition (ML Kit), InkNormalizer, RecognitionText, RecognitionLanguages
+├── ui/                        BoardPanel, KeyButton, Ui, ColorPicker
+└── util/                      BoardMath, GridMath, StylusCompat, SystemHandwriting
 ```
-
-## Pengujian
-
-`./gradlew :app:testDebugUnitTest` — 6 berkas pengujian untuk bagian yang murni logika:
-
-- `util/GridMathTest` — ukuran tombol grid 3×3 selalu menyisakan papan lebar di kiri
-- `util/BoardMathTest` — pemetaan tulisan ke baris panduan
-- `util/SystemHandwritingTest` — pemilihan keyboard tulisan tangan Huawei/Celia
-- `data/PenboardConfigTest` — bawaan, simpan/muat, pemangkasan angka, migrasi berkas lama
-- `ink/RecognitionTextTest` — satu tulisan = satu kata + spasi otomatis
-- `ink/InkNormalizerTest` — baris dipadatkan dan tinggi tulisan dinormalkan
-
-## Privasi
-
-Tidak ada data yang keluar dari perangkat Anda: tidak ada analitik, tidak ada iklan,
-tidak ada pengiriman tulisan ke internet. Pengenalan tulisan berjalan di perangkat
-(model bahasa diunduh sekali dari Google, setelah itu luring penuh).
 
 ## Lisensi
 
-[MIT](LICENSE) © 2026 RetroBit
+MIT — lihat [LICENSE](LICENSE).

@@ -1,115 +1,147 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Penboard</string>
-    <string name="app_tagline">Papan tulis stylus sebagai keyboard — papan di kiri, tombol 3×3 di kanan.</string>
+    <string name="app_tagline">Papan tulis stylus: tulis dengan M-Pen, teks langsung masuk ke kolom isian.</string>
 
-    <!-- 1. Keyboard -->
-    <string name="card_keyboard">1. Aktifkan keyboard Penboard</string>
-    <string name="card_keyboard_sub">Penboard dipakai seperti keyboard biasa; saat muncul, papan tulis langsung siap dipakai stylus.</string>
-    <string name="status_keyboard_active">Penboard sedang dipakai sebagai keyboard aktif.</string>
-    <string name="status_keyboard_inactive">Penboard belum dipakai. Pilih keyboard Penboard lewat tombol di bawah.</string>
+    <!-- Kartu: keyboard -->
+    <string name="card_keyboard">Keyboard Penboard</string>
+    <string name="card_keyboard_sub">Papan tulis di kiri, tombol 3x3 di kanan.</string>
+    <string name="status_keyboard_active">Keyboard Penboard sedang aktif.</string>
+    <string name="status_keyboard_inactive">Keyboard Penboard belum aktif.</string>
     <string name="action_pick_keyboard">Pilih keyboard</string>
-    <string name="action_keyboard_settings">Setelan keyboard</string>
+    <string name="action_keyboard_settings">Pengaturan keyboard</string>
 
-    <!-- 2. Papan melayang -->
-    <string name="card_overlay">2. Papan melayang (opsional)</string>
-    <string name="card_overlay_sub">Papan tulis muncul di atas aplikasi lain dan bisa digeser lewat pegangan di atasnya.</string>
-    <string name="status_overlay_permission_missing">Izin \u201Ctampil di atas aplikasi lain\u201D belum diberikan.</string>
+    <!-- Kartu: papan melayang -->
+    <string name="card_overlay">Papan melayang</string>
+    <string name="card_overlay_sub">Papan yang melayang di atas aplikasi lain.</string>
+    <string name="status_overlay_permission_missing">Izin "tampil di atas aplikasi lain" belum diberikan.</string>
+    <string name="status_overlay_ready">Izin sudah ada, papan melayang siap dinyalakan.</string>
     <string name="status_overlay_running">Papan melayang sedang tampil.</string>
-    <string name="status_overlay_ready">Siap ditampilkan.</string>
+    <string name="action_overlay_permission">Beri izin</string>
     <string name="action_overlay_show">Tampilkan</string>
     <string name="action_overlay_hide">Sembunyikan</string>
-    <string name="action_overlay_permission">Beri izin</string>
-    <string name="overlay_note">Bila keyboard Penboard aktif, hasil tulisan langsung masuk ke kolom isian. Bila tidak, teks disalin ke papan klip.</string>
+    <string name="overlay_note">Geser lewat pegangan kecil di atas papan. Bila keyboard Penboard aktif, teks langsung dikirim ke kolom isian; bila tidak, teks disalin ke papan klip.</string>
+    <string name="overlay_title">Papan tulis Penboard</string>
+    <string name="overlay_channel">Papan melayang</string>
+    <string name="overlay_channel_desc">Notifikasi papan tulis melayang Penboard.</string>
+    <string name="overlay_notification_text">Papan tulis sedang melayang di atas aplikasi lain.</string>
+    <string name="overlay_copied">Teks disalin ke papan klip. Buka keyboard Penboard untuk langsung menempel.</string>
+    <string name="overlay_permission_missing">Izin "tampil di atas aplikasi lain" belum diberikan.</string>
+    <string name="msg_overlay_started">Papan melayang dinyalakan.</string>
+    <string name="msg_overlay_stopped">Papan melayang dimatikan.</string>
+    <string name="msg_overlay_failed">Papan melayang gagal dinyalakan.</string>
+    <string name="msg_overlay_permission_failed">Tidak bisa membuka pengaturan izin.</string>
 
-    <!-- Pratinjau -->
-    <string name="card_preview">Pratinjau susunan</string>
-    <string name="card_preview_sub">Tinggi papan, transparansi, dan tombol ikut berubah sesuai pengaturan. Coba tulis dengan stylus di sini.</string>
-    <string name="preview_key_tap">Tombol \u201C%1$s\u201D bekerja di keyboard sungguhan.</string>
+    <!-- Kartu: pemeriksaan perangkat -->
+    <string name="card_check">Pemeriksaan perangkat</string>
+    <string name="card_check_sub">Apa saja yang sudah siap di ponsel ini.</string>
+    <string name="check_keyboard_ok">Keyboard: aktif.</string>
+    <string name="check_keyboard_no">Keyboard: belum dipilih sebagai keyboard aktif.</string>
+    <string name="check_engine_ok">Mesin pengenalan Penboard: siap.</string>
+    <string name="check_engine_no">Mesin pengenalan Penboard: tidak tersedia (perangkat ini tanpa Google Play services). Pakai tombol tulisan tangan perangkat.</string>
+    <string name="check_device_ink_ok">Tulisan tangan perangkat: %1$s tersedia.</string>
+    <string name="check_device_ink_no">Tulisan tangan perangkat: tidak ditemukan. Penboard memakai mesin pengenalan bawaannya.</string>
+    <string name="check_overlay_ok">Izin papan melayang: sudah diberikan.</string>
+    <string name="check_overlay_no">Izin papan melayang: belum diberikan.</string>
 
-    <!-- Kolom uji -->
-    <string name="card_test">Coba di sini</string>
-    <string name="card_test_sub">Pilih keyboard Penboard, lalu tulis di papan tulisnya — teks akan masuk ke kolom ini.</string>
-    <string name="test_hint">Tulis dengan stylus di papan Penboard…</string>
-    <string name="action_clear_text">Bersihkan kolom uji</string>
+    <!-- Kartu: pratinjau -->
+    <string name="card_preview">Pratinjau</string>
+    <string name="card_preview_sub">Tampilannya sama persis dengan yang muncul saat menulis.</string>
+    <string name="preview_key_tap">Tombol %1$s (pratinjau saja).</string>
 
-    <!-- Papan tulis -->
+    <!-- Kartu: uji tulis -->
+    <string name="card_test">Uji tulis</string>
+    <string name="card_test_sub">Ketuk kolom ini, lalu pilih keyboard Penboard dan tulis dengan M-Pen.</string>
+    <string name="test_hint">Tulis di sini memakai keyboard Penboard...</string>
+    <string name="action_clear_text">Kosongkan teks</string>
+
+    <!-- Kartu: papan tulis -->
     <string name="card_board">Papan tulis</string>
-    <string name="card_board_sub">Ukuran, ketebalan pena, warna, dan getar.</string>
-    <string name="setting_board_height">Tinggi papan tulis</string>
+    <string name="card_board_sub">Ukuran, pena, dan tombol samping pena.</string>
+    <string name="setting_board_height">Tinggi papan</string>
     <string name="setting_line_gap">Jarak garis panduan</string>
-    <string name="setting_pen_width">Ketebalan pena</string>
+    <string name="setting_pen_width">Tebal pena</string>
     <string name="setting_pen_colors">Warna pena (ketuk untuk mengubah)</string>
     <string name="setting_pen_color_n">Warna pena %1$d</string>
     <string name="action_add_pen_color">Tambah warna</string>
-    <string name="action_remove_pen_color">Kurangi</string>
+    <string name="action_remove_pen_color">Hapus warna terakhir</string>
     <string name="msg_pen_color_full">Maksimal %1$d warna pena.</string>
-    <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
-    <string name="setting_show_lines">Tampilkan garis panduan</string>
-    <string name="setting_show_lines_sub">Membantu menulis rapi berbaris; garis tidak ikut dikenali.</string>
-    <string name="setting_allow_finger">Izinkan jari menulis</string>
-    <string name="setting_allow_finger_sub">Bila mati, hanya stylus yang menulis sehingga sentuhan jari tidak mengganggu.</string>
-    <string name="setting_haptics">Getar saat menulis</string>
-    <string name="setting_haptics_sub">Umpan balik halus saat pena menyentuh papan.</string>
+    <string name="setting_show_lines">Garis panduan</string>
+    <string name="setting_show_lines_sub">Tampilkan garis samar seperti buku tulis.</string>
+    <string name="setting_pressure">Ketebalan ikut tekanan</string>
+    <string name="setting_pressure_sub">Tekanan M-Pen membuat goresan lebih tebal atau tipis.</string>
+    <string name="setting_allow_finger">Izinkan jari</string>
+    <string name="setting_allow_finger_sub">Matikan bila hanya ingin menulis dengan stylus.</string>
+    <string name="setting_haptics">Getaran</string>
+    <string name="setting_haptics_sub">Getar saat papan atau tombol ditekan.</string>
     <string name="setting_pen_buttons">Tombol samping pena</string>
-    <string name="setting_pen_button_primary">Tombol pena (primer)</string>
-    <string name="setting_pen_button_secondary">Tombol pena (sekunder)</string>
+    <string name="setting_pen_button_primary">Tombol samping (klik)</string>
+    <string name="setting_pen_button_secondary">Tombol samping (tahan/kedua)</string>
 
-    <!-- Grid tombol -->
-    <string name="card_grid">Tombol 3×3</string>
-    <string name="card_grid_sub">Tentukan berapa tombol dan aksi masing-masing; susunan tetap rapi 3×3.</string>
+    <!-- Kartu: tombol 3x3 -->
+    <string name="card_grid">Tombol 3x3</string>
+    <string name="card_grid_sub">Pilih berapa tombol yang tampil dan apa fungsinya.</string>
     <string name="setting_grid_count">Jumlah tombol</string>
     <string name="unit_keys">tombol</string>
-    <string name="grid_slot_label">%1$d. %2$s</string>
-    <string name="grid_slot_title">Tombol %1$d</string>
+    <string name="grid_slot_label">Tombol %1$d: %2$s</string>
+    <string name="grid_slot_title">Tombol grid %1$d</string>
     <string name="action_change">Ubah</string>
     <string name="action_grid_default">Kembalikan tombol bawaan</string>
-    <string name="setting_action">Aksi</string>
-    <string name="setting_custom_label">Nama tombol (boleh kosong)</string>
-    <string name="setting_custom_text">Teks yang diinput</string>
-    <string name="setting_repeat">Ulangi bila ditahan</string>
-    <string name="setting_repeat_sub">Berguna untuk tombol hapus.</string>
-    <string name="hint_text">ketik teks pilihan</string>
-    <string name="hint_space">spasi</string>
+    <string name="setting_action">Fungsi</string>
+    <string name="setting_custom_label">Label sendiri (opsional)</string>
+    <string name="setting_custom_text">Teks yang diinput (untuk fungsi abc)</string>
+    <string name="setting_repeat">Ulangi saat ditahan</string>
+    <string name="setting_repeat_sub">Cocok untuk tombol hapus.</string>
+
+    <!-- Keterangan fungsi tombol -->
+    <string name="hint_text">menulis teks tertentu</string>
+    <string name="hint_space">menambah spasi</string>
     <string name="hint_enter">baris baru</string>
     <string name="hint_backspace">hapus satu huruf</string>
     <string name="hint_delete_word">hapus satu kata</string>
-    <string name="hint_undo">batal goresan terakhir</string>
+    <string name="hint_undo">batalkan goresan terakhir</string>
     <string name="hint_redo">ulangi goresan yang dibatalkan</string>
     <string name="hint_clear">bersihkan papan</string>
     <string name="hint_delete_stroke">hapus goresan terakhir</string>
     <string name="hint_cycle_pen">ganti warna pena</string>
-    <string name="hint_recognize">jadikan teks</string>
-    <string name="hint_system_handwriting">pindah ke tulisan tangan Huawei/Celia</string>
-    <string name="hint_overlay">tampilkan atau sembunyikan papan melayang</string>
+    <string name="hint_recognize">ubah tulisan menjadi teks</string>
+    <string name="hint_system_handwriting">pindah ke tulisan tangan perangkat</string>
+    <string name="hint_overlay">nyalakan papan melayang</string>
     <string name="hint_hide">sembunyikan keyboard</string>
 
-    <!-- Pengenalan tulisan -->
+    <!-- Kartu: pengenalan tulisan -->
     <string name="card_recognition">Pengenalan tulisan</string>
-    <string name="card_recognition_sub">Tulisan di papan diubah menjadi teks dan dikirim ke kolom isian.</string>
+    <string name="card_recognition_sub">Tulisan diubah menjadi teks secara otomatis.</string>
     <string name="setting_auto_recognize">Input otomatis</string>
-    <string name="setting_auto_recognize_sub">Bila tidak ada tulisan baru selama jeda di bawah, tulisan langsung diinput sebagai teks. Setiap goresan baru mengulang hitungan.</string>
-    <string name="setting_auto_delay">Jeda tanpa tulisan baru</string>
-    <string name="setting_auto_space">Tambah spasi otomatis</string>
-    <string name="setting_auto_space_sub">Satu tulisan = satu kata, lalu satu spasi ditambahkan untuk kata berikutnya.</string>
-    <string name="setting_clear_after">Bersihkan papan setelah diinput</string>
-    <string name="setting_clear_after_sub">Papan langsung siap untuk kata berikutnya.</string>
+    <string name="setting_auto_recognize_sub">Bila tidak ada goresan baru, tulisan langsung dikirim sebagai teks.</string>
+    <string name="setting_auto_delay">Jeda sebelum input otomatis</string>
+    <string name="setting_auto_space">Tambah spasi setelah kata</string>
+    <string name="setting_auto_space_sub">Satu tulisan dianggap satu kata, lalu spasi disiapkan untuk kata berikutnya.</string>
+    <string name="setting_clear_after">Kosongkan papan setelah jadi teks</string>
+    <string name="setting_clear_after_sub">Papan bersih lagi supaya siap untuk kata berikutnya.</string>
     <string name="setting_language">Bahasa tulisan</string>
     <string name="setting_auto_switch">Pindah otomatis ke tulisan tangan perangkat</string>
-    <string name="setting_auto_switch_sub">Bila mesin pengenalan bawaan tidak tersedia (mis. perangkat Huawei tanpa Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan perangkat agar Anda tetap bisa menulis.</string>
-    <string name="status_model_checking">Memeriksa model bahasa…</string>
-    <string name="status_model_downloading">Menyiapkan model bahasa…</string>
+    <string name="setting_auto_switch_sub">Dipakai bila mesin pengenalan Penboard tidak tersedia, misalnya di perangkat Huawei tanpa Google Play services.</string>
+    <string name="status_model_checking">Memeriksa model bahasa...</string>
     <string name="status_model_ready">Model bahasa siap dipakai.</string>
-    <string name="status_model_not_downloaded">Model bahasa belum terunduh (diunduh otomatis saat pertama dipakai).</string>
-    <string name="status_model_unsupported">Bahasa ini tidak tersedia di mesin pengenalan.</string>
-    <string name="status_model_unknown">Status model tidak diketahui.</string>
-    <string name="status_model_failed">Model gagal diunduh — periksa koneksi internet.</string>
-    <string name="action_download_model">Unduh model sekarang</string>
-    <string name="recognition_note">Pengenalan berjalan di perangkat dan tetap bekerja luring setelah model terunduh. Tidak ada tulisan yang dikirim ke internet.</string>
+    <string name="status_model_not_downloaded">Model bahasa belum diunduh.</string>
+    <string name="status_model_unsupported">Bahasa ini belum didukung ML Kit di perangkat ini.</string>
+    <string name="status_model_unknown">Status model tidak bisa diperiksa.</string>
+    <string name="status_model_downloading">Mengunduh model bahasa...</string>
+    <string name="status_model_failed">Model bahasa gagal diunduh.</string>
+    <string name="action_download_model">Unduh model bahasa</string>
+    <string name="recognition_note">Pengenalan berjalan di perangkat dan luring setelah model terunduh. Model bahasa Indonesia sekitar 20 MB dan diunduh sekali saja per bahasa.</string>
+    <string name="msg_engine_missing">Mesin pengenalan bawaan tidak tersedia di perangkat ini. Pakai keyboard tulisan tangan bawaan perangkat untuk menulis.</string>
+    <string name="msg_model_missing">Model bahasa belum ada. Mengunduh otomatis sekarang...</string>
+    <string name="msg_model_ready">Model bahasa siap dipakai.</string>
+    <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
+    <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau pakai tombol Hapus.</string>
+    <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
+    <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
 
-    <!-- Transparansi & warna -->
-    <string name="card_look">Transparansi &amp; warna</string>
-    <string name="card_look_sub">Semua bagian bisa diatur tingkat transparansinya (0% berarti tidak terlihat).</string>
+    <!-- Kartu: tampilan -->
+    <string name="card_look">Tampilan dan transparansi</string>
+    <string name="card_look_sub">Atur warna dan tingkat tembus pandang papan.</string>
     <string name="setting_panel_opacity">Transparansi panel</string>
     <string name="setting_panel_color">Warna panel</string>
     <string name="setting_board_opacity">Transparansi papan</string>
@@ -118,43 +150,25 @@
     <string name="setting_button_opacity">Transparansi tombol</string>
     <string name="setting_button_color">Warna tombol</string>
     <string name="setting_button_text_color">Warna tulisan tombol</string>
-    <string name="setting_accent_color">Warna garis tepi tombol</string>
-    <string name="setting_corner_radius">Kebulatan sudut</string>
+    <string name="setting_accent_color">Warna aksen</string>
+    <string name="setting_corner_radius">Lengkung sudut</string>
 
-    <!-- Huawei/Honor -->
-    <string name="card_huawei">Catatan untuk Huawei/Honor</string>
-    <string name="card_huawei_sub">Tulisan tangan stylus bawaan perangkat bisa bertabrakan dengan Penboard.</string>
-    <string name="huawei_body">1. Penboard menolak mode tulisan tangan sistem, jadi bantalan tulisan tangan bawaan tidak muncul saat Anda menulis di papan Penboard.\n\n2. Mesin tulisan tangan Huawei/Celia tidak bisa dipanggil langsung oleh aplikasi lain (tidak ada API untuk itu). Bila Anda ingin memakai mesin tersebut, ketuk tombol \u201CHuawei\u201D pada grid — Penboard berpindah ke keyboard tulisan tangan perangkat, dan Anda bisa kembali ke Penboard setelah selesai.\n\n3. Bila mesin pengenalan bawaan Penboard tidak tersedia di perangkat ini (tanpa Google Play services), Penboard otomatis menawarkan pindah ke keyboard tulisan tangan perangkat saat Anda selesai menulis.</string>
+    <!-- Kartu: perangkat Huawei -->
+    <string name="card_huawei">Perangkat Huawei/Honor</string>
+    <string name="card_huawei_sub">Cara berdampingan dengan keyboard tulisan tangan bawaan.</string>
+    <string name="huawei_body">Mesin tulisan tangan Huawei (Celia) hanya bisa dipakai lewat keyboard bawaannya, jadi Penboard menyediakan tombol "Huawei" pada grid untuk berpindah ke sana. Supaya tidak bertabrakan, tombol samping M-Pen dipakai Penboard untuk menjadikan tulisan sebagai teks, sedangkan tulisan tangan bawaan Huawei dimatikan otomatis di kolom Uji tulis.</string>
 
-    <!-- Tentang -->
+    <!-- Kartu: tentang -->
     <string name="card_about">Tentang</string>
-    <string name="about_version">Penboard %1$s</string>
-    <string name="about_privacy">Semua pengaturan dan tulisan disimpan di perangkat ini sendiri.</string>
-    <string name="about_repo">github.com/retrobit-dev/RetroBit-Penboard</string>
+    <string name="about_version">Versi %1$s</string>
+    <string name="about_privacy">Tidak ada data yang dikirim ke mana pun. Semua tulisan dikenali di dalam ponsel.</string>
+    <string name="about_repo">Kode sumber: github.com/retrobit-dev/RetroBit-Penboard</string>
     <string name="repo_url">https://github.com/retrobit-dev/RetroBit-Penboard</string>
-    <string name="action_reset_all">Kembalikan semua pengaturan</string>
+    <string name="action_reset_all">Setel ulang semua pengaturan</string>
     <string name="reset_confirm">Semua pengaturan kembali ke bawaan?</string>
 
-    <!-- Notifikasi papan melayang -->
-    <string name="overlay_title">Papan tulis Penboard</string>
-    <string name="overlay_channel">Papan melayang</string>
-    <string name="overlay_channel_desc">Notifikasi saat papan tulis melayang aktif.</string>
-    <string name="overlay_notification_text">Ketuk untuk membuka pengaturan; tombol Sembunyikan untuk mematikannya.</string>
-    <string name="overlay_permission_missing">Izin tampil di atas aplikasi lain belum diberikan.</string>
-    <string name="overlay_copied">Teks disalin ke papan klip karena keyboard Penboard tidak aktif.</string>
-
-    <!-- Pesan singkat -->
-    <string name="msg_overlay_started">Papan melayang ditampilkan.</string>
-    <string name="msg_overlay_stopped">Papan melayang disembunyikan.</string>
-    <string name="msg_overlay_failed">Papan melayang gagal ditampilkan.</string>
-    <string name="msg_overlay_permission_failed">Tidak bisa membuka pengaturan izin.</string>
-    <string name="msg_picker_failed">Tidak bisa membuka pemilih keyboard.</string>
-    <string name="msg_board_empty">Papan masih kosong — tulis dulu dengan stylus.</string>
-    <string name="msg_not_recognized">Tulisan belum terbaca. Coba tulis lebih jelas.</string>
-    <string name="msg_engine_missing">Pengenalan bawaan butuh Google Play services. Gunakan tombol Huawei/Celia untuk memakai mesin tulisan tangan perangkat.</string>
-    <string name="msg_model_missing">Model bahasa belum siap — sedang disiapkan.</string>
-    <string name="msg_model_ready">Model bahasa siap dipakai.</string>
-    <string name="msg_model_failed">Model bahasa gagal diunduh.</string>
-    <string name="system_handwriting_switched">Beralih ke %1$s. Setelah selesai, pilih lagi Penboard dari daftar keyboard.</string>
-    <string name="system_handwriting_picker">Pilih keyboard tulisan tangan bawaan (mis. Celia/Huawei) dari daftar.</string>
+    <!-- Perpindahan ke tulisan tangan perangkat -->
+    <string name="system_handwriting_switched">Beralih ke %1$s. Tulis seperti biasa, tekan selesai untuk kembali ke Penboard.</string>
+    <string name="system_handwriting_picker">Pilih keyboard tulisan tangan perangkat dari daftar ini.</string>
+    <string name="msg_picker_failed">Tidak bisa membuka daftar keyboard.</string>
 </resources>

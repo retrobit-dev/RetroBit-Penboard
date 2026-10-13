@@ -13,6 +13,8 @@ import dev.retrobit.penboard.data.PenboardConfig
  * - **Input otomatis**: bila tidak ada goresan baru selama
  *   [PenboardConfig.autoRecognizeDelayMs] (bawaan 2 detik), tulisan langsung
  *   dikenali dan diinput sebagai teks. Setiap goresan baru mengulang hitungan.
+ *   Selama menunggu, papan menampilkan garis hitung mundur; setelah teks terkirim,
+ *   papan menampilkan kilasan hasilnya.
  * - **Manual**: tombol "Teks" atau tombol samping pena.
  * - Tulisan dianggap satu kata, lalu satu spasi ditambahkan untuk kata berikutnya.
  * - Bila mesin pengenalan bawaan tidak tersedia (mis. perangkat Huawei tanpa
@@ -48,16 +50,22 @@ class HandwritingInput(
     fun scheduleAuto() {
         handler.removeCallbacks(autoTask)
         val current = config()
-        if (!current.autoRecognize) return
+        if (!current.autoRecognize) {
+            board.cancelPending()
+            return
+        }
+        board.beginPending(current.autoRecognizeDelayMs)
         handler.postDelayed(autoTask, current.autoRecognizeDelayMs.toLong())
     }
 
     fun cancelAuto() {
         handler.removeCallbacks(autoTask)
+        board.cancelPending()
     }
 
     fun recognize(clearAfter: Boolean? = null, announce: Boolean = true) {
         handler.removeCallbacks(autoTask)
+        board.cancelPending()
         if (busy) return
         val current = config()
         if (!board.hasContent) {
@@ -88,6 +96,7 @@ class HandwritingInput(
 
     fun release() {
         handler.removeCallbacks(autoTask)
+        board.cancelPending()
     }
 
     // ------------------------------------------------------------------ internal
@@ -103,7 +112,11 @@ class HandwritingInput(
         if (RecognitionText.isMeaningful(text)) {
             val prepared = RecognitionText.prepare(text, current.autoSpace)
             val delivered = commit(prepared)
-            if (delivered && (clearAfter ?: current.clearAfterRecognize)) board.clear()
+            if (delivered) {
+                // Papan memberi tahu apa yang baru saja masuk ke kolom isian.
+                board.showFlash("\u2713 " + prepared.trim())
+                if (clearAfter ?: current.clearAfterRecognize) board.clear()
+            }
             return
         }
         when (failure) {

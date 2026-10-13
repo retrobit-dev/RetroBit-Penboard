@@ -8,29 +8,47 @@ import org.junit.Test
 class RecognitionTextTest {
 
     @Test
-    fun `satu tulisan menjadi satu kata dengan spasi di ujung`() {
+    fun `satu tulisan menjadi satu kata dengan spasi otomatis`() {
         assertEquals("halo ", RecognitionText.prepare("halo", autoSpace = true))
-        assertEquals("halo dunia ", RecognitionText.prepare("halo\n dunia ", autoSpace = true))
     }
 
     @Test
-    fun `tanpa spasi otomatis teks dikirim tanpa tambahan`() {
-        assertEquals("halo", RecognitionText.prepare(" halo ", autoSpace = false))
+    fun `spasi otomatis bisa dimatikan`() {
+        assertEquals("halo", RecognitionText.prepare("halo", autoSpace = false))
     }
 
     @Test
-    fun `teks kosong tetap kosong`() {
+    fun `teks berlebih dirapikan`() {
+        assertEquals("kata dua ", RecognitionText.prepare("  kata   dua \n", autoSpace = true))
+    }
+
+    @Test
+    fun `hasil kosong tidak menghasilkan spasi`() {
         assertEquals("", RecognitionText.prepare(null, autoSpace = true))
         assertEquals("", RecognitionText.prepare("   ", autoSpace = true))
-        assertEquals("", RecognitionText.prepare("\n", autoSpace = true))
+        assertEquals("", RecognitionText.prepare("\n\n", autoSpace = true))
     }
 
     @Test
-    fun `hanya tulisan bermakna yang layak diinput`() {
-        assertTrue(RecognitionText.isMeaningful("halo"))
-        assertTrue(RecognitionText.isMeaningful(" 12 "))
-        assertFalse(RecognitionText.isMeaningful("  ..  "))
-        assertFalse(RecognitionText.isMeaningful(""))
+    fun `teks tanpa huruf atau angka dianggap tidak layak`() {
         assertFalse(RecognitionText.isMeaningful(null))
+        assertFalse(RecognitionText.isMeaningful("   "))
+        assertFalse(RecognitionText.isMeaningful("-- --"))
+        assertFalse(RecognitionText.isMeaningful("."))
+    }
+
+    @Test
+    fun `teks berisi huruf atau angka layak diinput`() {
+        assertTrue(RecognitionText.isMeaningful("a"))
+        assertTrue(RecognitionText.isMeaningful(" 7 "))
+        assertTrue(RecognitionText.isMeaningful("kata"))
+        assertTrue(RecognitionText.isMeaningful("日本語"))
+    }
+
+    @Test
+    fun `bahasa bawaan adalah Indonesia`() {
+        assertEquals("id-ID", RecognitionLanguages.DEFAULT)
+        assertTrue(RecognitionLanguages.isSupported("id-ID"))
+        assertTrue(RecognitionLanguages.all.any { it.first == RecognitionLanguages.DEFAULT })
     }
 }

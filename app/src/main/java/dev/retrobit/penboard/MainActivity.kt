@@ -36,6 +36,7 @@ import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
 import dev.retrobit.penboard.util.StylusCompat
+import dev.retrobit.penboard.util.SystemHandwriting
 
 /** Layar pengaturan: mengaktifkan keyboard, papan melayang, dan seluruh pilihan tampilan. */
 class MainActivity : AppCompatActivity() {
@@ -97,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         renderHeader()
         renderKeyboardCard()
         renderOverlayCard()
+        renderDiagnosticsCard()
         renderPreviewCard()
         renderTestCard()
         renderBoardCard()
@@ -173,6 +175,30 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.overlay_note))
     }
 
+    /** Pemeriksaan perangkat: apa saja yang siap dan apa yang belum. */
+    private fun renderDiagnosticsCard() {
+        val card = Ui.card(content, getString(R.string.card_check), getString(R.string.card_check_sub))
+        Ui.statusText(
+            card,
+            getString(if (isPenboardActive()) R.string.check_keyboard_ok else R.string.check_keyboard_no)
+        )
+        val engineReady = InkRecognition.isServicesAvailable(this)
+        Ui.statusText(card, getString(if (engineReady) R.string.check_engine_ok else R.string.check_engine_no))
+        val deviceInk = SystemHandwriting.pickBest(SystemHandwriting.candidates(this), packageName)
+        Ui.statusText(
+            card,
+            if (deviceInk != null) {
+                getString(R.string.check_device_ink_ok, deviceInk.label)
+            } else {
+                getString(R.string.check_device_ink_no)
+            }
+        )
+        Ui.statusText(
+            card,
+            getString(if (Settings.canDrawOverlays(this)) R.string.check_overlay_ok else R.string.check_overlay_no)
+        )
+    }
+
     private fun renderPreviewCard() {
         val card = Ui.card(content, getString(R.string.card_preview), getString(R.string.card_preview_sub))
         val panel = previewPanel ?: BoardPanel(this, showHandle = true).also { previewPanel = it }
@@ -242,6 +268,9 @@ class MainActivity : AppCompatActivity() {
         Ui.switchRow(
             card, getString(R.string.setting_show_lines), getString(R.string.setting_show_lines_sub), config.showLines
         ) { value -> store.update { it.copy(showLines = value) } }
+        Ui.switchRow(
+            card, getString(R.string.setting_pressure), getString(R.string.setting_pressure_sub), config.pressureEnabled
+        ) { value -> store.update { it.copy(pressureEnabled = value) } }
         Ui.switchRow(
             card, getString(R.string.setting_allow_finger), getString(R.string.setting_allow_finger_sub), config.allowFinger
         ) { value -> store.update { it.copy(allowFinger = value) } }
