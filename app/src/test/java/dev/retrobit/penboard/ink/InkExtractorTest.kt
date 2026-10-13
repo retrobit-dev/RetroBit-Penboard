@@ -12,7 +12,7 @@ class InkExtractorTest {
 
     private fun stroke(line: Int, points: Int = 3, x: Float = 10f): Stroke {
         val stroke = Stroke(0xFF112233.toInt(), 3f)
-        repeat(points) { index -> stroke.add(x + index * 4f, line * gap + 8f + index * 2f) }
+        repeat(points) { index -> stroke.add(x + index * 4f, line * gap + index * 2f) }
         return stroke
     }
 
@@ -31,7 +31,7 @@ class InkExtractorTest {
         assertEquals(2, capture.lines.size)
         // goresan baris 2 & 3 diambil, dan yang paling awal (baris 2) jadi acuan koordinat
         assertEquals(0f, capture.lines.first().points.first().y, 0.01f)
-        assertEquals((gap + 8f), capture.lines.last().points.first().y, 0.01f)
+        assertEquals(gap, capture.lines.last().points.first().y, 0.01f)
     }
 
     @Test
@@ -61,9 +61,12 @@ class InkExtractorTest {
     @Test
     fun `nilai jumlah baris di luar batas tetap aman`() {
         val strokes = listOf(stroke(0), stroke(9))
-        assertEquals(2, InkExtractor.capture(strokes, gap, 0, 800, 400).lines.size)
+        // diminta 0 baris -> dianggap 1 baris (hanya baris terakhir)
+        assertEquals(1, InkExtractor.capture(strokes, gap, 0, 800, 400).lines.size)
+        // diminta banyak baris -> diambil semua yang ada
         assertEquals(2, InkExtractor.capture(strokes, gap, 99, 800, 400).lines.size)
-        assertFalse(InkExtractor.capture(strokes, 0f, 3, 800, 400).isEmpty)
+        // jarak baris belum diketahui (0) -> tidak ada yang bisa diambil, tetapi tidak error
+        assertTrue(InkExtractor.capture(strokes, 0f, 3, 800, 400).isEmpty)
     }
 
     @Test
