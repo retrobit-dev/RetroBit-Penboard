@@ -15,6 +15,11 @@ class GlobalPrefs(context: Context) {
         get() = prefs.getBoolean("show_guide", true)
         set(value) = prefs.edit().putBoolean("show_guide", value).apply()
 
+    /** Pengguna bisa menyembunyikan saran khusus perangkat Huawei/Honor. */
+    var hideHuaweiTip: Boolean
+        get() = prefs.getBoolean("hide_huawei_tip", false)
+        set(value) = prefs.edit().putBoolean("hide_huawei_tip", value).apply()
+
     /** Posisi terakhir jendela papan melayang. */
     var overlayX: Int
         get() = prefs.getInt("overlay_x", 0)

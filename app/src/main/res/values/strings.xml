@@ -128,6 +128,11 @@
     <string name="color_dialog_title">Pilih warna</string>
     <string name="color_hex_label">Kode hex</string>
 
+    <!-- Saran perangkat Huawei/Honor -->
+    <string name="huawei_tip_title">Catatan untuk perangkat Huawei/Honor</string>
+    <string name="huawei_tip_body">Perangkat ini punya tulisan tangan stylus bawaan (Celia/Huawei Handwriting) yang bisa menyerobot saat stylus menyentuh layar, sehingga papan Penboard tidak menerima tulisan.\n\nAgar Penboard bekerja penuh:\n1. Setelan → Sistem &amp; pembaruan → Bahasa &amp; masukan → Keyboard default → pilih Penboard.\n2. Di pengaturan keyboard bawaan (Celia/Huawei), matikan opsi tulisan tangan/stylus dan pengalihan keyboard otomatis.\n3. Bila panel tulisan tangan bawaan tetap muncul, ketuk ikon keyboard di bilah navigasi lalu pilih Penboard.\n\nPenboard juga menolak mode tulisan tangan sistem, jadi papan Penboard selalu yang dipakai saat keyboard Penboard aktif.</string>
+    <string name="huawei_tip_hide">Jangan tampilkan saran ini lagi</string>
+
     <!-- Tata letak papan & grid tombol -->
     <string name="sec_board_layout">Tata letak papan &amp; tombol</string>
     <string name="board_layout_hint">Pilih “Papan di kiri, tombol grid 3×3” untuk tata letak yang paling praktis: papan tulis di sisi kiri, sembilan tombol operasi tersusun rapi di sisi kanan.</string>
@@ -166,9 +171,9 @@
     <string name="pen_button_primary">Tombol utama (tekanan pertama)</string>
     <string name="pen_button_secondary">Tombol kedua</string>
     <string name="pen_button_hint">Pilih “Tulisan menjadi teks, langsung dikirim” supaya setelah menulis cukup tekan tombol samping pena — tulisan langsung masuk ke kolom teks. Tombol “Sembunyikan keyboard” berguna saat memakai papan melayang.</string>
-    <string name="ocr_auto">Kenali tulisan otomatis setelah pena diangkat</string>
-    <string name="ocr_auto_summary">Paling praktis: tulis, lalu diam sejenak — teks langsung terkirim tanpa menekan apa pun.</string>
-    <string name="ocr_auto_delay">Jeda sebelum dikenali</string>
+    <string name="ocr_auto">Input otomatis bila tidak ada tulisan baru</string>
+    <string name="ocr_auto_summary">Paling praktis: tulis seperti biasa, lalu diam. Bila tidak ada tulisan baru selama jeda di bawah, tulisan langsung diinput sebagai teks. Setiap goresan baru mengulang hitungan.</string>
+    <string name="ocr_auto_delay">Jeda tanpa tulisan baru (bawaan 2 detik)</string>
     <string name="ocr_engine_missing">Perangkat ini tidak mendeteksi Google Play services, sehingga pengenalan tulisan (ML Kit) tidak bisa dipakai. Pada perangkat seperti itu, gunakan tombol teks/simbol dan simpan gambar.</string>
     <string name="ocr_services_ok">Google Play services terdeteksi — pengenalan tulisan siap dipakai (setelah model bahasa diunduh).</string>
 

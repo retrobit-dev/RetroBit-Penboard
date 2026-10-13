@@ -259,6 +259,8 @@ class PenboardOverlayService : Service() {
                 haptics = prefs.hapticsEnabled,
                 currentTool = tool,
                 interactive = true,
+                boardHeightPx = boardHeight,
+                availableWidthPx = resources.displayMetrics.widthPixels,
                 onKey = { key -> onKey(key) }
             )
         } else if (config.showToolbar && config.toolbarRows.isNotEmpty()) {

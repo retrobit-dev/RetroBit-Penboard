@@ -32,6 +32,7 @@ import dev.retrobit.penboard.ink.ModelStatus
 import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.ui.Preview
 import dev.retrobit.penboard.ui.Ui
+import dev.retrobit.penboard.util.StylusCompat
 import kotlin.math.roundToInt
 
 /**
@@ -149,6 +150,7 @@ class BoardEditorActivity : AppCompatActivity() {
                 updateTitle()
             }
         })
+        StylusCompat.disableSystemHandwriting(input)
         card.addView(input, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
     }
 
@@ -739,8 +741,8 @@ class BoardEditorActivity : AppCompatActivity() {
                 ocrCard,
                 getString(R.string.ocr_auto_delay),
                 config.autoRecognizeDelayMs,
-                300,
-                3000,
+                500,
+                5000,
                 "ms"
             ) { value -> update { it.copy(autoRecognizeDelayMs = value) } }
 

@@ -126,6 +126,24 @@ class PenboardInputService : InputMethodService() {
     /** Papan stylus tidak boleh dipaksa mode layar penuh (mis. saat lanskap). */
     override fun onEvaluateFullscreenMode(): Boolean = false
 
+    /**
+     * Penboard **tidak** memakai mode tulisan tangan dari sistem: papan tulisnya sendiri yang
+     * menangani stylus. Mengembalikan false mencegah sistem (mis. Huawei/EMUI atau Android 14+)
+     * memunculkan panel tulisan tangan bawaan yang bertabrakan dengan papan Penboard.
+     */
+    override fun onStartStylusHandwriting(): Boolean {
+        Log.i(TAG, "Permintaan tulisan tangan sistem diabaikan; Penboard memakai papan sendiri")
+        return false
+    }
+
+    override fun onPrepareStylusHandwriting() {
+        // tidak ada yang perlu disiapkan: papan Penboard sudah tampil
+    }
+
+    override fun onStylusHandwritingMotionEvent(motionEvent: android.view.MotionEvent) {
+        // abaikan aliran stylus dari sistem; papan Penboard menerima sentuhan langsung
+    }
+
     override fun onEvaluateInputViewShown(): Boolean = true
 
     // ------------------------------------------------------------ penerapan UI
@@ -185,6 +203,8 @@ class PenboardInputService : InputMethodService() {
                 haptics = prefs.hapticsEnabled,
                 currentTool = tool,
                 interactive = true,
+                boardHeightPx = newBoardHeight,
+                availableWidthPx = resources.displayMetrics.widthPixels,
                 onKey = { onKey(it) }
             )
         } else if (config.showToolbar && config.toolbarRows.isNotEmpty()) {

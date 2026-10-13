@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import dev.retrobit.penboard.databinding.ActivityTestBinding
+import dev.retrobit.penboard.util.StylusCompat
 
 /** Halaman uji coba: kolom teks sederhana supaya keyboard Penboard bisa dipakai. */
 class TestActivity : AppCompatActivity() {
@@ -20,6 +21,7 @@ class TestActivity : AppCompatActivity() {
         binding.header.headerTitle.text = getString(R.string.test_title)
         binding.header.headerSubtitle.text = getString(R.string.app_subtitle)
         binding.header.headerIcon.setImageResource(R.drawable.ic_launcher_foreground)
+        StylusCompat.disableSystemHandwriting(binding.field)
         binding.openSettings.setOnClickListener {
             try {
                 startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))

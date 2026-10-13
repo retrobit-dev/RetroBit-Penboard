@@ -8,6 +8,7 @@ import dev.retrobit.penboard.board.KeyButton
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.data.ToolMode
+import dev.retrobit.penboard.util.GridMath
 
 /**
  * Menyusun tombol operasi dalam **grid 3x3** (untuk tata letak "papan di kiri, tombol di kanan").
@@ -29,22 +30,37 @@ object KeyGridBuilder {
         haptics: Boolean = true,
         currentTool: ToolMode? = null,
         interactive: Boolean = true,
+        /** Tinggi papan tulis; grid dibuat sepadan agar rapi di sisi kanan. */
+        boardHeightPx: Int = 0,
+        /** Lebar layar yang tersedia (papan mengambil sisanya). */
+        availableWidthPx: Int = 0,
         onKey: (KeyDef) -> Unit
     ): List<KeyButton> {
         container.removeAllViews()
         container.orientation = LinearLayout.VERTICAL
-        container.gravity = Gravity.CENTER
+        container.gravity = Gravity.END or Gravity.CENTER_VERTICAL
 
         val keys = PenboardConfig.withGridDefaults(config.gridKeys)
         val count = config.gridButtonCount.coerceIn(1, PenboardConfig.GRID_SLOTS)
         val spacing = (SPACING_DP * density).toInt().coerceAtLeast(1)
-        val cell = (config.keyHeightDp * CELL_SCALE * density).toInt().coerceAtLeast(1)
+        val fallbackCell = (config.keyHeightDp * CELL_SCALE * density).toInt().coerceAtLeast(1)
+        val cell = if (boardHeightPx > 0 && availableWidthPx > 0) {
+            GridMath.cellSizePx(
+                boardHeightPx = boardHeightPx,
+                availableWidthPx = availableWidthPx,
+                rows = GridMath.rowsFor(count),
+                spacingPx = spacing,
+                minCellPx = (34f * density).toInt()
+            )
+        } else {
+            fallbackCell
+        }
 
         val buttons = mutableListOf<KeyButton>()
         for (row in 0 until COLUMNS) {
             val rowView = LinearLayout(container.context).apply {
                 orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER
+                gravity = Gravity.END
             }
             for (column in 0 until COLUMNS) {
                 val index = row * COLUMNS + column
@@ -69,7 +85,12 @@ object KeyGridBuilder {
                 rowView.addView(button)
                 buttons.add(button)
             }
-            container.addView(rowView, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+            container.addView(
+                rowView,
+                LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+                    gravity = Gravity.END
+                }
+            )
         }
         return buttons
     }

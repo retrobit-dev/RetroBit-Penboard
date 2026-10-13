@@ -221,10 +221,13 @@ data class PenboardConfig(
      * Bawaannya aktif: satu tulisan = satu kata.
      */
     val clearAfterRecognize: Boolean = true,
-    /** Otomatis mengenali tulisan sesaat setelah pena diangkat (tanpa menekan tombol). */
-    val autoRecognize: Boolean = false,
-    /** Jeda sebelum pengenalan otomatis berjalan (milidetik). */
-    val autoRecognizeDelayMs: Int = 900,
+    /**
+     * Otomatis mengubah tulisan menjadi teks bila tidak ada tulisan baru selama
+     * [autoRecognizeDelayMs] (bawaan 2 detik) — tidak perlu menekan tombol sama sekali.
+     */
+    val autoRecognize: Boolean = true,
+    /** Jeda tanpa tulisan baru sebelum tulisan diinput sebagai teks (milidetik). */
+    val autoRecognizeDelayMs: Int = 2000,
     /** Tata letak papan tulis & tombol operasi. */
     val boardLayout: BoardLayoutMode = BoardLayoutMode.BOARD_LEFT_GRID,
     /** Tombol-tombol untuk grid 3x3 (selalu 9 slot; yang aktif diatur [gridButtonCount]). */
@@ -273,7 +276,7 @@ data class PenboardConfig(
             penColors = penColors.take(MAX_PEN_COLORS),
             recognitionLanguage = recognitionLanguage.trim().ifBlank { "id-ID" }.take(12),
             recognitionLines = recognitionLines.coerceIn(1, 6),
-            autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(300, 3000),
+            autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(500, 5000),
             gridKeys = withGridDefaults(gridKeys),
             gridButtonCount = gridButtonCount.coerceIn(1, GRID_SLOTS),
             schemaVersion = SCHEMA_VERSION,
@@ -345,7 +348,7 @@ data class PenboardConfig(
         const val GRID_SLOTS = 9
 
         /** Versi skema data profil; naikkan bila nilai bawaan berubah. */
-        const val SCHEMA_VERSION = 2
+        const val SCHEMA_VERSION = 3
 
         /** Tombol bawaan untuk grid 3x3 (operasi yang paling sering dipakai). */
         fun defaultGridKeys(): List<KeyDef> = listOf(
@@ -428,8 +431,8 @@ data class PenboardConfig(
                 gridButtonCount = o.optInt("gridButtonCount", GRID_SLOTS),
                 autoSpaceAfterWord = o.optBoolean("autoSpaceAfterWord", true),
                 schemaVersion = o.optInt("schemaVersion", 1),
-                autoRecognize = o.optBoolean("autoRecognize", false),
-                autoRecognizeDelayMs = o.optInt("autoRecognizeDelayMs", 900),
+                autoRecognize = migratedBoolean(o, "autoRecognize", true, migrated),
+                autoRecognizeDelayMs = if (migrated) 2000 else o.optInt("autoRecognizeDelayMs", 2000),
                 penButtonPrimary = PenButtonAction.fromId(o.optString("penButtonPrimary"), PenButtonAction.RECOGNIZE),
                 penButtonSecondary = PenButtonAction.fromId(o.optString("penButtonSecondary"), PenButtonAction.UNDO),
                 toolbarRows = toolbar,

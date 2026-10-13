@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         content.removeAllViews()
         val config = repository.active()
         renderStatus(content)
+        renderHuaweiTip(content)
         renderOverlay(content)
         renderActiveBoard(content, config)
         renderProfiles(content, config)
@@ -77,6 +78,27 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.action_pick_keyboard) to { showImePicker() },
             getString(R.string.action_system_settings) to { openImeSettings() }
         )
+    }
+
+    /** Saran khusus perangkat Huawei/Honor: tulisan tangan bawaan bisa bertabrakan. */
+    private fun renderHuaweiTip(parent: LinearLayout) {
+        if (!isHuaweiFamily() || prefs.hideHuaweiTip) return
+        val card = Ui.card(parent, getString(R.string.huawei_tip_title), getString(R.string.huawei_tip_body))
+        Ui.buttonRow(
+            card,
+            getString(R.string.action_system_settings) to { openImeSettings() },
+            getString(R.string.action_pick_keyboard) to { showImePicker() }
+        )
+        Ui.fullButton(card, getString(R.string.huawei_tip_hide), outlined = true) {
+            prefs.hideHuaweiTip = true
+            render()
+        }
+    }
+
+    /** Huawei/Honor memakai stylus dengan tulisan tangan bawaan yang bisa menyerobot stylus. */
+    private fun isHuaweiFamily(): Boolean {
+        val brand = (Build.BRAND + " " + Build.MANUFACTURER + " " + Build.DEVICE).lowercase()
+        return brand.contains("huawei") || brand.contains("honor") || brand.contains("harmony")
     }
 
     /** Kartu papan tulis melayang: izin, tombol tampilkan/sembunyikan. */

@@ -28,9 +28,15 @@ class HandwritingInput(
     private val handler = Handler(Looper.getMainLooper())
     private val autoTask = Runnable { recognize(clearAfter = true, announce = false) }
 
-    /** Dipanggil setiap kali satu goresan selesai ditulis. */
+    /**
+     * Dipanggil setiap kali satu goresan selesai ditulis.
+     *
+     * Setiap goresan baru mengulang hitungan mundur, sehingga tulisan baru diinput sebagai teks
+     * setelah pengguna berhenti menulis selama [configDelayMs] (bawaan 2 detik).
+     */
     fun onStrokeCommitted() {
         if (!configAutoRecognize()) return
+        if (boardProvider()?.hasContent != true) return
         handler.removeCallbacks(autoTask)
         handler.postDelayed(autoTask, configDelayMs().toLong())
     }

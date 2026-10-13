@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:settingsActivity="dev.retrobit.penboard.MainActivity"
-    android:supportsSwitchingToNextInputMethod="true">
+    android:supportsStylusHandwriting="false"
+    android:supportsSwitchingToNextInputMethod="true"
+    tools:targetApi="34">
     <subtype
         android:icon="@mipmap/ic_launcher"
         android:imeSubtypeLocale="id_ID"

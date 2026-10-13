@@ -144,13 +144,23 @@ class PenboardConfigTest {
         val migrated = PenboardConfig.fromJson(old)
         assertTrue("tulisan harus dibersihkan setelah dikenali", migrated.clearAfterRecognize)
         assertTrue("spasi otomatis harus aktif", migrated.autoSpaceAfterWord)
+        assertTrue("input otomatis harus aktif", migrated.autoRecognize)
+        assertEquals("jeda bawaan 2 detik", 2000, migrated.autoRecognizeDelayMs)
         assertEquals(BoardLayoutMode.BOARD_LEFT_GRID, migrated.boardLayout)
 
         // profil baru tetap menghormati pilihan pengguna
-        val chosen = PenboardConfig(clearAfterRecognize = false, autoSpaceAfterWord = false, schemaVersion = 2)
+        val chosen = PenboardConfig(
+            clearAfterRecognize = false,
+            autoSpaceAfterWord = false,
+            autoRecognize = false,
+            autoRecognizeDelayMs = 3000,
+            schemaVersion = PenboardConfig.SCHEMA_VERSION
+        )
         val restored = PenboardConfig.fromJson(JSONObject(chosen.toJson().toString()))
         assertFalse(restored.clearAfterRecognize)
         assertFalse(restored.autoSpaceAfterWord)
+        assertFalse(restored.autoRecognize)
+        assertEquals(3000, restored.autoRecognizeDelayMs)
     }
 
     @Test
@@ -169,13 +179,15 @@ class PenboardConfigTest {
         val config = PenboardConfig()
         assertEquals(PenButtonAction.RECOGNIZE, config.penButtonPrimary)
         assertEquals(PenButtonAction.UNDO, config.penButtonSecondary)
-        assertEquals(false, config.autoRecognize)
-        assertEquals(900, config.autoRecognizeDelayMs)
+        assertTrue("input otomatis harus aktif secara bawaan", config.autoRecognize)
+        assertEquals(2000, config.autoRecognizeDelayMs)
+        assertTrue("tulisan dibersihkan setelah diinput", config.clearAfterRecognize)
+        assertTrue("spasi otomatis antar kata", config.autoSpaceAfterWord)
         assertEquals("id-ID", config.recognitionLanguage)
 
-        // jeda di luar batas dipangkas
-        assertEquals(300, config.copy(autoRecognizeDelayMs = 10).sanitized().autoRecognizeDelayMs)
-        assertEquals(3000, config.copy(autoRecognizeDelayMs = 99_999).sanitized().autoRecognizeDelayMs)
+        // jeda di luar batas dipangkas (minimal 0,5 detik, maksimal 5 detik)
+        assertEquals(500, config.copy(autoRecognizeDelayMs = 10).sanitized().autoRecognizeDelayMs)
+        assertEquals(5000, config.copy(autoRecognizeDelayMs = 99_999).sanitized().autoRecognizeDelayMs)
         // profil lama tanpa bidang ini tetap memakai bawaan
         val old = PenboardConfig.fromJson(JSONObject("""{"name":"Lama"}"""))
         assertEquals(PenButtonAction.RECOGNIZE, old.penButtonPrimary)
