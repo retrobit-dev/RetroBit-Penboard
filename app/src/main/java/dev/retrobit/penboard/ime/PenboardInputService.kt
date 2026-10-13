@@ -72,6 +72,10 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         handleAction(action, key.text)
     }
 
+    override fun onStrokeStarted() {
+        handwriting?.onStrokeStarted()
+    }
+
     override fun onStrokeCommitted() {
         handwriting?.onStrokeCommitted()
     }
@@ -93,7 +97,11 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             KeyAction.DELETE_WORD -> deleteWord()
             KeyAction.UNDO -> panel?.board?.undo()
             KeyAction.REDO -> panel?.board?.redo()
-            KeyAction.CLEAR -> panel?.board?.clear()
+            KeyAction.CLEAR -> {
+                // Tidak ada lagi yang perlu dijadikan teks setelah papan dibersihkan.
+                handwriting?.cancelAuto()
+                panel?.board?.clear()
+            }
             KeyAction.DELETE_STROKE -> panel?.board?.deleteLastStroke()
             KeyAction.CYCLE_PEN -> cyclePen()
             KeyAction.RECOGNIZE -> handwriting?.recognize(announce = true)
@@ -111,6 +119,13 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     fun deleteBackwardFromExternal(): Boolean {
         if (currentInputConnection == null) return false
         deleteBackward()
+        return true
+    }
+
+    /** Hapus satu kata utuh dari papan melayang (bukan satu huruf demi satu huruf). */
+    fun deleteWordFromExternal(): Boolean {
+        if (currentInputConnection == null) return false
+        deleteWord()
         return true
     }
 

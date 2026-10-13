@@ -34,6 +34,9 @@ class BoardView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     var onStrokeCommitted: (() -> Unit)? = null
+
+    /** Pena baru menyentuh papan: batalkan hitungan tunggu supaya tulisan tidak terpotong. */
+    var onStrokeStarted: (() -> Unit)? = null
     var onContentChanged: (() -> Unit)? = null
     var onPenButtonPrimary: (() -> Unit)? = null
     var onPenButtonSecondary: (() -> Unit)? = null
@@ -43,6 +46,7 @@ class BoardView @JvmOverloads constructor(
     private val strokePaths = mutableListOf<Path>()
     private val currentPath = Path()
     private var current: Stroke? = null
+    private var lastInk: InkPoint? = null
 
     private val density = resources.displayMetrics.density
 
@@ -135,6 +139,9 @@ class BoardView @JvmOverloads constructor(
 
     val hasContent: Boolean get() = strokes.isNotEmpty()
 
+    /** Benar bila pena masih menempel di papan (ada goresan yang belum diangkat). */
+    val isWriting: Boolean get() = current != null
+
     val strokeCount: Int get() = strokes.size
 
     /** Salinan goresan untuk pengenalan tulisan. */
@@ -160,7 +167,14 @@ class BoardView @JvmOverloads constructor(
     fun deleteLastStroke(): Boolean = undo()
 
     fun clear() {
-        if (strokes.isEmpty()) return
+        // Goresan yang belum diangkat ikut dibuang supaya tidak tertinggal di papan.
+        current = null
+        currentPath.reset()
+        lastInk = null
+        if (strokes.isEmpty()) {
+            invalidate()
+            return
+        }
         redoStack.clear()
         strokes.clear()
         strokePaths.clear()
@@ -385,30 +399,37 @@ class BoardView @JvmOverloads constructor(
     private fun startStroke(x: Float, y: Float, widthFactor: Float) {
         parent?.requestDisallowInterceptTouchEvent(true)
         if (haptics) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        // Pena mulai menulis: papan belum siap dijadikan teks.
+        onStrokeStarted?.invoke()
         val stroke = Stroke(color = penColor, widthPx = penWidthPx * widthFactor)
         stroke.points.add(InkPoint(x, y))
         current = stroke
         currentPath.reset()
         currentPath.moveTo(x, y)
+        lastInk = InkPoint(x, y)
         redoStack.clear()
         invalidate()
     }
 
     private fun extendStroke(x: Float, y: Float) {
         val stroke = current ?: return
-        val last = stroke.last()
-        if (last != null && hypot(x - last.x, y - last.y) < 1.2f) return
+        val last = stroke.last() ?: return
+        if (hypot(x - last.x, y - last.y) < 1.2f) return
         stroke.points.add(InkPoint(x, y))
-        currentPath.lineTo(x, y)
+        // Lengkung kuadratik lewat titik tengah: tulisan halus, tidak patah-patah.
+        currentPath.quadTo(last.x, last.y, (last.x + x) / 2f, (last.y + y) / 2f)
+        lastInk = InkPoint(x, y)
         invalidate()
     }
 
     private fun finishStroke() {
         val stroke = current ?: return
         current = null
+        lastInk?.let { currentPath.lineTo(it.x, it.y) }
         strokes.add(stroke)
         strokePaths.add(pathOf(currentPath))
         currentPath.reset()
+        lastInk = null
         invalidate()
         onStrokeCommitted?.invoke()
         onContentChanged?.invoke()
@@ -420,15 +441,17 @@ class BoardView @JvmOverloads constructor(
     }
 
     private fun pathOf(stroke: Stroke): Path = Path().also { path ->
-        var first = true
-        for (point in stroke.points) {
-            if (first) {
-                path.moveTo(point.x, point.y)
-                first = false
-            } else {
-                path.lineTo(point.x, point.y)
-            }
+        val points = stroke.points
+        if (points.isEmpty()) return@also
+        path.moveTo(points[0].x, points[0].y)
+        var previous = points[0]
+        for (index in 1 until points.size) {
+            val point = points[index]
+            // Sama seperti saat menulis: lengkung kuadratik lewat titik tengah.
+            path.quadTo(previous.x, previous.y, (previous.x + point.x) / 2f, (previous.y + point.y) / 2f)
+            previous = point
         }
+        path.lineTo(previous.x, previous.y)
     }
 
     private fun pathOf(source: Path): Path = Path(source)

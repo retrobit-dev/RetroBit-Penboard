@@ -41,6 +41,15 @@ class HandwritingInput(
     /** Pengalihan ke keyboard bawaan hanya ditawarkan sekali per sesi. */
     private var fallbackOffered = false
 
+    /**
+     * Pena mulai menulis: batalkan jadwal "jadi teks" supaya tulisan yang sedang
+     * ditulis tidak terpotong dan papan tidak dikosongkan di tengah goresan.
+     */
+    fun onStrokeStarted() {
+        handler.removeCallbacks(autoTask)
+        board.cancelPending()
+    }
+
     /** Dipanggil setiap goresan selesai: mulai hitungan jeda input otomatis. */
     fun onStrokeCommitted() {
         scheduleAuto()
@@ -67,6 +76,11 @@ class HandwritingInput(
         handler.removeCallbacks(autoTask)
         board.cancelPending()
         if (busy) return
+        if (board.isWriting) {
+            // Pena masih menempel di papan: tunggu diangkat dulu, jangan potong tulisan.
+            handler.postDelayed(autoTask, RECHECK_MS)
+            return
+        }
         val current = config()
         if (!board.hasContent) {
             if (announce) notify(context.getString(R.string.msg_board_empty))
@@ -127,7 +141,16 @@ class HandwritingInput(
                 }
             }
             RecognitionFailure.EMPTY -> if (announce) notify(context.getString(R.string.msg_board_empty))
-            else -> if (announce) notify(context.getString(R.string.msg_not_recognized))
+            else -> {
+                // Papan memberi tahu bahwa tulisannya belum terbaca, walau tanpa suara.
+                board.showFlash(context.getString(R.string.flash_unreadable))
+                if (announce) notify(context.getString(R.string.msg_not_recognized))
+            }
         }
+    }
+
+    private companion object {
+        /** Selang pemeriksaan ulang saat pena masih menempel di papan (ms). */
+        const val RECHECK_MS = 400L
     }
 }

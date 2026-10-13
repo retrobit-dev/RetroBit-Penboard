@@ -2,7 +2,15 @@
 
 Papan tulis stylus untuk Android. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Ini **bukan keyboard QWERTY** — papan tulisnya lebar di kiri, tombol-tombol operasinya kecil dan rapi 3x3 di kanan.
 
-Versi terbaru: **2.0.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **2.0.3** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+Yang baru di 2.0.3:
+
+- **Tulisan tidak lagi terpotong.** Begitu pena menyentuh papan, hitungan 2 detik dibatalkan; kalau pena masih menempel saat waktunya habis, papan menunggu pena diangkat dulu.
+- **Goresan dihaluskan** (lengkung kuadratik) sehingga tulisan lebih enak dilihat dan lebih mudah dikenali mesin.
+- **Panduan pemasangan 3 langkah** di halaman utama, dengan tanda ✓ bila langkahnya sudah beres.
+- Pesan **"✗ tidak terbaca"** muncul di papan kalau tulisannya belum bisa dikenali, jadi jelas bukan karena papan yang diam.
+- Tombol **Hapus satu kata** di papan melayang sekarang benar-benar menghapus satu kata, bukan beberapa huruf.
 
 ## Cara pakai singkat
 
@@ -44,8 +52,8 @@ Panel dan papan dibuat tembus pandang supaya tulisan di aplikasi lain tetap terb
 
 Umpan balik saat menulis:
 
-- Garis **hitung mundur** di papan menunjukkan kapan input otomatis akan berjalan.
-- Setelah teks terkirim, muncul **kilasan tanda centang + teks** yang baru masuk, jadi kelihatan hasil pengenalannya.
+- Garis **hitung mundur** di papan menunjukkan kapan input otomatis akan berjalan; hitungan ini berhenti begitu pena kembali menyentuh papan.
+- Setelah teks terkirim, muncul **kilasan tanda centang + teks** yang baru masuk, jadi kelihatan hasil pengenalannya; kalau gagal, muncul **"✗ tidak terbaca"**.
 - **Tekanan M-Pen** membuat goresan lebih tebal atau tipis (bisa dimatikan).
 - **Ujung penghapus stylus** menghapus goresan yang ada di sekitar sentuhan itu.
 

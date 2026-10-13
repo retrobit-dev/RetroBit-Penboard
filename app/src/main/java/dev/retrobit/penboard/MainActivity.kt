@@ -175,13 +175,20 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.overlay_note))
     }
 
-    /** Pemeriksaan perangkat: apa saja yang siap dan apa yang belum. */
+    /** Panduan tiga langkah + pemeriksaan perangkat. */
     private fun renderDiagnosticsCard() {
         val card = Ui.card(content, getString(R.string.card_check), getString(R.string.card_check_sub))
-        Ui.statusText(
+        val keyboardActive = isPenboardActive()
+        step(card, getString(R.string.step_keyboard_enable), keyboardActive)
+        step(card, getString(R.string.step_keyboard_pick), keyboardActive)
+        step(card, getString(R.string.step_test), !testField.text.isNullOrBlank())
+        Ui.buttonRow(
             card,
-            getString(if (isPenboardActive()) R.string.check_keyboard_ok else R.string.check_keyboard_no)
+            getString(R.string.action_keyboard_settings) to { openKeyboardSettings() },
+            getString(R.string.action_pick_keyboard) to { showKeyboardPicker() }
         )
+
+        Ui.divider(card)
         val engineReady = InkRecognition.isServicesAvailable(this)
         Ui.statusText(card, getString(if (engineReady) R.string.check_engine_ok else R.string.check_engine_no))
         val deviceInk = SystemHandwriting.pickBest(SystemHandwriting.candidates(this), packageName)
@@ -199,6 +206,11 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /** Satu langkah panduan dengan tanda selesai/belum. */
+    private fun step(parent: LinearLayout, text: String, done: Boolean) {
+        Ui.statusText(parent, getString(if (done) R.string.step_done else R.string.step_todo) + " " + text)
+    }
+
     private fun renderPreviewCard() {
         val card = Ui.card(content, getString(R.string.card_preview), getString(R.string.card_preview_sub))
         val panel = previewPanel ?: BoardPanel(this, showHandle = true).also { previewPanel = it }
@@ -208,6 +220,7 @@ class MainActivity : AppCompatActivity() {
                 toast(getString(R.string.preview_key_tap, store.config.labelFor(key)))
             }
 
+            override fun onStrokeStarted() = Unit
             override fun onStrokeCommitted() = Unit
             override fun onPenButton(primary: Boolean) = Unit
             override fun onContentChanged() = Unit

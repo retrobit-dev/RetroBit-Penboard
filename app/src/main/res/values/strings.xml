@@ -32,11 +32,14 @@
     <string name="msg_overlay_failed">Papan melayang gagal dinyalakan.</string>
     <string name="msg_overlay_permission_failed">Tidak bisa membuka pengaturan izin.</string>
 
-    <!-- Kartu: pemeriksaan perangkat -->
-    <string name="card_check">Pemeriksaan perangkat</string>
-    <string name="card_check_sub">Apa saja yang sudah siap di ponsel ini.</string>
-    <string name="check_keyboard_ok">Keyboard: aktif.</string>
-    <string name="check_keyboard_no">Keyboard: belum dipilih sebagai keyboard aktif.</string>
+    <!-- Kartu: panduan pemasangan + pemeriksaan perangkat -->
+    <string name="card_check">Panduan pemasangan</string>
+    <string name="card_check_sub">Tiga langkah supaya papan tulis bisa langsung dipakai.</string>
+    <string name="step_done">✓</string>
+    <string name="step_todo">○</string>
+    <string name="step_keyboard_enable">Pasang Penboard sebagai keyboard</string>
+    <string name="step_keyboard_pick">Pilih Penboard dari daftar keyboard</string>
+    <string name="step_test">Coba tulis di kolom Uji tulis dengan M-Pen</string>
     <string name="check_engine_ok">Mesin pengenalan Penboard: siap.</string>
     <string name="check_engine_no">Mesin pengenalan Penboard: tidak tersedia (perangkat ini tanpa Google Play services). Pakai tombol tulisan tangan perangkat.</string>
     <string name="check_device_ink_ok">Tulisan tangan perangkat: %1$s tersedia.</string>
@@ -136,6 +139,7 @@
     <string name="msg_model_ready">Model bahasa siap dipakai.</string>
     <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
     <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau pakai tombol Hapus.</string>
+    <string name="flash_unreadable">✗ tidak terbaca</string>
     <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
     <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
 

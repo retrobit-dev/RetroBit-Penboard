@@ -24,6 +24,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
 
     interface Listener {
         fun onKey(key: KeyDef, action: KeyAction)
+        fun onStrokeStarted()
         fun onStrokeCommitted()
         fun onPenButton(primary: Boolean)
         fun onContentChanged()
@@ -44,6 +45,7 @@ class BoardPanel(private val context: Context, private val showHandle: Boolean) 
     val handle: View?
 
     init {
+        board.onStrokeStarted = { listener?.onStrokeStarted() }
         board.onStrokeCommitted = { listener?.onStrokeCommitted() }
         board.onContentChanged = { listener?.onContentChanged() }
         board.onPenButtonPrimary = { listener?.onPenButton(true) }

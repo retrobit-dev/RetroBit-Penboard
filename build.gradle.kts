@@ -1,4 +1,4 @@
-// Penboard 2 — dibangun ulang dari nol (versi 2.0.2).
+// Penboard 2 — dibangun ulang dari nol (versi 2.0.3).
 // Papan tulis stylus sebagai keyboard: papan di kiri, grid tombol 3x3 di kanan.
 plugins {
     id("com.android.application") version "8.7.3" apply false

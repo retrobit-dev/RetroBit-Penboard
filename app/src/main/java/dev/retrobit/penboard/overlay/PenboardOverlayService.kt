@@ -215,13 +215,20 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
             KeyAction.DELETE_WORD -> deleteWord()
             KeyAction.UNDO -> panel?.board?.undo()
             KeyAction.REDO -> panel?.board?.redo()
-            KeyAction.CLEAR -> panel?.board?.clear()
+            KeyAction.CLEAR -> {
+                handwriting?.cancelAuto()
+                panel?.board?.clear()
+            }
             KeyAction.DELETE_STROKE -> panel?.board?.deleteLastStroke()
             KeyAction.CYCLE_PEN -> cyclePen()
             KeyAction.RECOGNIZE -> handwriting?.recognize(announce = true)
             KeyAction.SYSTEM_HANDWRITING -> openHandwritingPicker()
             KeyAction.OVERLAY_TOGGLE, KeyAction.HIDE -> stopSelf()
         }
+    }
+
+    override fun onStrokeStarted() {
+        handwriting?.onStrokeStarted()
     }
 
     override fun onStrokeCommitted() {
@@ -258,10 +265,7 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
     }
 
     private fun deleteWord() {
-        val ime = PenboardInputService.current() ?: return
-        repeat(12) {
-            if (!ime.deleteBackwardFromExternal()) return
-        }
+        PenboardInputService.current()?.deleteWordFromExternal()
     }
 
     private fun cyclePen() {
@@ -272,9 +276,12 @@ class PenboardOverlayService : Service(), BoardPanel.Listener {
         toast(getString(R.string.msg_pen_changed, next + 1))
     }
 
+    /**
+     * Papan melayang tidak bisa berpindah keyboard sendiri (hanya keyboard yang boleh),
+     * jadi yang ditampilkan adalah pemilih keyboard dengan pesan yang jujur.
+     */
     private fun openHandwritingPicker() {
-        val target = SystemHandwriting.pickBest(SystemHandwriting.candidates(this), packageName)
-        if (target != null) toast(getString(R.string.system_handwriting_switched, target.label))
+        toast(getString(R.string.system_handwriting_picker))
         SystemHandwriting.openPicker(this)
     }
 
