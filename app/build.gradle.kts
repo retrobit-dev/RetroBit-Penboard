@@ -78,6 +78,10 @@ android {
     lint {
         abortOnError = false
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -90,4 +94,6 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
+    // org.json asli untuk unit test (android.jar hanya berisi stub)
+    testImplementation("org.json:json:20231013")
 }

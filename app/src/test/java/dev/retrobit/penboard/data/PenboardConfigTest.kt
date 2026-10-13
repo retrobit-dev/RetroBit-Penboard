@@ -1,0 +1,105 @@
+package dev.retrobit.penboard.data
+
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PenboardConfigTest {
+
+    @Test
+    fun `preset bawaan selamat dari putaran json`() {
+        Presets.builtins().forEach { original ->
+            val restored = PenboardConfig.fromJson(JSONObject(original.toJson().toString()))
+            assertEquals(original.id, restored.id)
+            assertEquals(original.name, restored.name)
+            assertEquals(original.builtinId, restored.builtinId)
+            assertEquals(original.boardHeightDp, restored.boardHeightDp)
+            assertEquals(original.lineGapDp, restored.lineGapDp)
+            assertEquals(original.boardBgColor, restored.boardBgColor)
+            assertEquals(original.boardBgOpacity, restored.boardBgOpacity)
+            assertEquals(original.strokeColor, restored.strokeColor)
+            assertEquals(original.toolbarSide, restored.toolbarSide)
+            assertEquals(original.toolbarRows.size, restored.toolbarRows.size)
+            assertEquals(original.boardRows.size, restored.boardRows.size)
+            assertEquals(original.boardRows.first().keys.size, restored.boardRows.first().keys.size)
+            assertEquals(original.boardRows.first().keys.first().action, restored.boardRows.first().keys.first().action)
+        }
+    }
+
+    @Test
+    fun `setiap preset punya id unik dan baris yang tidak kosong`() {
+        val presets = Presets.builtins()
+        assertEquals(presets.size, presets.map { it.id }.toSet().size)
+        presets.forEach { preset ->
+            assertTrue(preset.name.isNotBlank())
+            assertTrue(preset.toolbarRows.isNotEmpty())
+            assertTrue(preset.boardRows.isNotEmpty())
+            preset.toolbarRows.forEach { row -> assertTrue(row.keys.isNotEmpty()) }
+            preset.boardRows.forEach { row -> assertTrue(row.keys.isNotEmpty()) }
+            assertNotNull(preset.builtinId)
+        }
+    }
+
+    @Test
+    fun `nilai di luar batas dipangkas saat sanitasi`() {
+        val wild = PenboardConfig(
+            name = "  ",
+            boardHeightDp = 99_999,
+            lineGapDp = 1,
+            boardBgOpacity = 500,
+            strokeWidthDp = 100f,
+            keyHeightDp = 1,
+            toolbarRows = emptyList(),
+            boardRows = emptyList()
+        ).sanitized()
+
+        assertEquals("Papan", wild.name)
+        assertEquals(600, wild.boardHeightDp)
+        assertEquals(22, wild.lineGapDp)
+        assertEquals(100, wild.boardBgOpacity)
+        assertEquals(16f, wild.strokeWidthDp, 0.001f)
+        assertEquals(30, wild.keyHeightDp)
+        assertTrue(wild.toolbarRows.isNotEmpty())
+        assertTrue(wild.boardRows.isNotEmpty())
+    }
+
+    @Test
+    fun `json rusak tetap menghasilkan profil yang bisa dipakai`() {
+        val broken = JSONObject("""{"name":"Uji","toolbarRows":[],"boardRows":[]}""")
+        val config = PenboardConfig.fromJson(broken)
+        assertTrue(config.toolbarRows.isNotEmpty())
+        assertTrue(config.boardRows.isNotEmpty())
+        assertEquals("Uji", config.name)
+    }
+
+    @Test
+    fun `duplikat memakai id baru tetapi pengaturan sama`() {
+        val original = Presets.standard()
+        val copy = original.boardCopy("Salinan")
+        assertTrue(copy.id != original.id)
+        assertEquals("Salinan", copy.name)
+        assertEquals(original.boardHeightDp, copy.boardHeightDp)
+        assertEquals(original.boardRows.first().keys.map { it.action }, copy.boardRows.first().keys.map { it.action })
+        assertTrue(copy.boardRows.first().keys.first().id != original.boardRows.first().keys.first().id)
+    }
+
+    @Test
+    fun `warna dapat digabung dengan transparansi`() {
+        val solid = Colors.withOpacity(0xFF102030.toInt(), 100)
+        assertEquals(0xFF102030.toInt(), solid)
+        val half = Colors.withOpacity(0xFF102030.toInt(), 50)
+        assertEquals(127, half ushr 24)
+        val transparent = Colors.withOpacity(0xFF102030.toInt(), 0)
+        assertEquals(0, transparent ushr 24)
+    }
+
+    @Test
+    fun `hex warna bisa dibaca kembali`() {
+        val color = 0xFF3D5AFE.toInt()
+        assertEquals(color, Colors.parseHex(Colors.toHex(color), 0))
+        assertEquals(color, Colors.parseHex("3d5afe", 0))
+        assertEquals(color, Colors.parseHex("#3D5AFE", 0))
+    }
+}
