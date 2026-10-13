@@ -15,6 +15,17 @@ serta tata letaknya.
 
 ## 1. Fitur
 
+### Baru di v1.1
+- **Tulisan tersimpan otomatis per papan** — tulisan tetap ada walau keyboard ditutup, aplikasi
+  ditutup, atau HP dimatikan (berkas ringkas di penyimpanan internal, satu berkas per profil).
+- **Menelusuri tulisan lama** — tombol *Lihat tulisan lama* / *Kembali ke baris baru* menggeser
+  tampilan papan 3 baris setiap kali ditekan (tulisan tidak hilang, hanya tampilannya bergeser).
+- **Warna pena tetap** — daftar warna milik profil; tombol warna bergiliran memakai warna tersebut
+  dan tetap dipakai sampai ditekan lagi (setelah warna terakhir kembali ke warna profil).
+- Tombol **Profil sebelumnya** dan **Profil berikutnya**; tiap profil punya isi papan sendiri.
+- 2 preset baru: **Warna Pena Tetap** dan **Papan Tulis Leluasa** (8 preset total).
+- Rumus papan (jarak baris, geser otomatis, geser tampilan) dipindah ke `BoardMath` dan **diuji unit test**.
+
 ### Papan tulis stylus
 - Menggambar dengan stylus secara halus (path kuadratik), **tekanan pena ikut memengaruhi tebal garis**.
 - **Tombol samping pena = Urungkan (undo)**, **ujung penghapus pena = mode hapus** (kalau stylus Anda mendukungnya) — perilaku khas stylus EMR seperti M-Pencil.
@@ -39,12 +50,14 @@ serta tata letaknya.
 | Tombol | aksi, teks, **lebar relatif**, **isi sisa ruang (%)**, ulangi saat ditahan, geser posisi |
 
 Aksi tombol yang tersedia: teks/simbol bebas, spasi, entri (baris baru), hapus huruf, hapus goresan
-terakhir, bersihkan papan, urungkan, ulangi, geser kursor kiri/kanan, simpan gambar, ganti warna pena,
-ganti profil papan, alat pena, alat penghapus, sembunyikan papan.
+terakhir, bersihkan papan, urungkan, ulangi, geser kursor kiri/kanan, lihat tulisan lama, kembali ke
+baris baru, simpan gambar, warna pena bergiliran, profil sebelumnya/berikutnya, alat pena, alat
+penghapus, sembunyikan papan.
 
 ### Siap pakai & bisa disalin
-6 preset bawaan (Catatan Standar, Catatan Ringkas, Angka & Simbol, Alat Cepat/Menggambar, Tema Terang,
-Papan Penuh). Semua bisa diubah, disalin (duplikat), diganti nama, dipulihkan ke bawaan, atau dihapus.
+8 preset bawaan (Catatan Standar, Catatan Ringkas, Angka & Simbol, Alat Cepat/Menggambar, Tema Terang,
+Papan Penuh, Warna Pena Tetap, Papan Tulis Leluasa). Semua bisa diubah, disalin (duplikat),
+diganti nama, dipulihkan ke bawaan, atau dihapus.
 
 ### Privasi
 - **100% luring.** Tidak ada izin internet, tidak ada analitik, tidak ada pengiriman data.
@@ -103,13 +116,18 @@ app/src/main/java/dev/retrobit/penboard/
 ├── data/            # model pengaturan (profil), preset bawaan, penyimpanan JSON, warna
 │   ├── PenboardConfig.kt     # KeyAction, KeyDef, RowDef, PenboardConfig (+ JSON)
 │   ├── Presets.kt            # 6 preset siap pakai
-│   ├── PresetRepository.kt   # simpan/muat profil (SharedPreferences)
+│   ├── PresetRepository.kt   # simpan/muat profil (SharedPreferences) + isi papan
+│   ├── BoardStore.kt         # berkas goresan per profil (files/boards)
 │   ├── GlobalPrefs.kt        # preferensi global (getar, panduan)
 │   └── Colors.kt             # transparansi, campur warna, palet, hex
-├── util/KeyLayout.kt # perhitungan lebar tombol (fungsi murni + unit test)
+├── util/
+│   ├── KeyLayout.kt          # perhitungan lebar tombol (fungsi murni + unit test)
+│   └── BoardMath.kt          # jarak baris, geser otomatis, geser tampilan (fungsi murni + unit test)
 ├── board/           # mesin gambar papan tulis
 │   ├── BoardView.kt          # kanvas stylus: tekanan, penghapus, undo/redo, geser otomatis
-│   ├── Stroke.kt             # goresan (titik, path, uji tabrak penghapus)
+│   ├── Stroke.kt             # goresan (titik, batas, uji tabrak penghapus) — bebas Android
+│   ├── StrokePaths.kt        # cache Path untuk menggambar goresan
+│   ├── StrokeCodec.kt        # simpan/muat goresan (format teks ringkas)
 │   ├── KeyButton.kt          # tombol kustom: label/ikon, status aktif, ulangi saat ditahan
 │   ├── KeyIcons.kt           # ikon vektor untuk tiap aksi
 │   └── BoardExporter.kt      # simpan papan ke PNG (Galeri)
@@ -172,6 +190,9 @@ keyPassword=…
 
 `./gradlew :app:testDebugUnitTest` menjalankan:
 - `KeyLayoutTest` — perhitungan lebar tombol (lebar relatif, isi sisa ruang, sisa pembulatan).
+- `BoardMathTest` — jumlah baris, geser otomatis, batas geser tampilan, konversi koordinat.
+- `StrokeTest` — titik goresan, batas, dan uji tabrak penghapus.
+- `StrokeCodecTest` — goresan tetap utuh setelah disimpan/dimuat, data rusak diabaikan dengan aman.
 - `PenboardConfigTest` — putaran JSON preset, sanitasi nilai ekstrem, duplikasi profil, warna.
 
 ---
@@ -184,8 +205,9 @@ keyPassword=…
 - Pintasan tombol/ujung penghapus pena hanya bekerja bila stylus & aplikasi mengirimkan informasi
   tombol (M-Pencil umumnya mengirim `TOOL_TYPE_ERASER` pada ujung penghapusnya; sebagian stylus
   mengirim `BUTTON_STYLUS_PRIMARY`).
-- Papan hanya menggambar di area yang terlihat; konten yang lebih lama tetap tersimpan sampai
-  dihapus, dan bisa digeser tampilannya lewat urungkan/ulangi.
+- Papan menggambar di area yang terlihat; tulisan yang lebih lama tetap tersimpan dan tampilannya
+  bisa ditelusuri dengan tombol *Lihat tulisan lama* / *Kembali ke baris baru* (atau urungkan).
+- Tulisan disimpan otomatis setiap ada perubahan (goresan, penghapusan, dan pergeseran papan).
 
 ## 9. Lisensi
 
@@ -199,5 +221,6 @@ RetroBit Penboard is a native Android **stylus writing-board keyboard** (not QWE
 Huawei M-Pencil and similar pens. Everything is configurable — board size, transparency levels,
 which buttons appear, and their layout (relative width, flex-to-fill, repeat-on-hold, toolbar
 position, rows). It supports pen pressure, side-button undo, eraser-tip erase, palm rejection,
-automatic paper shift, undo/redo, and PNG export. 100% offline, no internet permission.
-APKs are built and published by GitHub Actions on every push.
+automatic paper shift, undo/redo, and PNG export. Writing is **saved automatically per board**, can be
+**scrolled back** to review earlier lines, and each board can hold its **own fixed pen-colour palette**.
+100% offline, no internet permission. APKs are built and published by GitHub Actions on every push.
