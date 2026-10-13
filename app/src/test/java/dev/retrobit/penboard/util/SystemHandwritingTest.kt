@@ -50,8 +50,7 @@ class SystemHandwritingTest {
     @Test
     fun `keyboard penboard sendiri tidak pernah dipilih`() {
         val candidates = listOf(
-            candidate("dev.retrobit.penboard", "Penboard"),
-            candidate("dev.retrobit.penboard.ink", "Penboard OCR")
+            candidate("dev.retrobit.penboard", "Penboard")
         )
         assertNull(SystemHandwriting.pickBest(candidates, "dev.retrobit.penboard"))
     }

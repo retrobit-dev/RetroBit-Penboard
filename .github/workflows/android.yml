@@ -34,18 +34,29 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Unit tests (kedua varian)
+      - name: Unit test
         run: |
           set +e
           set -o pipefail
-          ./gradlew :app:testOfflineDebugUnitTest :app:testInkDebugUnitTest --stacktrace --console=plain 2>&1 | tee /tmp/unit-tests.log
+          ./gradlew :app:testDebugUnitTest --stacktrace --console=plain 2>&1 | tee /tmp/unit-tests.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             bash .github/scripts/report-gradle-failures.sh /tmp/unit-tests.log "unit test"
           fi
           exit "$status"
 
-      - name: Laporan error lanjutan (bila gagal)
+      - name: Build APK (debug + rilis)
+        run: |
+          set +e
+          set -o pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace --console=plain 2>&1 | tee /tmp/build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            bash .github/scripts/report-gradle-failures.sh /tmp/build.log "build apk"
+          fi
+          exit "$status"
+
+      - name: Laporan kegagalan (bila gagal)
         if: failure()
         run: |
           for f in /tmp/unit-tests.log /tmp/build.log; do
@@ -54,28 +65,15 @@ jobs:
             fi
           done
 
-      - name: Build APK (offline + ink, debug + release)
-        run: |
-          set +e
-          set -o pipefail
-          ./gradlew :app:assembleOfflineDebug :app:assembleOfflineRelease :app:assembleInkDebug :app:assembleInkRelease --stacktrace --console=plain 2>&1 | tee /tmp/build.log
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            bash .github/scripts/report-gradle-failures.sh /tmp/build.log "build apk"
-          fi
-          exit "$status"
-
-      - name: Collect APKs
+      - name: Kumpulkan APK
         run: |
           mkdir -p artifacts
           short="${GITHUB_SHA::7}"
-          cp app/build/outputs/apk/offline/debug/app-offline-debug.apk   "artifacts/Penboard-${short}-offline-debug.apk"   || true
-          cp app/build/outputs/apk/offline/release/app-offline-release.apk "artifacts/Penboard-${short}-offline-release.apk" || true
-          cp app/build/outputs/apk/ink/debug/app-ink-debug.apk           "artifacts/Penboard-${short}-ink-debug.apk"       || true
-          cp app/build/outputs/apk/ink/release/app-ink-release.apk       "artifacts/Penboard-${short}-ink-release.apk"     || true
+          cp app/build/outputs/apk/debug/app-debug.apk "artifacts/Penboard-${short}-debug.apk" || true
+          cp app/build/outputs/apk/release/app-release.apk "artifacts/Penboard-${short}-release.apk" || true
           ls -lh artifacts
 
-      - name: Upload APK artifacts
+      - name: Unggah artefak APK
         uses: actions/upload-artifact@v7
         with:
           name: penboard-apk
@@ -83,7 +81,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Attach APKs to release
+      - name: Lampirkan APK ke rilis
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:

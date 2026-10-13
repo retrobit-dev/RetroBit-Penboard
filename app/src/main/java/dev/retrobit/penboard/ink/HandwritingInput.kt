@@ -1,127 +1,109 @@
 package dev.retrobit.penboard.ink
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import dev.retrobit.penboard.R
 import dev.retrobit.penboard.board.BoardView
+import dev.retrobit.penboard.data.PenboardConfig
 
 /**
- * Menghubungkan papan tulis dengan mesin pengenalan tulisan.
+ * Logika bersama keyboard dan papan melayang:
  *
- * Dipakai baik oleh keyboard (IME) maupun papan melayang (overlay) supaya perilakunya sama:
- * - tombol "Tulisan menjadi teks" memicu pengenalan dan langsung mengirim teksnya;
- * - **satu tulisan = satu kata**, dan spasi ditambahkan otomatis untuk kata berikutnya;
- * - bila pengenalan otomatis aktif, tulisan dikenali sendiri sesaat setelah pena diangkat;
- * - setelah dikenali, goresan dibersihkan (masih bisa diurungkan) supaya siap menulis kata berikutnya.
+ * - **Input otomatis**: bila tidak ada goresan baru selama
+ *   [PenboardConfig.autoRecognizeDelayMs] (bawaan 2 detik), tulisan langsung
+ *   dikenali dan diinput sebagai teks. Setiap goresan baru mengulang hitungan.
+ * - **Manual**: tombol "Teks" atau tombol samping pena.
+ * - Tulisan dianggap satu kata, lalu satu spasi ditambahkan untuk kata berikutnya.
  */
 class HandwritingInput(
-    private val boardProvider: () -> BoardView?,
-    private val languageProvider: () -> String,
-    private val configAutoRecognize: () -> Boolean,
-    private val configDelayMs: () -> Int,
-    private val configLines: () -> Int,
-    private val configClearAfter: () -> Boolean,
-    private val configAutoSpace: () -> Boolean,
+    private val context: Context,
+    private val board: BoardView,
+    private val config: () -> PenboardConfig,
+    /** Kirim teks ke kolom isian; kembalikan true bila teks benar-benar terkirim. */
     private val commit: (String) -> Boolean,
     private val notify: (String) -> Unit,
-    /** Dipanggil saat mesin pengenalan tidak tersedia, agar pengguna diarahkan ke alternatifnya. */
-    private val onUnavailable: (String) -> Unit = { }
+    /** Mesin pengenalan bawaan tidak tersedia (mis. tanpa Google Play services). */
+    private val onUnavailable: (String) -> Unit = {}
 ) {
 
     private val handler = Handler(Looper.getMainLooper())
-    private val autoTask = Runnable { recognize(clearAfter = true, announce = false) }
+    private val autoTask = Runnable { recognize(clearAfter = null, announce = false) }
 
-    /**
-     * Dipanggil setiap kali satu goresan selesai ditulis.
-     *
-     * Setiap goresan baru mengulang hitungan mundur, sehingga tulisan baru diinput sebagai teks
-     * setelah pengguna berhenti menulis selama [configDelayMs] (bawaan 2 detik).
-     */
+    @Volatile
+    private var busy = false
+
+    /** Dipanggil setiap goresan selesai: mulai hitungan jeda input otomatis. */
     fun onStrokeCommitted() {
-        if (!configAutoRecognize()) return
-        if (boardProvider()?.hasContent != true) return
-        handler.removeCallbacks(autoTask)
-        handler.postDelayed(autoTask, configDelayMs().toLong())
+        scheduleAuto()
     }
 
-    fun cancelPending() {
+    /** Jadwalkan pengenalan otomatis sesuai jeda pengaturan. */
+    fun scheduleAuto() {
+        handler.removeCallbacks(autoTask)
+        val current = config()
+        if (!current.autoRecognize) return
+        handler.postDelayed(autoTask, current.autoRecognizeDelayMs.toLong())
+    }
+
+    fun cancelAuto() {
         handler.removeCallbacks(autoTask)
     }
 
-    /**
-     * Kenali tulisan pada beberapa baris terakhir.
-     * @param clearAfter null = ikuti pengaturan profil, true/false = paksa.
-     */
     fun recognize(clearAfter: Boolean? = null, announce: Boolean = true) {
         handler.removeCallbacks(autoTask)
-        val board = boardProvider() ?: return
-        if (!InkRecognition.isSupported) {
-            if (announce) onUnavailable(InkRecognition.offlineMessage())
-            return
-        }
+        if (busy) return
+        val current = config()
         if (!board.hasContent) {
-            if (announce) notify(EMPTY_MESSAGE)
+            if (announce) notify(context.getString(R.string.msg_board_empty))
             return
         }
-        val capture = InkExtractor.capture(
-            strokes = board.contentStrokes(),
-            gapPx = board.lineGapPx,
-            lines = configLines(),
-            width = board.width,
-            height = board.height
-        )
-        if (capture.isEmpty) {
-            if (announce) notify(EMPTY_MESSAGE)
+        if (!InkRecognition.isServicesAvailable(context)) {
+            if (announce) onUnavailable(context.getString(R.string.msg_engine_missing))
             return
         }
-        val language = RecognitionLanguages.normalize(languageProvider())
-        val shouldClear = clearAfter ?: configClearAfter()
-        InkRecognition.modelStatus(language) { status ->
-            when (status) {
-                ModelStatus.READY -> run(capture, language, shouldClear, announce)
-                ModelStatus.MISSING -> {
-                    if (announce) notify("Mengunduh model tulisan " + RecognitionLanguages.label(language) + "\u2026")
-                    InkRecognition.downloadModel(language) { state ->
-                        if (state == ModelStatus.READY) {
-                            run(capture, language, shouldClear, announce)
-                        } else {
-                            onUnavailable(InkRecognition.downloadFailureHint())
-                        }
-                    }
-                }
-
-                ModelStatus.UNKNOWN -> onUnavailable(InkRecognition.downloadFailureHint())
-            }
+        val strokes = InkNormalizer.normalize(board.contentStrokes(), board.lineGapPx)
+        if (strokes.isEmpty()) {
+            if (announce) notify(context.getString(R.string.msg_board_empty))
+            return
+        }
+        busy = true
+        val language = current.recognitionLanguage
+        InkRecognition.recognize(strokes, language) { text, failure ->
+            busy = false
+            handleResult(text, failure, current, clearAfter, announce, language)
         }
     }
 
-    private fun run(capture: InkCapture, language: String, clearAfter: Boolean, announce: Boolean) {
-        val board = boardProvider() ?: return
-        val toClear = if (clearAfter) board.contentStrokes() else emptyList()
-        InkRecognition.recognize(capture, language) { text, error ->
-            if (RecognitionText.isMeaningful(text)) {
-                // Satu tulisan = satu kata: tambahkan spasi untuk kata berikutnya.
-                val prepared = RecognitionText.prepare(text, configAutoSpace())
-                if (commit(prepared)) {
-                    if (announce) notify("Terkirim: " + prepared.trim())
-                    if (clearAfter && toClear.isNotEmpty()) board.removeStrokes(toClear)
-                } else {
-                    notify(NO_FIELD_MESSAGE)
-                }
-                return@recognize
-            }
-            when (error) {
-                RecognitionError.MODEL_MISSING -> notify(MODEL_MISSING_MESSAGE)
-                RecognitionError.EMPTY -> notify(EMPTY_MESSAGE)
-                RecognitionError.NOT_SUPPORTED -> onUnavailable(InkRecognition.offlineMessage())
-                else -> if (announce) notify(FAILED_MESSAGE)
-            }
-        }
+    fun release() {
+        handler.removeCallbacks(autoTask)
     }
 
-    companion object {
-        const val EMPTY_MESSAGE = "Belum ada tulisan yang bisa dikenali."
-        const val MODEL_MISSING_MESSAGE = "Model bahasa belum tersedia. Unduh dulu di aplikasi Penboard."
-        const val NO_FIELD_MESSAGE = "Tidak ada kolom teks yang aktif. Sentuh kolom teks lalu coba lagi."
-        const val FAILED_MESSAGE = "Tulisan belum bisa dikenali \u2014 coba tulis lebih jelas."
+    // ------------------------------------------------------------------ internal
+
+    private fun handleResult(
+        text: String?,
+        failure: RecognitionFailure?,
+        current: PenboardConfig,
+        clearAfter: Boolean?,
+        announce: Boolean,
+        language: String
+    ) {
+        if (RecognitionText.isMeaningful(text)) {
+            val prepared = RecognitionText.prepare(text, current.autoSpace)
+            val delivered = commit(prepared)
+            if (delivered && (clearAfter ?: current.clearAfterRecognize)) board.clear()
+            return
+        }
+        when (failure) {
+            RecognitionFailure.MODEL_MISSING -> {
+                onUnavailable(context.getString(R.string.msg_model_missing))
+                InkRecognition.downloadModel(language) { ok ->
+                    notify(context.getString(if (ok) R.string.msg_model_ready else R.string.msg_model_failed))
+                }
+            }
+            RecognitionFailure.EMPTY -> if (announce) notify(context.getString(R.string.msg_board_empty))
+            else -> if (announce) notify(context.getString(R.string.msg_not_recognized))
+        }
     }
 }

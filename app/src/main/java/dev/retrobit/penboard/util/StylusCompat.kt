@@ -4,18 +4,22 @@ import android.os.Build
 import android.view.View
 
 /**
- * Penyesuaian stylus untuk perangkat dengan tulisan tangan bawaan (mis. Huawei/HarmonyOS,
- * atau Android 14+ yang mendukung mode tulisan tangan sistem).
+ * Tabrakan dengan tulisan tangan bawaan perangkat.
+ *
+ * Sejak Android 14, kolom teks bisa otomatis memunculkan bantalan tulisan tangan
+ * stylus (pada perangkat Huawei/Honor memakai mesin Celia/Huawei Handwriting).
+ * Pada kolom teks milik aplikasi ini fitur tersebut dimatikan supaya yang muncul
+ * selalu papan Penboard, bukan panel bawaan.
  */
 object StylusCompat {
 
-    /**
-     * Matikan inisiasi tulisan tangan otomatis oleh sistem pada kolom teks milik Penboard,
-     * supaya semua tulisan stylus masuk lewat papan Penboard dan tidak bertabrakan dengan
-     * panel tulisan tangan bawaan perangkat.
-     */
     fun disableSystemHandwriting(view: View) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-        runCatching { view.setAutoHandwritingEnabled(false) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            try {
+                view.setAutoHandwritingEnabled(false)
+            } catch (error: Throwable) {
+                // Sebagian perangkat (HarmonyOS) tidak menyediakan API ini — abaikan.
+            }
+        }
     }
 }

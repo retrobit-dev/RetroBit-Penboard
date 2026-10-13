@@ -7,18 +7,18 @@ import android.view.inputmethod.InputMethodInfo
 import android.view.inputmethod.InputMethodManager
 
 /**
- * Jembatan ke **keyboard tulisan tangan bawaan perangkat** (mis. Celia/Huawei Handwriting
- * pada perangkat Huawei, atau metode masukan tulisan tangan lain yang terpasang).
+ * Jembatan ke **keyboard tulisan tangan bawaan perangkat** (mis. Celia/Huawei
+ * Handwriting pada perangkat Huawei/Honor).
  *
- * Huawei tidak menyediakan API pengenalan tulisan tangan untuk aplikasi pihak ketiga
- * (HMS Core hanya punya OCR gambar), sehingga cara yang bisa dipakai adalah berpindah
- * ke keyboard tulisan tangan tersebut ketika pengguna memang ingin pengenalan Huawei.
+ * Huawei maupun Honor tidak menyediakan API pengenalan tulisan tangan untuk
+ * aplikasi pihak ketiga (HMS Core hanya menyediakan OCR gambar), sehingga satu-satunya
+ * cara memakai mesin mereka adalah berpindah ke keyboard tulisan tangan tersebut.
  */
 object SystemHandwriting {
 
     private const val TAG = "PenboardSystemInk"
 
-    /** Kata kunci untuk mengenali keyboard tulisan tangan bawaan. */
+    /** Kata kunci untuk mengenali keyboard tulisan tangan bawaan perangkat. */
     val keywords: List<String> = listOf(
         "huawei", "celia", "honor", "harmony", "hiai",
         "handwrit", "tulisan tangan", "tulis tangan", "\u624b\u5199"
@@ -29,7 +29,6 @@ object SystemHandwriting {
         val packageName: String,
         val label: String
     ) {
-        /** Untuk uji & perbandingan tanpa Android. */
         val searchable: String get() = (packageName + " " + label).lowercase()
     }
 
@@ -40,40 +39,44 @@ object SystemHandwriting {
     }
 
     /**
-     * Pilih kandidat terbaik dari daftar keyboard: utamakan yang namanya mengandung kata
-     * kunci Huawei/Celia, lalu keyboard tulisan tangan lain; `null` bila tidak ada.
+     * Kandidat terbaik dari daftar keyboard: dahulukan Huawei/Celia, lalu Honor/Harmony,
+     * lalu keyboard tulisan tangan lain. `null` bila tidak ada sama sekali.
      */
     fun pickBest(candidates: List<Candidate>, ownPackage: String): Candidate? {
         val others = candidates.filter { it.packageName != ownPackage }
-        return others.firstOrNull { candidate -> candidate.searchable.contains("huawei") || candidate.searchable.contains("celia") }
-            ?: others.firstOrNull { candidate -> candidate.searchable.contains("honor") || candidate.searchable.contains("harmony") }
-            ?: others.firstOrNull { candidate ->
-                keywords.any { candidate.searchable.contains(it) }
-            }
+        return others.firstOrNull { it.isHuawei() }
+            ?: others.firstOrNull { it.isHonor() }
+            ?: others.firstOrNull { candidate -> keywords.any { candidate.searchable.contains(it) } }
     }
 
-    /** Daftar keyboard tulisan tangan yang tersedia di perangkat. */
+    private fun Candidate.isHuawei(): Boolean =
+        searchable.contains("huawei") || searchable.contains("celia")
+
+    private fun Candidate.isHonor(): Boolean =
+        searchable.contains("honor") || searchable.contains("harmony")
+
+    /** Daftar keyboard tulisan tangan yang aktif di perangkat. */
     fun candidates(context: Context): List<Candidate> = try {
         val manager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        manager.enabledInputMethodList.mapNotNull { info -> info.toCandidate(context) }
+        manager.enabledInputMethodList.mapNotNull { info -> candidate(context, info) }
     } catch (error: Throwable) {
         Log.w(TAG, "Gagal membaca daftar keyboard", error)
         emptyList()
     }
 
-    private fun InputMethodInfo.toCandidate(context: Context): Candidate? = try {
+    private fun candidate(context: Context, info: InputMethodInfo): Candidate? = try {
         Candidate(
-            id = id,
-            packageName = packageName,
-            label = loadLabel(context.packageManager).toString()
+            id = info.id,
+            packageName = info.packageName,
+            label = info.loadLabel(context.packageManager).toString()
         )
     } catch (error: Throwable) {
         null
     }
 
     /**
-     * Pindah ke keyboard tulisan tangan bawaan dari dalam keyboard Penboard.
-     * Mengembalikan [Candidate] yang dipakai, atau `null` bila hanya bisa membuka pemilih keyboard.
+     * Berpindah ke keyboard tulisan tangan bawaan dari dalam keyboard Penboard.
+     * Mengembalikan kandidat yang dipakai, atau `null` bila hanya bisa membuka pemilih keyboard.
      */
     fun switchFromIme(ime: InputMethodService): Candidate? {
         val target = pickBest(candidates(ime), ime.packageName)

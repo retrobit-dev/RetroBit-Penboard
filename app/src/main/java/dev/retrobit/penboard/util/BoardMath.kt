@@ -1,56 +1,28 @@
 package dev.retrobit.penboard.util
 
 import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.roundToInt
 
 /**
- * Hitungan geometri papan tulis. Semua fungsi murni (tanpa Android) supaya
- * perilaku papan — tinggi baris, geser otomatis, dan geser tampilan — bisa diuji.
+ * Matematika papan tulis: pemetaan tinggi tulisan ke indeks baris panduan.
+ * Murni Kotlin supaya bisa diuji tanpa Android.
  */
 object BoardMath {
 
-    const val MIN_VISIBLE_LINES = 3
-
-    /** Berapa baris tulis yang tampil untuk tinggi tertentu. */
-    fun visibleLines(availablePx: Float, desiredGapPx: Float): Int {
-        if (availablePx <= 0f || desiredGapPx <= 0f) return MIN_VISIBLE_LINES
-        return max(MIN_VISIBLE_LINES, (availablePx / desiredGapPx).roundToInt())
-    }
-
-    /** Jarak baris sebenarnya (dibulatkan agar pas mengisi tinggi papan). */
-    fun gapPx(availablePx: Float, lines: Int): Float = if (lines <= 0) 0f else availablePx / lines
-
-    /** Indeks baris dari sebuah koordinat konten. */
-    fun lineIndexOf(contentY: Float, gapPx: Float): Int {
-        if (gapPx <= 0f) return 0
-        return floor(contentY / gapPx).toInt().coerceAtLeast(0)
-    }
-
-    /** Koordinat konten paling atas yang terlihat (0 = paling awal). */
-    fun scrollY(contentShiftPx: Float, viewOffsetPx: Float): Float = max(0f, contentShiftPx - viewOffsetPx)
-
-    /** Ubah koordinat konten menjadi koordinat layar. */
-    fun toViewY(contentY: Float, contentShiftPx: Float, viewOffsetPx: Float, insetV: Float): Float =
-        contentY - scrollY(contentShiftPx, viewOffsetPx) + insetV
-
-    /** Ubah koordinat layar menjadi koordinat konten. */
-    fun toContentY(viewY: Float, contentShiftPx: Float, viewOffsetPx: Float, insetV: Float): Float =
-        viewY - insetV + scrollY(contentShiftPx, viewOffsetPx)
-
-    /** Batas geser tampilan: dari baris terbaru (0) sampai awal konten. */
-    fun clampViewOffset(offsetPx: Float, contentShiftPx: Float): Float =
-        offsetPx.coerceIn(0f, max(0f, contentShiftPx))
-
     /**
-     * Berapa baris papan perlu naik agar selalu tersisa satu baris kosong di bawah tulisan.
-     *
-     * Baris "bebas" terakhir adalah `visibleLines - 2` (baris terakhir selalu dibiarkan
-     * kosong), jadi menulis di baris terakhir yang terlihat menggeser papan satu baris.
+     * Indeks baris panduan untuk koordinat y.
+     * [lines] <= 0 berarti tidak dibatasi (dipakai saat tinggi tampilan belum diketahui).
      */
-    fun autoShiftLines(writtenLine: Int, visibleLines: Int): Int {
-        if (visibleLines <= 0) return 0
-        val lastFreeLine = max(0, visibleLines - 2)
-        return (writtenLine.coerceAtLeast(0) - lastFreeLine).coerceAtLeast(0)
+    fun lineIndexOf(y: Float, lineGapPx: Float, lines: Int = 0): Int {
+        if (lineGapPx <= 0f) return 0
+        val index = floor(y / lineGapPx).toInt()
+        if (lines <= 0) return if (index < 0) 0 else index
+        return index.coerceIn(0, lines - 1)
+    }
+
+    /** Jumlah baris panduan yang muat pada tinggi tertentu (minimal 1). */
+    fun lineCount(heightPx: Int, lineGapPx: Float): Int {
+        if (lineGapPx <= 0f) return 1
+        val count = floor(heightPx / lineGapPx).toInt()
+        return if (count < 1) 1 else count
     }
 }

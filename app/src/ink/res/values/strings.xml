@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Nama berbeda supaya mudah dibedakan di daftar keyboard Android. -->
-    <string name="app_name">Penboard OCR</string>
-</resources>

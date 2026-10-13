@@ -1,31 +1,31 @@
 package dev.retrobit.penboard.ink
 
 /**
- * Aturan teks hasil pengenalan tulisan. Fungsi murni (tanpa Android) sehingga bisa diuji.
- *
- * Perilaku "satu tulisan = satu kata": setiap hasil pengenalan dianggap satu kata, lalu
- * ditambah **satu spasi** agar kata berikutnya langsung terpisah.
+ * Teks hasil pengenalan: satu tulisan = satu kata, lalu satu spasi ditambahkan
+ * otomatis untuk kata berikutnya.
  */
 object RecognitionText {
 
-    private val existingSpace = charArrayOf(' ', '\n', '\t')
-
     /**
-     * Siapkan teks untuk dikirim ke kolom tujuan.
-     *
-     * @param autoSpace bila aktif, tambahkan spasi di akhir (satu kata per tulisan).
+     * Gabungkan hasil pengenalan menjadi teks yang siap diinput.
+     * - baris baru diubah menjadi spasi, spasi berlebih dirapikan,
+     * - bila [autoSpace] aktif, satu spasi di ujung ditambahkan.
      */
     fun prepare(raw: String?, autoSpace: Boolean): String {
-        val clean = raw?.trim().orEmpty()
-        if (clean.isEmpty()) return ""
-        if (!autoSpace) return clean
-        val last = clean.last()
-        return if (existingSpace.contains(last)) clean else clean + " "
+        val collapsed = raw
+            ?.replace('\n', ' ')
+            ?.replace('\r', ' ')
+            ?.trim()
+            ?.replace(Regex("\\s+"), " ")
+            .orEmpty()
+        if (collapsed.isEmpty()) return ""
+        return if (autoSpace) "$collapsed " else collapsed
     }
 
-    /** Teks yang layak dikenali: tidak kosong dan punya setidaknya satu karakter huruf/angka. */
-    fun isMeaningful(raw: String?): Boolean {
-        val clean = raw?.trim().orEmpty()
+    /** Apakah hasil pengenalan layak diinput (mengandung huruf/angka). */
+    fun isMeaningful(text: String?): Boolean {
+        val clean = text?.trim().orEmpty()
+        if (clean.isEmpty()) return false
         return clean.any { it.isLetterOrDigit() }
     }
 }

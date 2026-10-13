@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Varian "ink" perlu internet HANYA untuk mengunduh model bahasa tulisan tangan.
-         Pengenalan berjalan di perangkat; tidak ada data tulisan yang dikirim ke luar. -->
-    <uses-permission android:name="android.permission.INTERNET" />
-</manifest>

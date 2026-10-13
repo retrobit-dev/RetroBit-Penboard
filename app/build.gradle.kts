@@ -5,10 +5,9 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Optional release signing: create keystore.properties in the project root with
+// Penandatanganan rilis opsional: buat keystore.properties di akar proyek berisi
 // storeFile / storePassword / keyAlias / keyPassword.
-// If it is missing, the release build is signed with the debug key so that the
-// produced APK is still installable for sideloading.
+// Bila tidak ada, APK rilis ditandatangani dengan kunci debug supaya tetap bisa dipasang.
 val keystorePropsFile = rootProject.file("keystore.properties")
 val keystoreProps = Properties().apply {
     if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
@@ -23,8 +22,8 @@ android {
         applicationId = "dev.retrobit.penboard"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 20000
+        versionName = "2.0.0"
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -36,20 +35,6 @@ android {
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
             }
-        }
-    }
-
-    flavorDimensions += "ocr"
-    productFlavors {
-        // Varian ringan & 100% luring (tanpa izin internet).
-        create("offline") {
-            dimension = "ocr"
-        }
-        // Varian dengan pengenalan tulisan (ML Kit Digital Ink).
-        create("ink") {
-            dimension = "ocr"
-            applicationIdSuffix = ".ink"
-            versionNameSuffix = "-ink"
         }
     }
 
@@ -81,10 +66,6 @@ android {
         jvmTarget = "17"
     }
 
-    buildFeatures {
-        viewBinding = true
-    }
-
     packaging {
         resources.excludes += setOf("META-INF/*.kotlin_module", "DebugProbesKt.bin")
     }
@@ -102,15 +83,11 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.activity:activity-ktx:1.9.3")
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("androidx.documentfile:documentfile:1.0.1")
 
-    // Pengenalan tulisan hanya ikut dalam varian "ink" (menambah ukuran APK).
-    "inkImplementation"("com.google.mlkit:digital-ink-recognition:19.0.0")
+    // Pengenalan tulisan tangan: ML Kit Digital Ink (luring setelah model terunduh).
+    implementation("com.google.mlkit:digital-ink-recognition:19.0.0")
 
     testImplementation("junit:junit:4.13.2")
-    // org.json asli untuk unit test (android.jar hanya berisi stub)
+    // org.json asli untuk unit test (android.jar hanya berisi stub).
     testImplementation("org.json:json:20231013")
 }

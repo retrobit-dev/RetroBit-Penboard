@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Hanya dipakai untuk menyimpan PNG di Android 9 ke bawah -->
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
-
-    <!-- Papan tulis melayang (overlay) di atas aplikasi lain. -->
+    <!-- Papan tulis melayang di atas aplikasi lain (opsional, diminta pengguna). -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -16,33 +11,22 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.Penboard">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".TestActivity"
-            android:exported="false"
-            android:label="@string/test_title"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
-            android:name=".BoardEditorActivity"
-            android:exported="false"
-            android:label="@string/editor_title"
-            android:parentActivityName=".MainActivity"
-            android:windowSoftInputMode="adjustResize" />
-
+        <!-- Papan melayang: bisa dipakai tanpa keyboard Penboard aktif. -->
         <service
             android:name=".overlay.PenboardOverlayService"
             android:exported="false"
@@ -53,6 +37,7 @@
                 android:value="papan tulis melayang yang dipakai pengguna untuk menulis dengan stylus di atas aplikasi lain" />
         </service>
 
+        <!-- Keyboard papan tulis. -->
         <service
             android:name=".ime.PenboardInputService"
             android:exported="true"

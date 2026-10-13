@@ -1,366 +1,646 @@
 package dev.retrobit.penboard
 
 import android.Manifest
-import android.content.Context
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.text.InputType
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.LinearLayout
-import androidx.appcompat.app.AlertDialog
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import dev.retrobit.penboard.board.BoardView
-import dev.retrobit.penboard.data.GlobalPrefs
+import androidx.appcompat.widget.AppCompatTextView
+import com.google.android.material.button.MaterialButton
+import dev.retrobit.penboard.data.ConfigStore
+import dev.retrobit.penboard.data.KeyAction
+import dev.retrobit.penboard.data.KeyDef
+import dev.retrobit.penboard.data.PenButtonAction
 import dev.retrobit.penboard.data.PenboardConfig
-import dev.retrobit.penboard.data.PresetRepository
-import dev.retrobit.penboard.data.ToolMode
-import dev.retrobit.penboard.databinding.ActivityMainBinding
+import dev.retrobit.penboard.ink.InkRecognition
+import dev.retrobit.penboard.ink.ModelStatus
+import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.overlay.PenboardOverlayService
-import dev.retrobit.penboard.ui.Preview
+import dev.retrobit.penboard.ui.BoardPanel
+import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
+import dev.retrobit.penboard.util.StylusCompat
 
-/** Dasbor: status keyboard, papan aktif, daftar papan, preferensi, dan panduan. */
+/** Layar pengaturan: mengaktifkan keyboard, papan melayang, dan seluruh pilihan tampilan. */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private val repository by lazy { PresetRepository(this) }
-    private val prefs by lazy { GlobalPrefs(this) }
+    private lateinit var store: ConfigStore
+    private lateinit var content: LinearLayout
+    private lateinit var testField: EditText
+    private var previewPanel: BoardPanel? = null
+
+    private val configListener: (PenboardConfig) -> Unit = { config ->
+        previewPanel?.applyConfig(config)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        binding.header.headerTitle.text = getString(R.string.app_name)
-        binding.header.headerSubtitle.text = getString(R.string.app_subtitle)
-        binding.header.headerIcon.setImageResource(R.drawable.ic_launcher_foreground)
-
-        if (prefs.showGuideOnStart) {
-            prefs.showGuideOnStart = false
-            showGuideDialog()
+        store = ConfigStore.get(this)
+        testField = EditText(this).apply {
+            hint = getString(R.string.test_hint)
+            minLines = 2
+            gravity = Gravity.TOP or Gravity.START
+            textSize = 15f
+            setPadding(dp(14f), dp(12f), dp(14f), dp(12f))
+            StylusCompat.disableSystemHandwriting(this)
         }
+        content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16f), dp(16f), dp(16f), dp(28f))
+        }
+        setContentView(ScrollView(this).apply { addView(content) })
+        store.addListener(configListener)
+        render()
     }
 
     override fun onResume() {
         super.onResume()
-        render()
+        if (::content.isInitialized) render()
     }
 
-    // ------------------------------------------------------------------ render
+    override fun onDestroy() {
+        store.removeListener(configListener)
+        super.onDestroy()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATIONS && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            startOverlay()
+        }
+    }
+
+    // ------------------------------------------------------------------ tata letak
 
     private fun render() {
-        val content = binding.content
         content.removeAllViews()
-        val config = repository.active()
-        renderStatus(content)
-        renderHuaweiTip(content)
-        renderOverlay(content)
-        renderActiveBoard(content, config)
-        renderProfiles(content, config)
-        renderPreferences(content)
-        renderGuide(content)
+        renderHeader()
+        renderKeyboardCard()
+        renderOverlayCard()
+        renderPreviewCard()
+        renderTestCard()
+        renderBoardCard()
+        renderGridCard()
+        renderRecognitionCard()
+        renderLookCard()
+        renderHuaweiCard()
+        renderAboutCard()
     }
 
-    private fun renderStatus(parent: LinearLayout) {
-        val card = Ui.card(parent, getString(R.string.status_title))
-        val message = when {
-            isImeSelected() -> R.string.status_selected
-            isImeEnabled() -> R.string.status_enabled_not_selected
-            else -> R.string.status_disabled
+    private fun renderHeader() {
+        content.addView(
+            AppCompatTextView(this).apply {
+                text = getString(R.string.app_name)
+                textSize = 25f
+                setTypeface(typeface, Typeface.BOLD)
+            }
+        )
+        content.addView(
+            AppCompatTextView(this).apply {
+                text = getString(R.string.app_tagline)
+                textSize = 13.5f
+                alpha = 0.75f
+                setPadding(0, dp(4f), 0, dp(14f))
+            }
+        )
+    }
+
+    private fun renderKeyboardCard() {
+        val card = Ui.card(content, getString(R.string.card_keyboard), getString(R.string.card_keyboard_sub))
+        Ui.statusText(
+            card,
+            getString(if (isPenboardActive()) R.string.status_keyboard_active else R.string.status_keyboard_inactive)
+        )
+        Ui.buttonRow(
+            card,
+            getString(R.string.action_pick_keyboard) to { showKeyboardPicker() },
+            getString(R.string.action_keyboard_settings) to { openKeyboardSettings() }
+        )
+    }
+
+    private fun renderOverlayCard() {
+        val card = Ui.card(content, getString(R.string.card_overlay), getString(R.string.card_overlay_sub))
+        val canDraw = Settings.canDrawOverlays(this)
+        Ui.statusText(
+            card,
+            getString(
+                when {
+                    !canDraw -> R.string.status_overlay_permission_missing
+                    PenboardOverlayService.running -> R.string.status_overlay_running
+                    else -> R.string.status_overlay_ready
+                }
+            )
+        )
+        if (canDraw) {
+            val running = PenboardOverlayService.running
+            Ui.buttonRow(
+                card,
+                getString(if (running) R.string.action_overlay_hide else R.string.action_overlay_show) to {
+                    if (running) {
+                        PenboardOverlayService.stop(this)
+                    } else {
+                        requestOverlayStart()
+                    }
+                    content.postDelayed({ render() }, 500)
+                }
+            )
+        } else {
+            Ui.buttonRow(
+                card,
+                getString(R.string.action_overlay_permission) to { requestOverlayPermission() }
+            )
         }
-        Ui.bodyText(card, getString(message))
-        Ui.buttonRow(
-            card,
-            getString(R.string.action_pick_keyboard) to { showImePicker() },
-            getString(R.string.action_system_settings) to { openImeSettings() }
-        )
+        Ui.body(card, getString(R.string.overlay_note))
     }
 
-    /** Saran khusus perangkat Huawei/Honor: tulisan tangan bawaan bisa bertabrakan. */
-    private fun renderHuaweiTip(parent: LinearLayout) {
-        if (!isHuaweiFamily() || prefs.hideHuaweiTip) return
-        val card = Ui.card(parent, getString(R.string.huawei_tip_title), getString(R.string.huawei_tip_body))
-        Ui.bodyText(card, getString(R.string.huawei_tip_body_short))
+    private fun renderPreviewCard() {
+        val card = Ui.card(content, getString(R.string.card_preview), getString(R.string.card_preview_sub))
+        val panel = previewPanel ?: BoardPanel(this, showHandle = true).also { previewPanel = it }
+        detach(panel.root)
+        panel.listener = object : BoardPanel.Listener {
+            override fun onKey(key: KeyDef, action: KeyAction) {
+                toast(getString(R.string.preview_key_tap, store.config.labelFor(key)))
+            }
+
+            override fun onStrokeCommitted() = Unit
+            override fun onPenButton(primary: Boolean) = Unit
+            override fun onContentChanged() = Unit
+        }
+        card.addView(
+            panel.root,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(store.config.boardHeightDp + 26f)
+            )
+        )
+        panel.applyConfig(store.config)
+    }
+
+    private fun renderTestCard() {
+        val card = Ui.card(content, getString(R.string.card_test), getString(R.string.card_test_sub))
+        detach(testField)
+        card.addView(
+            testField,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
+        Ui.outlinedButton(card, getString(R.string.action_clear_text)) { testField.setText("") }
+    }
+
+    private fun renderBoardCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_board), getString(R.string.card_board_sub))
+        Ui.sliderRow(
+            card, getString(R.string.setting_board_height), config.boardHeightDp,
+            PenboardConfig.MIN_BOARD_HEIGHT_DP, PenboardConfig.MAX_BOARD_HEIGHT_DP, "dp"
+        ) { value -> store.update { it.copy(boardHeightDp = value) } }
+        Ui.sliderRow(
+            card, getString(R.string.setting_line_gap), config.lineGapDp,
+            PenboardConfig.MIN_LINE_GAP_DP, PenboardConfig.MAX_LINE_GAP_DP, "dp"
+        ) { value -> store.update { it.copy(lineGapDp = value) } }
+        Ui.sliderRow(
+            card, getString(R.string.setting_pen_width), config.penWidthDp,
+            PenboardConfig.MIN_PEN_WIDTH_DP, PenboardConfig.MAX_PEN_WIDTH_DP, "dp"
+        ) { value -> store.update { it.copy(penWidthDp = value) } }
+
+        Ui.divider(card)
+        Ui.body(card, getString(R.string.setting_pen_colors))
+        config.penColors.forEachIndexed { index, color ->
+            Ui.colorRow(card, getString(R.string.setting_pen_color_n, index + 1), color) { picked ->
+                store.update { current ->
+                    current.copy(penColors = current.penColors.toMutableList().also { it[index] = picked })
+                }
+                render()
+            }
+        }
         Ui.buttonRow(
             card,
-            getString(R.string.action_system_settings) to { openImeSettings() },
-            getString(R.string.action_pick_keyboard) to { showImePicker() }
+            getString(R.string.action_add_pen_color) to { addPenColor() },
+            getString(R.string.action_remove_pen_color) to { removePenColor() }
         )
-        Ui.fullButton(card, getString(R.string.huawei_tip_hide), outlined = true) {
-            prefs.hideHuaweiTip = true
+
+        Ui.divider(card)
+        Ui.switchRow(
+            card, getString(R.string.setting_show_lines), getString(R.string.setting_show_lines_sub), config.showLines
+        ) { value -> store.update { it.copy(showLines = value) } }
+        Ui.switchRow(
+            card, getString(R.string.setting_allow_finger), getString(R.string.setting_allow_finger_sub), config.allowFinger
+        ) { value -> store.update { it.copy(allowFinger = value) } }
+        Ui.switchRow(
+            card, getString(R.string.setting_haptics), getString(R.string.setting_haptics_sub), config.haptics
+        ) { value -> store.update { it.copy(haptics = value) } }
+
+        Ui.divider(card)
+        Ui.body(card, getString(R.string.setting_pen_buttons))
+        val penActions = PenButtonAction.entries
+        Ui.spinnerRow(
+            card,
+            getString(R.string.setting_pen_button_primary),
+            penActions.map { it.label },
+            penActions.indexOf(config.penButtonPrimary).coerceAtLeast(0)
+        ) { index ->
+            store.update { it.copy(penButtonPrimary = penActions[index]) }
+        }
+        Ui.spinnerRow(
+            card,
+            getString(R.string.setting_pen_button_secondary),
+            penActions.map { it.label },
+            penActions.indexOf(config.penButtonSecondary).coerceAtLeast(0)
+        ) { index ->
+            store.update { it.copy(penButtonSecondary = penActions[index]) }
+        }
+    }
+
+    private fun renderGridCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_grid), getString(R.string.card_grid_sub))
+        Ui.sliderRow(
+            card, getString(R.string.setting_grid_count), config.gridButtonCount,
+            PenboardConfig.MIN_GRID_KEYS, PenboardConfig.MAX_GRID_KEYS, getString(R.string.unit_keys)
+        ) { value -> store.update { it.copy(gridButtonCount = value) } }
+
+        Ui.divider(card)
+        for (index in 0 until PenboardConfig.GRID_SLOTS) {
+            val key = config.gridKeys.getOrNull(index) ?: PenboardConfig.defaultGridKeys()[index]
+            val enabled = index < config.gridButtonCount
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(5f), 0, dp(5f))
+            }
+            row.addView(
+                AppCompatTextView(this).apply {
+                    text = getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    textSize = 14f
+                    alpha = if (enabled) 1f else 0.4f
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            row.addView(
+                MaterialButton(this).apply {
+                    text = getString(R.string.action_change)
+                    isAllCaps = false
+                    textSize = 12.5f
+                    isEnabled = enabled
+                    setOnClickListener { showKeyEditor(index) }
+                }
+            )
+            card.addView(row)
+        }
+        Ui.divider(card)
+        Ui.outlinedButton(card, getString(R.string.action_grid_default)) {
+            store.update { it.copy(gridKeys = PenboardConfig.defaultGridKeys(), gridButtonCount = PenboardConfig.MAX_GRID_KEYS) }
             render()
         }
     }
 
-    /** Huawei/Honor memakai stylus dengan tulisan tangan bawaan yang bisa menyerobot stylus. */
+    private fun renderRecognitionCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_recognition), getString(R.string.card_recognition_sub))
+        Ui.switchRow(
+            card, getString(R.string.setting_auto_recognize), getString(R.string.setting_auto_recognize_sub), config.autoRecognize
+        ) { value -> store.update { it.copy(autoRecognize = value) } }
+        Ui.sliderRow(
+            card, getString(R.string.setting_auto_delay), config.autoRecognizeDelayMs,
+            PenboardConfig.MIN_AUTO_DELAY_MS, PenboardConfig.MAX_AUTO_DELAY_MS, "ms"
+        ) { value -> store.update { it.copy(autoRecognizeDelayMs = value) } }
+        Ui.switchRow(
+            card, getString(R.string.setting_auto_space), getString(R.string.setting_auto_space_sub), config.autoSpace
+        ) { value -> store.update { it.copy(autoSpace = value) } }
+        Ui.switchRow(
+            card, getString(R.string.setting_clear_after), getString(R.string.setting_clear_after_sub), config.clearAfterRecognize
+        ) { value -> store.update { it.copy(clearAfterRecognize = value) } }
+
+        Ui.divider(card)
+        val languages = RecognitionLanguages.all
+        Ui.spinnerRow(
+            card,
+            getString(R.string.setting_language),
+            languages.map { it.second },
+            languages.indexOfFirst { it.first == config.recognitionLanguage }.coerceAtLeast(0)
+        ) { position ->
+            store.update { it.copy(recognitionLanguage = languages[position].first) }
+            render()
+        }
+        val status = Ui.statusText(card, getString(R.string.status_model_checking))
+        showModelStatus(status)
+        Ui.buttonRow(card, getString(R.string.action_download_model) to { downloadModel(status) })
+        Ui.body(card, getString(R.string.recognition_note))
+    }
+
+    private fun renderLookCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_look), getString(R.string.card_look_sub))
+        Ui.sliderRow(card, getString(R.string.setting_panel_opacity), config.panelOpacity, 0, 100, "%") { value ->
+            store.update { it.copy(panelOpacity = value) }
+        }
+        Ui.colorRow(card, getString(R.string.setting_panel_color), config.panelColor) { picked ->
+            store.update { it.copy(panelColor = picked) }
+            render()
+        }
+        Ui.sliderRow(card, getString(R.string.setting_board_opacity), config.boardOpacity, 0, 100, "%") { value ->
+            store.update { it.copy(boardOpacity = value) }
+        }
+        Ui.colorRow(card, getString(R.string.setting_board_color), config.boardColor) { picked ->
+            store.update { it.copy(boardColor = picked) }
+            render()
+        }
+        Ui.colorRow(card, getString(R.string.setting_line_color), config.lineColor) { picked ->
+            store.update { it.copy(lineColor = picked) }
+            render()
+        }
+        Ui.sliderRow(card, getString(R.string.setting_button_opacity), config.buttonOpacity, 0, 100, "%") { value ->
+            store.update { it.copy(buttonOpacity = value) }
+        }
+        Ui.colorRow(card, getString(R.string.setting_button_color), config.buttonColor) { picked ->
+            store.update { it.copy(buttonColor = picked) }
+            render()
+        }
+        Ui.colorRow(card, getString(R.string.setting_button_text_color), config.buttonTextColor) { picked ->
+            store.update { it.copy(buttonTextColor = picked) }
+            render()
+        }
+        Ui.colorRow(card, getString(R.string.setting_accent_color), config.accentColor) { picked ->
+            store.update { it.copy(accentColor = picked) }
+            render()
+        }
+        Ui.sliderRow(
+            card, getString(R.string.setting_corner_radius), config.cornerRadiusDp,
+            PenboardConfig.MIN_RADIUS_DP, PenboardConfig.MAX_RADIUS_DP, "dp"
+        ) { value -> store.update { it.copy(cornerRadiusDp = value) } }
+    }
+
+    private fun renderHuaweiCard() {
+        if (!isHuaweiFamily()) return
+        val card = Ui.card(content, getString(R.string.card_huawei), getString(R.string.card_huawei_sub))
+        Ui.body(card, getString(R.string.huawei_body))
+        Ui.buttonRow(
+            card,
+            getString(R.string.action_keyboard_settings) to { openKeyboardSettings() },
+            getString(R.string.action_pick_keyboard) to { showKeyboardPicker() }
+        )
+    }
+
+    private fun renderAboutCard() {
+        val card = Ui.card(content, getString(R.string.card_about))
+        Ui.body(card, getString(R.string.about_version, appVersion()))
+        Ui.body(card, getString(R.string.about_privacy))
+        card.addView(
+            AppCompatTextView(this).apply {
+                text = getString(R.string.about_repo)
+                textSize = 13.5f
+                setTextColor(Color.parseColor("#0EA5E9"))
+                setPadding(0, dp(4f), 0, dp(10f))
+                setOnClickListener { openRepo() }
+            }
+        )
+        Ui.outlinedButton(card, getString(R.string.action_reset_all)) {
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.action_reset_all))
+                .setMessage(getString(R.string.reset_confirm))
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    store.reset()
+                    previewPanel?.applyConfig(store.config)
+                    render()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+    }
+
+    // ------------------------------------------------------------------ tombol grid
+
+    private fun showKeyEditor(index: Int) {
+        val config = store.config
+        val current = config.gridKeys.getOrNull(index) ?: KeyDef()
+        var action = current.action
+        var repeat = current.repeatOnHold
+
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20f), dp(8f), dp(20f), dp(4f))
+        }
+        val actions = KeyAction.entries.toList()
+        Ui.spinnerRow(
+            body,
+            getString(R.string.setting_action),
+            actions.map { "${it.label} — ${actionHint(it)}" },
+            actions.indexOf(action).coerceAtLeast(0)
+        ) { position -> action = actions[position] }
+
+        val labelField = EditText(this).apply {
+            hint = getString(R.string.setting_custom_label)
+            setText(current.label)
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        body.addView(labelField)
+        val textField = EditText(this).apply {
+            hint = getString(R.string.setting_custom_text)
+            setText(current.text)
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        body.addView(textField)
+        Ui.switchRow(
+            body, getString(R.string.setting_repeat), getString(R.string.setting_repeat_sub), current.repeatOnHold
+        ) { value -> repeat = value }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.grid_slot_title, index + 1))
+            .setView(body)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val updated = current.copy(
+                    action = action,
+                    label = labelField.text.toString().trim(),
+                    text = textField.text.toString(),
+                    repeatOnHold = repeat
+                )
+                store.update { cfg ->
+                    cfg.copy(gridKeys = cfg.gridKeys.toMutableList().also { it[index] = updated })
+                }
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun actionHint(action: KeyAction): String = getString(
+        when (action) {
+            KeyAction.TEXT -> R.string.hint_text
+            KeyAction.SPACE -> R.string.hint_space
+            KeyAction.ENTER -> R.string.hint_enter
+            KeyAction.BACKSPACE -> R.string.hint_backspace
+            KeyAction.DELETE_WORD -> R.string.hint_delete_word
+            KeyAction.UNDO -> R.string.hint_undo
+            KeyAction.REDO -> R.string.hint_redo
+            KeyAction.CLEAR -> R.string.hint_clear
+            KeyAction.DELETE_STROKE -> R.string.hint_delete_stroke
+            KeyAction.CYCLE_PEN -> R.string.hint_cycle_pen
+            KeyAction.RECOGNIZE -> R.string.hint_recognize
+            KeyAction.SYSTEM_HANDWRITING -> R.string.hint_system_handwriting
+            KeyAction.OVERLAY_TOGGLE -> R.string.hint_overlay
+            KeyAction.HIDE -> R.string.hint_hide
+        }
+    )
+
+    // ------------------------------------------------------------------ bantuan
+
+    private fun addPenColor() {
+        val config = store.config
+        if (config.penColors.size >= PenboardConfig.MAX_PEN_COLORS) {
+            toast(getString(R.string.msg_pen_color_full, PenboardConfig.MAX_PEN_COLORS))
+            return
+        }
+        store.update { current ->
+            val next = current.penColors.toMutableList()
+            next.add(PenboardConfig.DEFAULT_PEN_COLORS[next.size % PenboardConfig.DEFAULT_PEN_COLORS.size])
+            current.copy(penColors = next)
+        }
+        render()
+    }
+
+    private fun removePenColor() {
+        val config = store.config
+        if (config.penColors.size <= 1) return
+        store.update { current ->
+            val next = current.penColors.dropLast(1)
+            current.copy(penColors = next, penColorIndex = current.penColorIndex.coerceAtMost(next.size - 1))
+        }
+        render()
+    }
+
+    private fun showModelStatus(statusView: TextView) {
+        if (!InkRecognition.isServicesAvailable(this)) {
+            statusView.text = getString(R.string.msg_engine_missing)
+            return
+        }
+        InkRecognition.modelStatus(store.config.recognitionLanguage) { status ->
+            statusView.text = getString(
+                when (status) {
+                    ModelStatus.READY -> R.string.status_model_ready
+                    ModelStatus.NOT_DOWNLOADED -> R.string.status_model_not_downloaded
+                    ModelStatus.MISSING -> R.string.status_model_unsupported
+                    ModelStatus.UNKNOWN -> R.string.status_model_unknown
+                }
+            )
+        }
+    }
+
+    private fun downloadModel(statusView: TextView) {
+        if (!InkRecognition.isServicesAvailable(this)) {
+            statusView.text = getString(R.string.msg_engine_missing)
+            return
+        }
+        statusView.text = getString(R.string.status_model_downloading)
+        InkRecognition.downloadModel(store.config.recognitionLanguage) { ok ->
+            statusView.text = getString(if (ok) R.string.status_model_ready else R.string.status_model_failed)
+        }
+    }
+
+    private fun isPenboardActive(): Boolean {
+        val active = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+        return active?.startsWith(packageName) == true
+    }
+
+    private fun showKeyboardPicker() {
+        try {
+            val manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            manager.showInputMethodPicker()
+        } catch (error: Throwable) {
+            toast(getString(R.string.msg_picker_failed))
+        }
+    }
+
+    private fun openKeyboardSettings() {
+        try {
+            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+        } catch (error: Throwable) {
+            toast(getString(R.string.msg_picker_failed))
+        }
+    }
+
+    private fun requestOverlayPermission() {
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+            )
+        } catch (error: Throwable) {
+            toast(getString(R.string.msg_overlay_permission_failed))
+        }
+    }
+
+    private fun requestOverlayStart() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+            return
+        }
+        startOverlay()
+    }
+
+    private fun startOverlay() {
+        try {
+            PenboardOverlayService.start(this)
+            toast(getString(R.string.msg_overlay_started))
+        } catch (error: Throwable) {
+            toast(getString(R.string.msg_overlay_failed))
+        }
+    }
+
+    private fun openRepo() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.repo_url))))
+        } catch (error: Throwable) {
+            toast(getString(R.string.repo_url))
+        }
+    }
+
+    private fun appVersion(): String = try {
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "-"
+    } catch (error: Throwable) {
+        "-"
+    }
+
     private fun isHuaweiFamily(): Boolean {
         val brand = (Build.BRAND + " " + Build.MANUFACTURER + " " + Build.DEVICE).lowercase()
         return brand.contains("huawei") || brand.contains("honor") || brand.contains("harmony")
     }
 
-    /** Kartu papan tulis melayang: izin, tombol tampilkan/sembunyikan. */
-    private fun renderOverlay(parent: LinearLayout) {
-        val card = Ui.card(parent, getString(R.string.overlay_section), getString(R.string.overlay_info))
-        val granted = Settings.canDrawOverlays(this)
-        Ui.bodyText(
-            card,
-            getString(if (granted) R.string.overlay_permission_granted else R.string.overlay_need_permission)
-        )
-        if (!granted) {
-            Ui.fullButton(card, getString(R.string.overlay_grant)) {
-                runCatching {
-                    startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:" + packageName)
-                        )
-                    )
-                }.onFailure { openImeSettings() }
-            }
-        } else {
-            Ui.fullButton(
-                card,
-                getString(
-                    if (PenboardOverlayService.running) R.string.overlay_hide else R.string.overlay_show
-                ),
-                outlined = true
-            ) {
-                if (PenboardOverlayService.running) {
-                    startService(
-                        Intent(this, PenboardOverlayService::class.java)
-                            .setAction(PenboardOverlayService.ACTION_STOP)
-                    )
-                } else {
-                    requestNotificationPermissionIfNeeded()
-                    runCatching {
-                        startForegroundService(
-                            Intent(this, PenboardOverlayService::class.java)
-                                .setAction(PenboardOverlayService.ACTION_START)
-                        )
-                    }
-                }
-            }
-            Ui.bodyText(
-                card,
-                getString(
-                    if (PenboardOverlayService.running) R.string.overlay_running else R.string.overlay_not_running
-                )
-            )
-        }
+    private fun detach(view: View) {
+        (view.parent as? ViewGroup)?.removeView(view)
     }
 
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
-        runCatching { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 40) }
+    private fun dp(value: Float): Int = Ui.dp(this, value)
+
+    private fun toast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    private fun renderActiveBoard(parent: LinearLayout, config: PenboardConfig) {
-        val density = resources.displayMetrics.density
-        val card = Ui.card(parent, getString(R.string.section_active_board) + " · " + config.name)
-
-        val board = BoardView(this)
-        card.addView(board, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
-        Preview.boardPreview(card, board, config, density, maxHeightFraction = 0.42f)
-
-        // Tulisan disimpan otomatis per papan, sehingga tetap ada setelah aplikasi ditutup.
-        board.restore(repository.loadBoard(config.id))
-        val persist = {
-            repository.saveBoard(config.id, board.snapshot())
-            Unit
-        }
-        board.onContentChanged = persist
-        board.onEraseHappened = persist
-        board.onStrokeCommitted = persist
-
-        Ui.buttonRow(
-            card,
-            getString(R.string.action_scroll_older) to { board.scrollByLines(3) },
-            getString(R.string.action_scroll_newer) to { board.scrollByLines(-3) }
-        )
-        Ui.bodyText(card, getString(R.string.board_saved_hint))
-
-        val keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        card.addView(keys, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
-        Preview.populate(keys, config, density, currentTool = ToolMode.WRITE)
-
-        Ui.buttonRow(
-            card,
-            getString(R.string.action_test) to { startActivity(Intent(this, TestActivity::class.java)) },
-            getString(R.string.action_edit) to { openEditor(config) },
-            getString(R.string.action_duplicate) to { duplicateProfile(config) }
-        )
-    }
-
-    private fun renderProfiles(parent: LinearLayout, active: PenboardConfig) {
-        val card = Ui.card(
-            parent,
-            getString(R.string.section_profiles),
-            getString(R.string.section_profiles_summary)
-        )
-        repository.profiles().forEach { profile ->
-            val lines = (profile.boardHeightDp / profile.lineGapDp).coerceAtLeast(1)
-            val keyCount = profile.toolbarRows.sumOf { it.keys.size } + profile.boardRows.sumOf { it.keys.size }
-            Ui.listRow(
-                parent = card,
-                title = profile.name,
-                subtitle = getString(R.string.profile_detail, profile.boardHeightDp, lines, keyCount),
-                badge = if (profile.id == active.id) getString(R.string.badge_active) else null,
-                actionLabel = getString(R.string.action_edit),
-                onAction = { openEditor(profile) },
-                onMore = { showProfileOptions(profile) },
-                onClick = {
-                    repository.setActive(profile.id)
-                    prefs.lastUsedProfileId = profile.id
-                    render()
-                }
-            )
-        }
-        Ui.fullButton(card, getString(R.string.action_new_profile)) { duplicateProfile(repository.active()) }
-    }
-
-    private fun renderPreferences(parent: LinearLayout) {
-        val card = Ui.card(parent, getString(R.string.section_preferences))
-        Ui.switchRow(
-            parent = card,
-            title = getString(R.string.pref_haptics),
-            summary = getString(R.string.pref_haptics_summary),
-            checked = prefs.hapticsEnabled
-        ) { prefs.hapticsEnabled = it }
-
-        Ui.switchRow(
-            parent = card,
-            title = getString(R.string.pref_guide),
-            checked = prefs.showGuideOnStart
-        ) { prefs.showGuideOnStart = it }
-
-        Ui.divider(card)
-        Ui.fullButton(card, getString(R.string.pref_reset), outlined = true) {
-            Ui.confirmDialog(
-                context = this,
-                title = getString(R.string.dialog_reset_title),
-                message = getString(R.string.dialog_reset_message),
-                confirmLabel = getString(R.string.action_yes)
-            ) {
-                repository.resetEverything()
-                render()
-            }
-        }
-        Ui.bodyText(card, getString(R.string.pref_reset_summary))
-    }
-
-    private fun renderGuide(parent: LinearLayout) {
-        val card = Ui.card(parent, getString(R.string.section_guide))
-        Ui.bodyText(card, getString(R.string.guide_body))
-    }
-
-    // ------------------------------------------------------------------ aksi
-
-    private fun openEditor(config: PenboardConfig) {
-        startActivity(
-            Intent(this, BoardEditorActivity::class.java)
-                .putExtra(BoardEditorActivity.EXTRA_CONFIG_ID, config.id)
-        )
-    }
-
-    private fun duplicateProfile(source: PenboardConfig) {
-        val copy = repository.duplicate(source.id, source.name + " (salinan)") ?: return
-        repository.setActive(copy.id)
-        render()
-    }
-
-    private fun showProfileOptions(profile: PenboardConfig) {
-        val options = mutableListOf<String>()
-        val actions = mutableListOf<() -> Unit>()
-
-        options.add(getString(R.string.action_edit))
-        actions.add { openEditor(profile) }
-
-        options.add(getString(R.string.action_duplicate))
-        actions.add { duplicateProfile(profile) }
-
-        options.add(getString(R.string.action_rename))
-        actions.add {
-            Ui.textInputDialog(this, getString(R.string.dialog_rename_title), profile.name) { name ->
-                if (name.isNotBlank()) {
-                    repository.rename(profile.id, name)
-                    render()
-                }
-            }
-        }
-
-        if (profile.builtinId != null) {
-            options.add(getString(R.string.action_restore))
-            actions.add {
-                repository.restoreFactory(profile.id)
-                render()
-            }
-        }
-
-        if (repository.profiles().size > 1) {
-            options.add(getString(R.string.action_delete))
-            actions.add {
-                Ui.confirmDialog(
-                    context = this,
-                    title = getString(R.string.dialog_delete_title, profile.name),
-                    message = null,
-                    confirmLabel = getString(R.string.action_delete)
-                ) {
-                    repository.delete(profile.id)
-                    render()
-                }
-            }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(profile.name)
-            .setItems(options.toTypedArray()) { _, which -> actions[which].invoke() }
-            .show()
-    }
-
-    private fun showGuideDialog() {
-        val switch = com.google.android.material.materialswitch.MaterialSwitch(this).apply {
-            text = getString(R.string.guide_dont_show)
-        }
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(Ui.dp(this@MainActivity, 20f), Ui.dp(this@MainActivity, 8f), Ui.dp(this@MainActivity, 20f), 0)
-        }
-        container.addView(switch, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
-        AlertDialog.Builder(this)
-            .setTitle(R.string.guide_first_title)
-            .setMessage(R.string.guide_body)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { _, _ -> prefs.showGuideOnStart = !switch.isChecked }
-            .show()
-    }
-
-    // ------------------------------------------------------------------ status sistem
-
-    private fun isImeEnabled(): Boolean {
-        val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        return manager.enabledInputMethodList.any { it.packageName == packageName }
-    }
-
-    private fun isImeSelected(): Boolean {
-        val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        return current != null && current.contains(packageName)
-    }
-
-    private fun showImePicker() {
-        val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        manager.showInputMethodPicker()
-    }
-
-    private fun openImeSettings() {
-        try {
-            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
-        } catch (_: Exception) {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
-        }
+    companion object {
+        private const val REQUEST_NOTIFICATIONS = 40
     }
 }

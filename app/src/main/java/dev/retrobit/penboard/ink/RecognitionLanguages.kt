@@ -1,6 +1,6 @@
 package dev.retrobit.penboard.ink
 
-/** Bahasa tulisan yang bisa dikenali (BCP-47) — sebagian besar bahasa Latin & Asia utama. */
+/** Bahasa tulisan yang bisa dikenali (BCP-47). */
 object RecognitionLanguages {
 
     val all: List<Pair<String, String>> = listOf(
@@ -22,11 +22,14 @@ object RecognitionLanguages {
 
     const val DEFAULT = "id-ID"
 
-    fun label(tag: String): String = all.firstOrNull { it.first.equals(tag, ignoreCase = true) }?.second
-        ?: tag
+    /** Label bahasa untuk ditampilkan. */
+    fun label(tag: String): String =
+        all.firstOrNull { it.first.equals(tag, ignoreCase = true) }?.second ?: tag
 
-    fun isSupported(tag: String): Boolean = all.any { it.first.equals(tag, ignoreCase = true) }
+    fun isSupported(tag: String?): Boolean =
+        all.any { it.first.equals(tag, ignoreCase = true) }
 
+    /** Kembalikan tag yang dikenal, atau [DEFAULT] bila tidak diketahui. */
     fun normalize(tag: String?): String {
         val clean = tag?.trim().orEmpty()
         if (clean.isEmpty()) return DEFAULT

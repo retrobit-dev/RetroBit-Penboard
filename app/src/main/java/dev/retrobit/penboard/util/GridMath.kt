@@ -1,49 +1,50 @@
 package dev.retrobit.penboard.util
 
-import kotlin.math.max
-import kotlin.math.min
-
 /**
- * Ukuran tombol untuk grid 3x3 (tata letak "papan di kiri, tombol di kanan").
+ * Ukuran tombol grid 3x3.
  *
- * Tujuannya: papan tulis memakai lebar sebanyak mungkin di kiri, sedangkan grid tombol
- * di kanan tinggal seperlunya saja (tidak lebih dari [MAX_WIDTH_FRACTION] lebar layar).
- * Fungsi murni tanpa Android agar bisa diuji.
+ * Grid dipasang di kanan papan tulis; ukurannya diambil dari tinggi papan supaya
+ * tiga baris tombol sejajar dengan papan, tetapi lebarnya tidak pernah melebihi
+ * [MAX_WIDTH_FRACTION] layar agar papan tulis tetap lebar di kiri.
  */
 object GridMath {
 
     const val COLUMNS = 3
     const val ROWS = 3
-
-    /** Bagian lebar layar yang boleh dipakai grid tombol. */
     const val MAX_WIDTH_FRACTION = 0.34f
 
+    /** Jarak antar tombol (dp) — dipakai pemanggil untuk menghitung [spacingPx]. */
+    const val SPACING_DP = 3f
+
     /**
-     * Ukuran satu tombol grid (piksel).
-     *
-     * @param boardHeightPx tinggi papan tulis (grid dibuat sepadan tinggi papan)
-     * @param availableWidthPx lebar layar yang tersedia
-     * @param rows jumlah baris grid yang dipakai (1..3)
-     * @param spacingPx jarak antar tombol
-     * @param minCellPx ukuran terkecil agar tombol tetap bisa ditekan
+     * Sisi tombol (px) = sekecil mungkin antara:
+     *  - tinggi papan dibagi tiga baris (dikurangi jarak antar baris),
+     *  - batas lebar [MAX_WIDTH_FRACTION] layar.
+     * Bila hasilnya di bawah [minCellPx], ukuran dinaikkan selama masih muat di tinggi papan.
      */
     fun cellSizePx(
         boardHeightPx: Int,
         availableWidthPx: Int,
-        rows: Int = ROWS,
         spacingPx: Int = 0,
-        minCellPx: Int = 1
+        minCellPx: Int = 0
     ): Int {
-        if (boardHeightPx <= 0) return max(1, minCellPx)
-        val rowCount = rows.coerceIn(1, ROWS)
-        val byHeight = (boardHeightPx - spacingPx * (rowCount - 1)) / rowCount
-        val gridBudget = (availableWidthPx * MAX_WIDTH_FRACTION).toInt()
-        val byWidth = (gridBudget - spacingPx * (COLUMNS - 1)) / COLUMNS
-        val chosen = min(byHeight, max(byWidth, minCellPx))
-        return max(1, min(chosen, byHeight))
+        val usableHeight = (boardHeightPx - spacingPx * (ROWS - 1)).coerceAtLeast(1)
+        var cell = usableHeight / ROWS
+
+        val budget = (availableWidthPx * MAX_WIDTH_FRACTION).toInt()
+        val maxByWidth = (budget - spacingPx * (COLUMNS - 1)) / COLUMNS
+        if (maxByWidth in 1 until cell) cell = maxByWidth
+
+        if (minCellPx > 0 && cell < minCellPx) {
+            cell = minOf(minCellPx, usableHeight / ROWS)
+        }
+        return if (cell < 1) 1 else cell
     }
 
-    /** Berapa baris grid yang terpakai untuk sejumlah tombol. */
-    fun rowsFor(buttonCount: Int): Int = ((buttonCount.coerceIn(1, COLUMNS * ROWS) + COLUMNS - 1) / COLUMNS)
-        .coerceIn(1, ROWS)
+    /** Jumlah baris grid yang perlu ditampilkan untuk [count] tombol. */
+    fun rowsFor(count: Int): Int = when {
+        count <= 0 -> 1
+        count > COLUMNS * ROWS -> ROWS
+        else -> (count + COLUMNS - 1) / COLUMNS
+    }
 }

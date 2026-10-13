@@ -1,23 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon peluncur: papan bergaris + pena stylus. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- board -->
     <path
-        android:fillColor="#FF34D399"
-        android:pathData="M30,34 h48 a6,6 0 0 1 6,6 v28 a6,6 0 0 1 -6,6 h-48 a6,6 0 0 1 -6,-6 v-28 a6,6 0 0 1 6,-6 z" />
-    <!-- ink squiggle -->
+        android:fillColor="#F8FAFC"
+        android:pathData="M22,28h64v52h-64z" />
     <path
-        android:strokeColor="#FF101828"
-        android:strokeWidth="3.6"
-        android:strokeLineCap="round"
-        android:pathData="M32,54 q6,-12 12,0 t12,0 t12,0" />
-    <!-- pen -->
+        android:fillColor="#0EA5E9"
+        android:pathData="M30,42h48v3.5h-48z" />
     <path
-        android:fillColor="#FFF9FAFB"
-        android:pathData="M74,20 l6,6 -22,22 -8,2 2,-8 z" />
+        android:fillColor="#0EA5E9"
+        android:pathData="M30,54h48v3.5h-48z" />
     <path
-        android:fillColor="#FF3D5AFE"
-        android:pathData="M74,20 l6,6 -4,4 -6,-6 z" />
+        android:fillColor="#0EA5E9"
+        android:pathData="M30,66h28v3.5h-28z" />
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M50.5,78.5l4,0.4 21.5,-21.5 -4.4,-4.4 -21.5,21.5z" />
 </vector>
