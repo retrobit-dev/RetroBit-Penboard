@@ -132,6 +132,15 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         }
     }
 
+    /**
+     * Tombol minimize di bilah jendela: sembunyikan papan dengan menutup keyboard.
+     * Keyboard muncul lagi begitu pengguna menyentuh kolom isian.
+     */
+    override fun onMinimize() {
+        handwriting?.cancelAuto()
+        requestHideSelf(0)
+    }
+
     // ------------------------------------------------------------------ teks
 
     /** Kirim teks ke kolom isian. */

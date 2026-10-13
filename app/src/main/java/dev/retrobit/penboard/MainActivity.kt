@@ -90,6 +90,8 @@ class MainActivity : AppCompatActivity() {
         content.removeAllViews()
         renderHeader()
         renderKeyboardCard()
+        renderWindowCard()
+        renderBottomCard()
         renderDiagnosticsCard()
         renderPreviewCard()
         renderTestCard()
@@ -295,6 +297,10 @@ class MainActivity : AppCompatActivity() {
             override fun onStrokeCommitted() = Unit
             override fun onPenButton(primary: Boolean) = Unit
             override fun onContentChanged() = Unit
+            override fun onMinimize() {
+                // Di keyboard sungguhan papan benar-benar ditutup; di pratinjau hanya diumumkan.
+                toast(getString(R.string.msg_minimize_preview))
+            }
         }
         // Tinggi pratinjau mengikuti papan atau grid tombol, mana yang lebih tinggi.
         val density = resources.displayMetrics.density
@@ -308,7 +314,15 @@ class MainActivity : AppCompatActivity() {
             store.config.gridRows
         )
         val gridHeightPx = cellPx * store.config.gridRows + spacingPx * (store.config.gridRows - 1)
-        val previewHeight = maxOf(boardHeightPx, gridHeightPx) + (24 * density).toInt()
+        val titleBarPx = if (store.config.windowFrame) (22 * density).toInt() + spacingPx else 0
+        val bottomBarPx = if (store.config.bottomButtonCount > 0) {
+            minOf(cellPx, (resources.displayMetrics.widthPixels / store.config.bottomButtonCount.coerceAtLeast(1)))
+                .coerceAtLeast((30 * density).toInt()) + spacingPx
+        } else {
+            0
+        }
+        val previewHeight =
+            maxOf(boardHeightPx, gridHeightPx) + titleBarPx + bottomBarPx + (24 * density).toInt()
         card.addView(
             panel.root,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)
@@ -448,6 +462,103 @@ class MainActivity : AppCompatActivity() {
             }
             render()
         }
+    }
+
+    /**
+     * Bingkai jendela: garis tepi + bilah judul dengan tombol **minimize** yang
+     * menyembunyikan papan (keyboard ditutup).
+     */
+    private fun renderWindowCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_window), getString(R.string.card_window_sub))
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_window_frame),
+            getString(R.string.setting_window_frame_sub),
+            config.windowFrame
+        ) { value -> store.update { it.copy(windowFrame = value) } }
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_minimize),
+            getString(R.string.setting_minimize_sub),
+            config.minimizeButton
+        ) { value -> store.update { it.copy(minimizeButton = value) } }
+        Ui.textRow(
+            card,
+            getString(R.string.setting_window_title),
+            config.windowTitle,
+            getString(R.string.setting_window_title_hint)
+        ) { value -> store.update { it.copy(windowTitle = value) } }
+        Ui.body(card, getString(R.string.window_note))
+    }
+
+    /**
+     * Bilah tombol **di bawah papan tulis**: jumlah dan isi tombolnya diatur pengguna,
+     * ikonnya pixel art (`util/PixelArt.kt`).
+     */
+    private fun renderBottomCard() {
+        val config = store.config
+        val card = Ui.card(content, getString(R.string.card_bottom), getString(R.string.card_bottom_sub))
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_bottom_show),
+            getString(R.string.setting_bottom_show_sub),
+            config.bottomButtonCount > 0
+        ) { value ->
+            store.update {
+                it.copy(bottomButtonCount = if (value) PenboardConfig.DEFAULT_BOTTOM_KEYS else 0)
+            }
+            render()
+        }
+        Ui.sliderRow(
+            card,
+            getString(R.string.setting_bottom_count),
+            config.bottomButtonCount,
+            PenboardConfig.MIN_BOTTOM_KEYS,
+            PenboardConfig.MAX_BOTTOM_KEYS,
+            getString(R.string.unit_keys)
+        ) { value -> store.update { it.copy(bottomButtonCount = value) } }
+
+        Ui.divider(card)
+        for (index in 0 until PenboardConfig.BOTTOM_SLOTS) {
+            val key = config.bottomKeys.getOrNull(index)
+                ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
+            val enabled = index < config.bottomButtonCount
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(5f), 0, dp(5f))
+            }
+            row.addView(
+                AppCompatTextView(this).apply {
+                    text = getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    textSize = 14f
+                    alpha = if (enabled) 1f else 0.4f
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            )
+            row.addView(
+                MaterialButton(this).apply {
+                    text = getString(R.string.action_change)
+                    isAllCaps = false
+                    textSize = 12.5f
+                    isEnabled = enabled
+                    setOnClickListener { showBottomKeyEditor(index) }
+                }
+            )
+            card.addView(row)
+        }
+        Ui.divider(card)
+        Ui.outlinedButton(card, getString(R.string.action_bottom_default)) {
+            store.update {
+                it.copy(
+                    bottomKeys = PenboardConfig.defaultBottomKeys(),
+                    bottomButtonCount = PenboardConfig.DEFAULT_BOTTOM_KEYS
+                )
+            }
+            render()
+        }
+        Ui.body(card, getString(R.string.bottom_note))
     }
 
     private fun renderRecognitionCard() {
@@ -599,6 +710,56 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
+    }
+
+    // ------------------------------------------------------------------ tombol bawah
+
+    private fun showBottomKeyEditor(index: Int) {
+        val config = store.config
+        val current = config.bottomKeys.getOrNull(index)
+            ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
+        var action = current.action
+        var repeat = current.repeatOnHold
+
+        val body = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20f), dp(8f), dp(20f), dp(4f))
+        }
+        val actions = KeyAction.entries.toList()
+        Ui.spinnerRow(
+            body,
+            getString(R.string.setting_action),
+            actions.map { "${it.label} — ${actionHint(it)}" },
+            actions.indexOf(action).coerceAtLeast(0)
+        ) { position -> action = actions[position] }
+
+        val labelField = EditText(this).apply {
+            hint = getString(R.string.setting_custom_label)
+            setText(current.label)
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_TEXT
+        }
+        body.addView(labelField)
+        Ui.switchRow(
+            body, getString(R.string.setting_repeat), getString(R.string.setting_repeat_sub), current.repeatOnHold
+        ) { value -> repeat = value }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.bottom_slot_title, index + 1))
+            .setView(body)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val updated = current.copy(
+                    action = action,
+                    label = labelField.text.toString().trim(),
+                    repeatOnHold = repeat
+                )
+                store.update { cfg ->
+                    cfg.copy(bottomKeys = cfg.bottomKeys.toMutableList().also { it[index] = updated })
+                }
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     // ------------------------------------------------------------------ tombol grid

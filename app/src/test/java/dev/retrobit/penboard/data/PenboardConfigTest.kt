@@ -296,4 +296,83 @@ class PenboardConfigTest {
         // Id tombol Penboard sekarang tidak ada yang menyebut papan melayang.
         assertFalse(KeyAction.entries.map { it.id }.contains("overlay"))
     }
+
+    @Test
+    fun `bilah bawah punya bawaan dan batas aman`() {
+        val config = PenboardConfig()
+        assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, config.bottomKeys.size)
+        assertEquals(
+            listOf(
+                KeyAction.RECOGNIZE, KeyAction.TEXT, KeyAction.DELETE_STROKE,
+                KeyAction.CLEAR, KeyAction.UNDO, KeyAction.REDO, KeyAction.CYCLE_PEN, KeyAction.HIDE
+            ),
+            config.bottomKeys.map { it.action }
+        )
+
+        val many = PenboardConfig(bottomButtonCount = 99, bottomKeys = emptyList()).sanitized()
+        assertEquals(PenboardConfig.MAX_BOTTOM_KEYS, many.bottomButtonCount)
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, many.bottomKeys.size)
+
+        // Bilah bawah bisa dimatikan seluruhnya.
+        val none = PenboardConfig(bottomButtonCount = -4).sanitized()
+        assertEquals(PenboardConfig.MIN_BOTTOM_KEYS, none.bottomButtonCount)
+    }
+
+    @Test
+    fun `bingkai jendela dan bilah bawah tersimpan bolak-balik`() {
+        val config = PenboardConfig(
+            windowFrame = false,
+            minimizeButton = false,
+            windowTitle = "  Papan Tulis  ",
+            bottomButtonCount = 3,
+            bottomKeys = listOf(KeyDef(KeyAction.CLEAR), KeyDef(KeyAction.UNDO), KeyDef(KeyAction.COPY))
+        ).sanitized()
+        assertEquals("Papan Tulis", config.windowTitle)
+
+        val restored = PenboardConfig.fromJson(JSONObject(config.toJson().toString()))
+        assertFalse(restored.windowFrame)
+        assertFalse(restored.minimizeButton)
+        assertEquals("Papan Tulis", restored.windowTitle)
+        assertEquals(3, restored.bottomButtonCount)
+        assertEquals(
+            listOf(KeyAction.CLEAR, KeyAction.UNDO, KeyAction.COPY),
+            restored.bottomKeys.take(3).map { it.action }
+        )
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, restored.bottomKeys.size)
+    }
+
+    @Test
+    fun `judul jendela dipangkas dan kosong memakai bawaan`() {
+        val blank = PenboardConfig(windowTitle = "   ").sanitized()
+        assertEquals(PenboardConfig.DEFAULT_WINDOW_TITLE, blank.effectiveWindowTitle)
+
+        val long = PenboardConfig(windowTitle = "X".repeat(200)).sanitized()
+        assertEquals(PenboardConfig.MAX_WINDOW_TITLE, long.effectiveWindowTitle.length)
+    }
+
+    @Test
+    fun `preset HiWrite menyalakan bingkai jendela dan bilah bawah`() {
+        val preset = PenboardConfig(
+            windowFrame = false,
+            minimizeButton = false,
+            bottomButtonCount = 0
+        ).withHiWritePreset()
+        assertTrue(preset.windowFrame)
+        assertTrue(preset.minimizeButton)
+        assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, preset.bottomButtonCount)
+        assertEquals(PenboardConfig.DEFAULT_WINDOW_TITLE, preset.effectiveWindowTitle)
+    }
+
+    @Test
+    fun `pengaturan lama tanpa bilah bawah tetap terbaca`() {
+        // Berkas pengaturan dari versi sebelum bilah bawah: bidang barunya memakai bawaan.
+        val json = JSONObject("""{"gridRows":3,"windowTitle":"Papan"}""")
+        val config = PenboardConfig.fromJson(json)
+        assertEquals("Papan", config.effectiveWindowTitle)
+        assertTrue(config.windowFrame)
+        assertTrue(config.minimizeButton)
+        assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, config.bottomKeys.size)
+    }
 }

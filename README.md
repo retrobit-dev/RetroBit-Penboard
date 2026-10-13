@@ -2,7 +2,16 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.1.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.1.0
+
+**Papan tulis sekarang berbingkai seperti jendela, dan punya tombol minimize.**
+
+- **Bingkai jendela**: garis tepi lebih tegas, **bilah judul** di atas papan (judulnya bisa diganti, bawaan `PENBOARD`), dan **tombol minimize** di kanan bilah judul. Sekali ketuk minimize, papan langsung disembunyikan (keyboard ditutup) dan layar jadi lega; sentuh kolom isian kalau ingin memunculkannya lagi.
+- **Bilah tombol di bawah papan tulis**: tempat menaruh tombol yang bisa diatur — jumlahnya 0–8, tiap tombol bebas dipilih aksinya (dan bisa diberi label serta tahan-untuk-mengulang). Ukurannya otomatis mengecil mengikuti lebar layar supaya semua tombol tetap muat.
+- **Ikonnya pixel art asli**: kanvas 12 x 12 piksel yang digambar kotak demi kotak tanpa anti-aliasing (`util/PixelArt.kt`), bukan ikon vektor yang diperkecil. Semua aksi punya ikonnya sendiri — termasuk tombol minimize.
+- Preset **HiWrite** menyalakan bingkai jendela, tombol minimize, dan 5 tombol bawah sekaligus. Keduanya bisa dimatikan di kartu **Jendela papan** dan **Tombol bawah**.
 
 ## Yang baru di 3.0.9
 
@@ -86,13 +95,16 @@ Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/Retro
 2. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
 3. Butuh memindahkan kursor atau menambah spasi/enter? Pakai tombol ikon di kanan papan.
 4. Ingin memaksa jadi teks sekarang? Ketuk tombol ikon **"A + percikan"** (Teks), atau tekan **tombol samping M-Pen**.
-5. Ingin menulis di atas aplikasi lain? Penboard sudah keyboard: panelnya menempel di atas aplikasi apa pun yang sedang dipakai. Mau pindah ke tulisan tangan Huawei dan kembali? Ketuk tombol ikon **papan tombol kecil** (pemilih keyboard).
+5. Mau layar lega? Ketuk tombol **minimize** (garis mendatar) di kanan bilah judul jendela — papan langsung disembunyikan.
+6. Ingin menulis di atas aplikasi lain? Penboard sudah keyboard: panelnya menempel di atas aplikasi apa pun yang sedang dipakai. Mau pindah ke tulisan tangan Huawei dan kembali? Ketuk tombol ikon **papan tombol kecil** (pemilih keyboard).
 
 ## Susunan papan
 
-![Pratinjau susunan panel: keyboard 3 baris, preset HiWrite 6 baris, dan keyboard yang menempel di atas aplikasi lain](docs/preview.png)
+![Pratinjau susunan panel: bingkai jendela + tombol minimize, bilah tombol pixel art, dan keyboard di atas aplikasi lain](docs/preview.png)
 
 ```
++----------------------------------------------+----------------+
+|  PENBOARD                            [ -- ]  |  bilah judul   |
 +----------------------------------------------+----------------+
 |                                              |   [<-] [^] [->] |  baris 1
 |            PAPAN TULIS (kiri)                |   [v] [spasi] [!]|  baris 2
@@ -101,7 +113,12 @@ Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/Retro
 |                                              |   [x>][tab][wrn] |  baris 5
 |                                              |   [tw][pkb][tut] |  baris 6
 +----------------------------------------------+----------------+
+|        [A+][teks][hapus][bersih][batal] ...   |  bilah bawah    |
++---------------------------------------------------------------+
 ```
+
+Bilah judul berisi judul jendela + tombol minimize; bilah bawah berisi tombol pixel art
+yang isinya bebas diatur (lihat **Pengaturan yang tersedia**).
 
 - **Papan tulis** memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol).
 - **Area tombol**: 3 kolom tetap, jumlah baris 1–6 (diatur pengguna), sampai 18 tombol.
@@ -131,6 +148,10 @@ Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/Retro
 | coretan tangan | pindah ke tulisan tangan perangkat (Huawei/Celia) |
 | papan tombol kecil | buka pemilih keyboard (mis. pindah ke tulisan tangan Huawei) |
 | panah bawah | sembunyikan keyboard |
+| garis mendatar (pixel art) | minimize: sembunyikan papan (di bilah judul jendela) |
+
+Tombol **grid** memakai ikon vektor monokrom; tombol **bilah bawah** memakai ikon
+**pixel art** 12 x 12 dari `util/PixelArt.kt` (setiap aksi punya polanya sendiri).
 
 ## Pengaturan yang tersedia
 
@@ -141,6 +162,8 @@ Versi terbaru: **3.0.9** (lihat [Releases](https://github.com/retrobit-dev/Retro
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
+| Jendela papan | bingkai jendela on/off, tombol minimize on/off, judul jendela (bawaan `PENBOARD`) |
+| Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang tiap tombol, kembali ke bawaan |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 
@@ -205,7 +228,7 @@ app/src/main/java/dev/retrobit/penboard/
 ├── overlay/                   PenboardTypingService (layanan aksesibilitas cadangan)
 ├── ink/                       InkRecognition (ML Kit), InkNormalizer, RecognitionText, RecognitionLanguages
 ├── ui/                        BoardPanel, KeyButton, KeyIcons, ScanlineDrawable, Ui, ColorPicker
-└── util/                      BoardMath, GridMath, StylusCompat, SystemHandwriting
+└── util/                      BoardMath, GridMath, PixelArt, StylusCompat, SystemHandwriting, GmsStatus, LanguageTags, AccessibilityIds, TextInsert
 ```
 
 ## Lisensi

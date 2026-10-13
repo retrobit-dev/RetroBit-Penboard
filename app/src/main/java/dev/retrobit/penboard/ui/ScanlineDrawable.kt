@@ -10,8 +10,12 @@ import android.graphics.RectF
 import android.graphics.drawable.Drawable
 
 /**
- * Latar panel gaya ePaper retro: warna dasar, garis tepi 1 px, sudut sedikit membulat,
+ * Latar panel gaya ePaper retro: warna dasar, garis tepi, sudut sedikit membulat,
  * dan tekstur **garis pindaian** tipis yang bisa dimatikan pengguna.
+ *
+ * Bila [titleBarHeightPx] lebih dari nol, bagian atas digambar sebagai **bilah judul
+ * jendela** (dengan garis pemisah di bawahnya) supaya panel terlihat seperti jendela
+ * melayang -- lengkap dengan tombol minimize yang dipasang di atasnya.
  */
 class ScanlineDrawable : Drawable() {
 
@@ -20,11 +24,18 @@ class ScanlineDrawable : Drawable() {
     var radiusPx: Float = 0f
     var scanlines: Boolean = true
     var lineSpacingPx: Float = 4f
+    /** Tebal garis tepi panel (px). */
+    var borderWidthPx: Float = 1f
+    /** Tinggi bilah judul di bagian atas panel (0 = tanpa bilah judul). */
+    var titleBarHeightPx: Float = 0f
+    /** Warna bilah judul. */
+    var titleBarColor: Int = Color.TRANSPARENT
+    /** Warna garis pemisah di bawah bilah judul. */
+    var dividerColor: Int = Color.TRANSPARENT
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 1f
     }
     private val rect = RectF()
     private val clip = Path()
@@ -32,11 +43,13 @@ class ScanlineDrawable : Drawable() {
     override fun draw(canvas: Canvas) {
         val bounds = bounds
         if (bounds.isEmpty) return
+        val stroke = borderWidthPx.coerceAtLeast(0f)
+        val inset = stroke / 2f
         rect.set(
-            bounds.left + 0.5f,
-            bounds.top + 0.5f,
-            bounds.right - 0.5f,
-            bounds.bottom - 0.5f
+            bounds.left + inset,
+            bounds.top + inset,
+            bounds.right - inset,
+            bounds.bottom - inset
         )
 
         paint.style = Paint.Style.FILL
@@ -57,7 +70,27 @@ class ScanlineDrawable : Drawable() {
             canvas.restoreToCount(save)
         }
 
+        if (titleBarHeightPx > 0f) {
+            // Bilah judul: ikut bentuk lengkung panel, lalu ditutup garis pemisah.
+            val save = canvas.save()
+            clip.reset()
+            clip.addRoundRect(rect, radiusPx, radiusPx, Path.Direction.CW)
+            canvas.clipPath(clip)
+            paint.color = titleBarColor
+            canvas.drawRect(rect.left, rect.top, rect.right, rect.top + titleBarHeightPx, paint)
+            paint.color = dividerColor
+            canvas.drawRect(
+                rect.left,
+                rect.top + titleBarHeightPx,
+                rect.right,
+                rect.top + titleBarHeightPx + 1f,
+                paint
+            )
+            canvas.restoreToCount(save)
+        }
+
         borderPaint.color = borderColor
+        borderPaint.strokeWidth = stroke.coerceAtLeast(1f)
         canvas.drawRoundRect(rect, radiusPx, radiusPx, borderPaint)
     }
 

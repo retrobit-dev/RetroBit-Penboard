@@ -80,6 +80,10 @@ data class KeyDef(
     /** Ulangi aksi selama tombol ditahan (mis. hapus). */
     val repeatOnHold: Boolean = false
 ) {
+    /** Judul yang benar-benar dipakai di bilah jendela. */
+    val effectiveWindowTitle: String
+        get() = windowTitle.trim().ifBlank { DEFAULT_WINDOW_TITLE }.take(MAX_WINDOW_TITLE)
+
     fun toJson(): JSONObject = JSONObject().apply {
         put("action", action.id)
         put("label", label)
@@ -148,7 +152,21 @@ data class PenboardConfig(
      * Google Play services), Penboard berpindah sendiri ke keyboard tulisan tangan
      * perangkat supaya pengguna tetap bisa menulis.
      */
-    val autoSwitchToSystemHandwriting: Boolean = true
+    val autoSwitchToSystemHandwriting: Boolean = true,
+
+    // ---------------------------------------------------------------- bilah bawah (pixel art)
+    /** Tombol di **bawah papan tulis**; ikonnya pixel art (lihat `util/PixelArt.kt`). */
+    val bottomKeys: List<KeyDef> = defaultBottomKeys(),
+    /** Berapa tombol bawah yang tampil; 0 berarti bilah bawah disembunyikan. */
+    val bottomButtonCount: Int = DEFAULT_BOTTOM_KEYS,
+
+    // ---------------------------------------------------------------- bingkai jendela
+    /** Bingkai + bilah judul seperti jendela: ada tombol minimize untuk menyembunyikan papan. */
+    val windowFrame: Boolean = true,
+    /** Tampilkan tombol minimize di bilah judul. */
+    val minimizeButton: Boolean = true,
+    /** Judul di bilah jendela; kosong berarti memakai [DEFAULT_WINDOW_TITLE]. */
+    val windowTitle: String = ""
 ) {
 
     /** Warna pena yang sedang dipakai. */
@@ -195,6 +213,11 @@ data class PenboardConfig(
         gridRows = MAX_GRID_ROWS,
         gridButtonCount = MAX_GRID_KEYS,
         gridKeys = defaultGridKeys(),
+        // Jendela & bilah bawah: bingkai + minimize, serta 5 tombol pixel art di bawah papan.
+        windowFrame = true,
+        minimizeButton = true,
+        bottomKeys = defaultBottomKeys(),
+        bottomButtonCount = DEFAULT_BOTTOM_KEYS,
         // Pengenalan: kata jadi teks otomatis setelah 2 detik, lalu papan bersih.
         autoRecognize = true,
         autoRecognizeDelayMs = 2000,
@@ -243,6 +266,11 @@ data class PenboardConfig(
         put("clearAfterRecognize", clearAfterRecognize)
         put("recognitionLanguage", recognitionLanguage)
         put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
+        put("bottomKeys", JSONArray().apply { bottomKeys.forEach { put(it.toJson()) } })
+        put("bottomButtonCount", bottomButtonCount)
+        put("windowFrame", windowFrame)
+        put("minimizeButton", minimizeButton)
+        put("windowTitle", windowTitle)
     }
 
     /** Semua angka dipangkas ke rentang yang masuk akal. */
@@ -264,15 +292,21 @@ data class PenboardConfig(
             buttonOpacity = buttonOpacity.coerceIn(0, 100),
             cornerRadiusDp = cornerRadiusDp.coerceIn(MIN_RADIUS_DP, MAX_RADIUS_DP),
             autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(MIN_AUTO_DELAY_MS, MAX_AUTO_DELAY_MS),
-            recognitionLanguage = RecognitionLanguages.normalize(recognitionLanguage)
+            recognitionLanguage = RecognitionLanguages.normalize(recognitionLanguage),
+            bottomKeys = sanitizeKeys(bottomKeys, defaultBottomKeys(), BOTTOM_SLOTS),
+            bottomButtonCount = bottomButtonCount.coerceIn(MIN_BOTTOM_KEYS, MAX_BOTTOM_KEYS),
+            windowTitle = windowTitle.trim().take(MAX_WINDOW_TITLE)
         )
     }
 
-    private fun sanitizeKeys(keys: List<KeyDef>): List<KeyDef> {
-        val defaults = defaultGridKeys()
-        val result = ArrayList<KeyDef>(GRID_SLOTS)
-        for (index in 0 until GRID_SLOTS) {
-            result.add(keys.getOrNull(index) ?: defaults[index])
+    private fun sanitizeKeys(keys: List<KeyDef>): List<KeyDef> =
+        sanitizeKeys(keys, defaultGridKeys(), GRID_SLOTS)
+
+    /** Isi setiap slot: pakai isian pengguna, atau bawaan yang sesuai untuk slot itu. */
+    private fun sanitizeKeys(keys: List<KeyDef>, defaults: List<KeyDef>, slots: Int): List<KeyDef> {
+        val result = ArrayList<KeyDef>(slots)
+        for (index in 0 until slots) {
+            result.add(keys.getOrNull(index) ?: defaults.getOrElse(index) { defaults.last() })
         }
         return result
     }
@@ -300,6 +334,16 @@ data class PenboardConfig(
         const val MAX_PEN_WIDTH_DP = 12
         const val MIN_GRID_KEYS = 1
         const val MAX_GRID_KEYS = GRID_SLOTS
+
+        /** Bilah tombol di bawah papan tulis: 0 (disembunyikan) sampai 8 tombol. */
+        const val MIN_BOTTOM_KEYS = 0
+        const val MAX_BOTTOM_KEYS = 8
+        const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
+        const val DEFAULT_BOTTOM_KEYS = 5
+
+        /** Bingkai jendela: judul bawaan & panjang maksimumnya. */
+        const val DEFAULT_WINDOW_TITLE = "PENBOARD"
+        const val MAX_WINDOW_TITLE = 20
         const val MIN_RADIUS_DP = 0
         const val MAX_RADIUS_DP = 32
         const val MIN_AUTO_DELAY_MS = 500
@@ -322,6 +366,21 @@ data class PenboardConfig(
          * Grid bawaan ala HiWrite: baris pertama-tama panah kursor, lalu tombol
          * keyboard konvensional, lalu tombol papan tulis.
          */
+        /**
+         * Bilah **bawah papan** bawaan: aksi papan tulis yang paling sering dipakai,
+         * digambar dengan ikon pixel art ([dev.retrobit.penboard.util.PixelArt]).
+         */
+        fun defaultBottomKeys(): List<KeyDef> = listOf(
+            KeyDef(KeyAction.RECOGNIZE),
+            KeyDef(KeyAction.TEXT),
+            KeyDef(KeyAction.DELETE_STROKE),
+            KeyDef(KeyAction.CLEAR),
+            KeyDef(KeyAction.UNDO),
+            KeyDef(KeyAction.REDO),
+            KeyDef(KeyAction.CYCLE_PEN),
+            KeyDef(KeyAction.HIDE)
+        )
+
         fun defaultGridKeys(): List<KeyDef> = listOf(
             // Baris 1 - penempatan kursor
             KeyDef(KeyAction.CURSOR_LEFT, repeatOnHold = true),
@@ -365,6 +424,9 @@ data class PenboardConfig(
             val keys = json.optJSONArray("gridKeys")?.let { array ->
                 (0 until array.length()).mapNotNull { index -> array.optJSONObject(index)?.let(KeyDef::fromJson) }
             } ?: base.gridKeys
+            val bottomKeys = json.optJSONArray("bottomKeys")?.let { array ->
+                (0 until array.length()).mapNotNull { index -> array.optJSONObject(index)?.let(KeyDef::fromJson) }
+            } ?: base.bottomKeys
             return PenboardConfig(
                 schemaVersion = json.optInt("schemaVersion", SCHEMA_VERSION),
                 boardHeightDp = json.optInt("boardHeightDp", base.boardHeightDp),
@@ -400,7 +462,12 @@ data class PenboardConfig(
                 autoSwitchToSystemHandwriting = json.optBoolean(
                     "autoSwitchToSystemHandwriting",
                     base.autoSwitchToSystemHandwriting
-                )
+                ),
+                bottomKeys = bottomKeys,
+                bottomButtonCount = json.optInt("bottomButtonCount", base.bottomButtonCount),
+                windowFrame = json.optBoolean("windowFrame", base.windowFrame),
+                minimizeButton = json.optBoolean("minimizeButton", base.minimizeButton),
+                windowTitle = json.optString("windowTitle", base.windowTitle)
             ).sanitized()
         }
 

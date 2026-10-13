@@ -6,6 +6,9 @@ Digambar dari angka yang sama dengan aplikasi:
 - tata letak kunci: PenboardConfig.defaultGridKeys()
 - bilah tunggu & lencana hasil: BoardView.drawPending / drawFlash
 """
+import pathlib
+import re
+
 from PIL import Image, ImageDraw, ImageFont
 
 D = 1.375                      # density efektif (2.75 xxhdpi diperkecil 50%)
@@ -41,6 +44,45 @@ DEFAULT_KEYS = [
     "DELETE_FORWARD", "TAB", "CYCLE_PEN",
     "SYSTEM_HANDWRITING", "KEYBOARD_PICKER", "HIDE",
 ]
+
+
+def load_pixel_art(path="app/src/main/java/dev/retrobit/penboard/util/PixelArt.kt"):
+    """Pola pixel art diambil dari berkas Kotlin yang sama dengan aplikasi."""
+    text = pathlib.Path(path).read_text()
+    patterns = {}
+    for match in re.finditer(r"KeyAction\.(\w+) to art\((.*?)\n        \)", text, re.S):
+        rows = re.findall(r'"([.#]{12})"', match.group(2))
+        if len(rows) == 12:
+            patterns[match.group(1)] = rows
+    mini = re.search(r"val MINIMIZE: Pattern = art\((.*?)\n    \)", text, re.S)
+    if mini:
+        patterns["MINIMIZE"] = re.findall(r'"([.#]{12})"', mini.group(1))
+    return patterns
+
+
+def load_bottom_keys(path="app/src/main/java/dev/retrobit/penboard/data/PenboardConfig.kt"):
+    """Urutan tombol bilah bawah bawaan, juga dari berkas Kotlin yang sama."""
+    text = pathlib.Path(path).read_text()
+    body = re.search(r"fun defaultBottomKeys\(\): List<KeyDef> = listOf\((.*?)\n        \)", text, re.S)
+    if not body:
+        return []
+    return re.findall(r"KeyAction\.(\w+)", body.group(1))
+
+
+def draw_pixel_icon(draw, pattern, cx, cy, size, color):
+    """Ikon pixel art: satu kotak per piksel, ukurannya bilangan bulat seperti di aplikasi."""
+    if not pattern:
+        return
+    rows = len(pattern)
+    cols = max(len(r) for r in pattern)
+    unit = max(1, int(size // 12))
+    left = cx - unit * cols / 2
+    top = cy - unit * rows / 2
+    for y, row in enumerate(pattern):
+        for x, ch in enumerate(row):
+            if ch == '#':
+                draw.rectangle([left + x * unit, top + y * unit,
+                                left + (x + 1) * unit - 1, top + (y + 1) * unit - 1], fill=color)
 
 
 def cell_size(board_height_px, available_width_px, spacing_px, min_cell_px, rows):
@@ -155,12 +197,26 @@ def draw_board_ink(draw, left, top, right, line_gap):
     stroke([(7.2, 0.3), (7.0, -0.4), (7.9, -0.6), (8.3, 0.1), (7.8, 0.5), (7.3, 0.2)])
 
 
-def draw_panel(rows, board_height_dp, keys, flash=None, pending=None):
+def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
+               title="PENBOARD", bottom_keys=None):
+    bottom_keys = BOTTOM_KEYS if bottom_keys is None else bottom_keys
+    """Panel Penboard: bingkai jendela + bilah judul + papan + grid + bilah tombol bawah."""
     board_h = int(board_height_dp * D)
     cell = cell_size(board_h, PANEL_W, SPACING, MIN_CELL, rows)
     grid_w = cell * COLUMNS + SPACING * (COLUMNS - 1)
     board_w = PANEL_W - 2 * PANEL_PADDING - grid_w - SPACING
-    panel_h = board_h + 2 * PANEL_PADDING
+
+    title_h = int(22 * D) if title else 0
+    bottom_keys = bottom_keys or []
+    count = len(bottom_keys)
+    side = 0
+    if count:
+        available = PANEL_W - 2 * PANEL_PADDING - SPACING * (count - 1)
+        side = max(int(30 * D), min(cell, available // count))
+    bottom_h = side + SPACING if count else 0
+    grid_h = rows * cell + (rows - 1) * SPACING
+    content_h = max(board_h, grid_h)
+    panel_h = title_h + content_h + bottom_h + 2 * PANEL_PADDING
 
     img = Image.new("RGBA", (PANEL_W, panel_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
@@ -168,10 +224,28 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None):
 
     draw.rounded_rectangle([0, 0, PANEL_W - 1, panel_h - 1], radius,
                            fill=alpha(COL_PANEL, 255 * PANEL_OPACITY),
-                           outline=alpha(COL_ACCENT, 120), width=1)
+                           outline=alpha(COL_ACCENT, 190), width=2)
     draw_scanlines(img, (0, 0, PANEL_W - 1, panel_h - 1), radius, COL_ACCENT)
 
-    bl, bt = PANEL_PADDING, PANEL_PADDING
+    # bilah judul jendela + garis pemisah
+    if title_h:
+        draw.rectangle([1, 1, PANEL_W - 2, 1 + title_h + PANEL_PADDING],
+                       fill=alpha(COL_ACCENT, 30))
+        draw.line([(1, 2 + title_h + PANEL_PADDING), (PANEL_W - 2, 2 + title_h + PANEL_PADDING)],
+                  fill=alpha(COL_ACCENT, 150), width=1)
+        draw.text((PANEL_PADDING + 4, PANEL_PADDING + (title_h - 12 * D) / 2), title,
+                  font=ImageFont.truetype(FONT_BOLD, int(10 * D)), fill=alpha(COL_ACCENT, 230))
+        # tombol minimize (pixel art) di kanan bilah judul
+        ms = int(18 * D)
+        mx1, my0 = PANEL_W - PANEL_PADDING - 2, PANEL_PADDING + 1
+        draw.rounded_rectangle([mx1 - ms, my0, mx1, my0 + ms], int(RADIUS_DP * D * 0.6),
+                               fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
+                               outline=alpha(COL_ACCENT, 170), width=1)
+        draw_pixel_icon(draw, PIXEL_ART.get("MINIMIZE"), mx1 - ms / 2, my0 + ms / 2,
+                        ms * 0.66, COL_TEXT)
+
+    bl = PANEL_PADDING
+    bt = PANEL_PADDING + title_h + (SPACING if title_h else 0)
     br, bb = bl + board_w, bt + board_h
     draw.rounded_rectangle([bl, bt, br, bb], radius, fill=alpha(COL_PAPER, 255 * BOARD_OPACITY),
                            outline=alpha(COL_LINE, 110), width=1)
@@ -218,6 +292,21 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None):
                                fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                outline=alpha(COL_ACCENT, 130), width=1)
         glyph(draw, action, (x0 + x1) / 2, (y0 + y1) / 2, cell * 0.52)
+
+    # bilah tombol pixel art di bawah papan tulis
+    if count:
+        by = bt + content_h + SPACING
+        total = count * side + (count - 1) * SPACING
+        bx = (PANEL_W - total) // 2
+        for index, action in enumerate(bottom_keys):
+            x0 = bx + index * (side + SPACING)
+            y0 = by
+            draw.rounded_rectangle([x0, y0, x0 + side, y0 + side],
+                                   max(2, int(RADIUS_DP * D * 0.9)),
+                                   fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
+                                   outline=alpha(COL_ACCENT, 130), width=1)
+            draw_pixel_icon(draw, PIXEL_ART.get(action), x0 + side / 2, y0 + side / 2,
+                            side * 0.66, COL_TEXT)
     return img
 
 
@@ -231,12 +320,14 @@ def section(canvas, y, caption, sub=None):
 
 
 def main():
+    global IME_PANEL
+    IME_PANEL = draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
     pad = 40
     width = PANEL_W + pad * 2
     header = 66
     panels = [
         ("1. Keyboard Penboard - 3 baris (bawaan)",
-         "menggantikan keyboard biasa; hasil tulisan masuk ke kolom isian",
+         "bingkai jendela + minimize + 5 tombol pixel art di bawah papan",
          ("field", draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55))),
         ("2. Preset HiWrite - 6 baris (18 tombol)",
          "geser 'jumlah baris' 1-6 di Pengaturan > Area tombol",
@@ -250,13 +341,13 @@ def main():
         if isinstance(item, tuple):
             heights.append(52 + item[1].height + 60)
         elif item == "ime":
-            heights.append(APP_MOCK_H + IME_ROWS_H + 60)
+            heights.append(APP_MOCK_H + IME_PANEL.height + 60)
         else:
             heights.append(item.height + 60)
     canvas = Image.new("RGBA", (width, sum(heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 20), "Penboard 3.0.x - susunan panel", font=TITLE_FONT, fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 44), "digambar dari angka pengaturan yang sama dengan aplikasi", font=SMALL_FONT,
+    draw.text((pad, 20), "Penboard 3.1.x - susunan panel", font=TITLE_FONT, fill=alpha(COL_ACCENT, 255))
+    draw.text((pad, 44), "bingkai jendela + tombol minimize + bilah tombol pixel art", font=SMALL_FONT,
               fill=alpha(COL_ACCENT, 150))
 
     y = header
@@ -265,7 +356,7 @@ def main():
         img = item[1] if isinstance(item, tuple) else item
         if item == "ime":
             # aplikasi lain di belakang, keyboard Penboard menempel di bawah
-            ime = draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
+            ime = IME_PANEL
             block = Image.new("RGBA", (PANEL_W, APP_MOCK_H + ime.height), (0x2A, 0x2A, 0x2A, 255))
             bd = ImageDraw.Draw(block)
             bd.rounded_rectangle([24, 24, PANEL_W - 24, 46], 8, fill=(0x33, 0x33, 0x33, 255),
@@ -294,6 +385,10 @@ def main():
     canvas.convert("RGB").save("docs/preview.png", optimize=True)
     print("docs/preview.png", canvas.size)
 
+
+PIXEL_ART = load_pixel_art()
+BOTTOM_KEYS = load_bottom_keys()[:5]
+IME_PANEL = None  # diisi di main() supaya tingginya pasti (bingkai + papan + bilah bawah)
 
 if __name__ == "__main__":
     import os

@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.EditText
 import android.widget.ArrayAdapter
 import android.widget.CompoundButton
 import android.widget.LinearLayout
@@ -17,6 +18,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.roundToInt
@@ -79,6 +81,36 @@ object Ui {
             setPadding(0, dp(parent.context, 2f), 0, dp(parent.context, 6f))
             parent.addView(this)
         }
+
+    /** Satu baris isian teks: judul kecil di atas, kotak teks di bawahnya. */
+    fun textRow(
+        parent: LinearLayout,
+        title: String,
+        value: String,
+        hint: String,
+        onChange: (String) -> Unit
+    ): EditText {
+        val context = parent.context
+        parent.addView(
+            AppCompatTextView(context).apply {
+                text = title
+                textSize = 13.5f
+                typeface = Typeface.MONOSPACE
+                setPadding(0, dp(context, 6f), 0, 0)
+            }
+        )
+        val field = EditText(context).apply {
+            this.hint = hint
+            setText(value)
+            textSize = 13.5f
+            isSingleLine = true
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            typeface = Typeface.MONOSPACE
+        }
+        field.doAfterTextChanged { onChange(it?.toString() ?: "") }
+        parent.addView(field)
+        return field
+    }
 
     fun divider(parent: LinearLayout) {
         val context = parent.context
