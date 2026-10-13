@@ -7,9 +7,15 @@ class TextInsertTest {
 
     @Test
     fun `teks disisipkan pada posisi kursor`() {
-        val result = TextInsert.into("halo dunia", 5, 5, " baru")
-        assertEquals("halo baru dunia", result.text)
-        assertEquals(10, result.caret)
+        // Kursor di ujung kata: "halo| dunia" lalu disisipkan " baru".
+        val atWord = TextInsert.into("halo dunia", 4, 4, " baru")
+        assertEquals("halo baru dunia", atWord.text)
+        assertEquals(9, atWord.caret)
+
+        // Kursor sesudah spasi: spasi yang sudah ada dipakai, tidak digandakan.
+        val atSpace = TextInsert.into("halo dunia", 5, 5, "baru ")
+        assertEquals("halo baru dunia", atSpace.text)
+        assertEquals(10, atSpace.caret)
     }
 
     @Test
