@@ -74,7 +74,9 @@ class PenboardInputService : InputMethodService() {
         binding.panel.background = panelBackground(radius)
         binding.panelDivider.visibility = View.VISIBLE
 
-        val newBoardHeight = (config.boardHeightDp * density).toInt()
+        // Batasi tinggi papan agar keyboard tidak melebihi jendela IME di layar kecil.
+        val maxBoardHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
+        val newBoardHeight = (config.boardHeightDp * density).toInt().coerceAtMost(maxBoardHeight)
         binding.boardView.layoutParams = binding.boardView.layoutParams.also { params ->
             params.height = newBoardHeight
         }
