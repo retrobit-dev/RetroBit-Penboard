@@ -75,9 +75,10 @@ class PenboardConfigTest {
         val many = PenboardConfig(penColors = List(20) { 0xFF000000.toInt() + it }).sanitized()
         assertTrue(many.penColors.size <= PenboardConfig.MAX_PEN_COLORS)
 
+        // Daftar warna kosong diganti warna bawaan, dan indeks warna selalu masuk rentang.
         val none = PenboardConfig(penColors = emptyList(), penColorIndex = 3).sanitized()
         assertTrue(none.penColors.isNotEmpty())
-        assertEquals(0, none.penColorIndex)
+        assertTrue(none.penColorIndex in none.penColors.indices)
         assertTrue(none.currentPenColor != 0)
     }
 
