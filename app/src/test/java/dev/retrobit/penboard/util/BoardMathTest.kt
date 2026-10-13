@@ -47,16 +47,16 @@ class BoardMathTest {
 
     @Test
     fun `geser otomatis menjaga satu baris kosong di bawah`() {
-        // 7 baris terlihat: baris 0..4 boleh dipakai, baris 5 memicu geser satu baris
+        // 7 baris terlihat (0..6): baris 0..5 masih menyisakan tempat, baris terakhir (6) memicu geser
         assertEquals(0, BoardMath.autoShiftLines(0, 7))
-        assertEquals(0, BoardMath.autoShiftLines(4, 7))
-        assertEquals(1, BoardMath.autoShiftLines(5, 7))
-        assertEquals(2, BoardMath.autoShiftLines(6, 7))
+        assertEquals(0, BoardMath.autoShiftLines(5, 7))
+        assertEquals(1, BoardMath.autoShiftLines(6, 7))
+        assertEquals(2, BoardMath.autoShiftLines(7, 7))
         // nilai di luar area tetap aman
         assertEquals(0, BoardMath.autoShiftLines(-3, 7))
         // goresan yang jauh di bawah digeser seluruhnya sampai masuk ke baris bebas terakhir
         assertEquals(94, BoardMath.autoShiftLines(99, 7))
-        // papan dua baris: baris terbawah masih dianggap perlu digeser
+        // papan dua baris: menulis di baris terakhir menggeser dua baris sekaligus
         assertEquals(2, BoardMath.autoShiftLines(2, 2))
         assertEquals(0, BoardMath.autoShiftLines(2, 0))
     }

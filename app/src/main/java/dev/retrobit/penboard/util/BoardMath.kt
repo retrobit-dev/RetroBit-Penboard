@@ -42,7 +42,12 @@ object BoardMath {
     fun clampViewOffset(offsetPx: Float, contentShiftPx: Float): Float =
         offsetPx.coerceIn(0f, max(0f, contentShiftPx))
 
-    /** Berapa baris papan perlu naik agar selalu tersisa satu baris kosong di bawah. */
+    /**
+     * Berapa baris papan perlu naik agar selalu tersisa satu baris kosong di bawah tulisan.
+     *
+     * Baris "bebas" terakhir adalah `visibleLines - 2` (baris terakhir selalu dibiarkan
+     * kosong), jadi menulis di baris terakhir yang terlihat menggeser papan satu baris.
+     */
     fun autoShiftLines(writtenLine: Int, visibleLines: Int): Int {
         if (visibleLines <= 0) return 0
         val lastFreeLine = max(0, visibleLines - 2)
