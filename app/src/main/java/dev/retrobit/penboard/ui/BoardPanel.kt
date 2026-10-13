@@ -175,7 +175,7 @@ class BoardPanel(private val context: Context) {
         )
         panelBackground.borderWidthPx = if (config.windowFrame) 1.5f * density else 1f
         panelBackground.titleBarHeightPx =
-            if (config.windowFrame) titleBarHeight + panelPadding else 0f
+            if (config.windowFrame) (titleBarHeight + panelPadding).toFloat() else 0f
         panelBackground.titleBarColor = BoardView.withAlpha(config.accentColor, 30)
         panelBackground.dividerColor = BoardView.withAlpha(config.accentColor, 150)
         panelBackground.scanlines = config.scanlines

@@ -80,10 +80,6 @@ data class KeyDef(
     /** Ulangi aksi selama tombol ditahan (mis. hapus). */
     val repeatOnHold: Boolean = false
 ) {
-    /** Judul yang benar-benar dipakai di bilah jendela. */
-    val effectiveWindowTitle: String
-        get() = windowTitle.trim().ifBlank { DEFAULT_WINDOW_TITLE }.take(MAX_WINDOW_TITLE)
-
     fun toJson(): JSONObject = JSONObject().apply {
         put("action", action.id)
         put("label", label)
@@ -232,6 +228,10 @@ data class PenboardConfig(
         key.action == KeyAction.TEXT && key.text.isNotBlank() -> key.text
         else -> key.action.label
     }
+
+    /** Judul yang benar-benar dipakai di bilah jendela. */
+    val effectiveWindowTitle: String
+        get() = windowTitle.trim().ifBlank { DEFAULT_WINDOW_TITLE }.take(MAX_WINDOW_TITLE)
 
     fun toJson(): JSONObject = JSONObject().apply {
         put("schemaVersion", schemaVersion)
