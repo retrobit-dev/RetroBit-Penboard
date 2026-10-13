@@ -189,8 +189,8 @@ data class PenboardConfig(
     fun sanitized(): PenboardConfig {
         val safeName = name.trim().ifBlank { "Papan" }.take(40)
         // Baris kosong tetap dibiarkan ada supaya pengguna bisa menyusun tombol dahulu.
-        val toolRows = toolbarRows.take(4).map { it.sanitized() }
-        val boardRowsSafe = boardRows.take(4).map { it.sanitized() }
+        val toolRows = toolbarRows.take(MAX_ROWS).map { it.sanitized() }
+        val boardRowsSafe = boardRows.take(MAX_ROWS).map { it.sanitized() }
         val fallback = Presets.defaultConfig()
         return copy(
             name = safeName,
@@ -243,6 +243,9 @@ data class PenboardConfig(
     }
 
     companion object {
+        /** Batas jumlah baris tombol supaya keyboard tetap masuk akal di layar. */
+        const val MAX_ROWS = 8
+
         fun fromJson(o: JSONObject): PenboardConfig {
             val toolbar = mutableListOf<RowDef>()
             o.optJSONArray("toolbarRows")?.let { arr ->

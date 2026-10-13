@@ -607,6 +607,6 @@ class BoardEditorActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_CONFIG_ID = "config_id"
-        private const val MAX_ROWS = 4
+        private const val MAX_ROWS = PenboardConfig.MAX_ROWS
     }
 }

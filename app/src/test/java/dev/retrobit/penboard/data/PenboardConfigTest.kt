@@ -96,6 +96,15 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `warna bisa dicampur dan kontras dihitung`() {
+        val mixed = Colors.blend(0xFF000000.toInt(), 0xFFFFFFFF.toInt(), 0.5f)
+        assertEquals(127, Colors.red(mixed))
+        assertEquals(255, Colors.alpha(0xFF000000.toInt()))
+        assertEquals(0xFF0F172A.toInt(), Colors.contrastFor(0xFFFFFFFF.toInt()))
+        assertEquals(0xFFF8FAFC.toInt(), Colors.contrastFor(0xFF000000.toInt()))
+    }
+
+    @Test
     fun `hex warna bisa dibaca kembali`() {
         val color = 0xFF3D5AFE.toInt()
         assertEquals(color, Colors.parseHex(Colors.toHex(color), 0))
