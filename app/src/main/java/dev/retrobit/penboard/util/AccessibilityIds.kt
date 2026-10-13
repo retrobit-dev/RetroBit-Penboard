@@ -12,7 +12,9 @@ object AccessibilityIds {
 
     fun matches(id: String?, packageName: String, className: String): Boolean {
         if (id.isNullOrEmpty()) return false
-        val withoutPackage = id.removePrefix(packageName).trimStart('.', '/')
-        return withoutPackage == className || id.endsWith(className)
+        // Samakan dulu bentuknya: 'pkg/.Kelas', 'pkg/pkg.Kelas', dan 'pkg.Kelas'.
+        val normalized = id.replace('/', '.').removePrefix(packageName).trimStart('.')
+        val simple = className.removePrefix(packageName).trimStart('.')
+        return normalized == simple || normalized == className
     }
 }

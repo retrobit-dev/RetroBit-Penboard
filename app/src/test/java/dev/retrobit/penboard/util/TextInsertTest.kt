@@ -54,9 +54,10 @@ class TextInsertTest {
     @Test
     fun `hapus satu kata`() {
         assertEquals("halo ", TextInsert.deleteWord("halo dunia", 10, 10).text)
-        // Spasi di depan kursor ikut dibuang.
-        assertEquals("halo", TextInsert.deleteWord("halo dunia ", 11, 11).text)
-        assertEquals("halo", TextInsert.deleteWord("halo ", 5, 5).text)
+        assertEquals(5, TextInsert.deleteWord("halo dunia", 10, 10).caret)
+        // Spasi tepat di kiri kursor ikut dibuang, jadi hanya sisa kata sebelumnya.
+        assertEquals("halo ", TextInsert.deleteWord("halo dunia ", 11, 11).text)
+        assertEquals("", TextInsert.deleteWord("halo ", 5, 5).text)
     }
 
     @Test
