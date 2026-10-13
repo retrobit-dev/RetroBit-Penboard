@@ -31,6 +31,7 @@ import dev.retrobit.penboard.databinding.KeyboardLayoutBinding
 import dev.retrobit.penboard.overlay.PenboardOverlayService
 import dev.retrobit.penboard.ui.KeyGridBuilder
 import dev.retrobit.penboard.ui.KeyRowsBuilder
+import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
  * Keyboard Penboard: papan tulis stylus yang bisa diatur penuh
@@ -63,7 +64,8 @@ class PenboardInputService : InputMethodService() {
             configClearAfter = { config.clearAfterRecognize },
             configAutoSpace = { config.autoSpaceAfterWord },
             commit = { text -> commitText(text); true },
-            notify = { message -> toast(message) }
+            notify = { message -> toast(message) },
+            onUnavailable = { message -> offerSystemHandwriting(message) }
         )
     }
 
@@ -187,6 +189,8 @@ class PenboardInputService : InputMethodService() {
         binding.imeGrid.removeAllViews()
 
         val gridMode = config.boardLayout == BoardLayoutMode.BOARD_LEFT_GRID
+        // Papan memakai seluruh sisi kiri sampai tombol grid di kanan.
+        binding.boardView.edgeToEdge = gridMode
         binding.imeGrid.visibility = if (gridMode) View.VISIBLE else View.GONE
         binding.keyRows.visibility = if (gridMode) View.GONE else View.VISIBLE
         binding.toolbarTop.visibility = if (gridMode) View.GONE else View.VISIBLE
@@ -288,6 +292,7 @@ class PenboardInputService : InputMethodService() {
             KeyAction.CURSOR_RIGHT -> sendKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT)
             KeyAction.RECOGNIZE -> handwriting.recognize(announce = true)
             KeyAction.OVERLAY_TOGGLE -> toggleOverlay()
+            KeyAction.SYSTEM_HANDWRITING -> bridgeToSystemHandwriting()
             KeyAction.SCROLL_OLDER -> board?.scrollByLines(SCROLL_STEP_LINES)
             KeyAction.SCROLL_NEWER -> board?.scrollByLines(-SCROLL_STEP_LINES)
             KeyAction.COLOR -> cyclePenColor()
@@ -394,6 +399,25 @@ class PenboardInputService : InputMethodService() {
             PenButtonAction.NONE -> Unit
         }
         refreshToolHighlight()
+    }
+
+    /**
+     * Pindah ke keyboard tulisan tangan bawaan perangkat (mis. Huawei/Celia) supaya pengenalan
+     * tulisan tangan milik perangkat bisa dipakai; Penboard tetap tersedia untuk papan tulisnya.
+     */
+    private fun bridgeToSystemHandwriting() {
+        persistBoard()
+        val target = SystemHandwriting.switchFromIme(this)
+        if (target != null) {
+            toast(getString(R.string.system_handwriting_switched, target.label))
+        } else {
+            toast(getString(R.string.system_handwriting_picker))
+        }
+    }
+
+    /** Mesin pengenalan Penboard tidak tersedia: arahkan ke tulisan tangan bawaan perangkat. */
+    private fun offerSystemHandwriting(message: String) {
+        toast(message + " " + getString(R.string.system_handwriting_hint))
     }
 
     /** Tampilkan atau sembunyikan papan tulis melayang di atas aplikasi lain. */

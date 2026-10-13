@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
     private fun renderHuaweiTip(parent: LinearLayout) {
         if (!isHuaweiFamily() || prefs.hideHuaweiTip) return
         val card = Ui.card(parent, getString(R.string.huawei_tip_title), getString(R.string.huawei_tip_body))
+        Ui.bodyText(card, getString(R.string.huawei_tip_body_short))
         Ui.buttonRow(
             card,
             getString(R.string.action_system_settings) to { openImeSettings() },

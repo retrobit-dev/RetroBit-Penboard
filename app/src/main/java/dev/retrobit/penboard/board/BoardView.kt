@@ -85,6 +85,19 @@ class BoardView @JvmOverloads constructor(
             invalidate()
         }
 
+    /**
+     * Tata letak grid: papan menempel ke tepi (sudut kiri siku, garis panduan lebih dekat
+     * ke tepi) supaya area menulis memakai seluruh sisi kiri sampai tombol grid di kanan.
+     */
+    var edgeToEdge: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            refreshInsets()
+            applyBackground()
+            invalidate()
+        }
+
     /** Radius sudut latar papan (px). 0 = tanpa pembulatan. */
     var cornerRadiusPx: Float = 0f
         set(value) {
@@ -295,7 +308,9 @@ class BoardView @JvmOverloads constructor(
         val bg = GradientDrawable()
         bg.shape = GradientDrawable.RECTANGLE
         val radius = cornerRadiusPx
-        bg.cornerRadii = floatArrayOf(radius, radius, radius, radius, radius, radius, radius, radius)
+        // Pada mode menempel tepi, sisi kiri papan siku agar tulisan memakai seluruh lebar.
+        val left = if (edgeToEdge) 0f else radius
+        bg.cornerRadii = floatArrayOf(left, left, radius, radius, radius, radius, left, left)
         bg.setColor(Colors.withOpacity(config.boardBgColor, config.boardBgOpacity))
         background = bg
     }
@@ -304,9 +319,14 @@ class BoardView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        insetV = 4f * density
-        insetH = 14f * density
+        refreshInsets()
         recomputeGeometry()
+    }
+
+    /** Jarak tepi papan; lebih rapat saat papan menempel tepi (mode grid). */
+    private fun refreshInsets() {
+        insetV = if (edgeToEdge) 3f * density else 4f * density
+        insetH = if (edgeToEdge) 4f * density else 14f * density
     }
 
     /**
@@ -378,8 +398,8 @@ class BoardView @JvmOverloads constructor(
         if (!config.gridEnabled || config.gridOpacity <= 0) return
         linePaint.color = Colors.withOpacity(config.gridColor, config.gridOpacity)
         baselinePaint.color = Colors.withOpacity(config.gridColor, (config.gridOpacity * 0.7f).toInt())
-        val left = insetH
-        val right = width - insetH
+        val left = if (edgeToEdge) 0f else insetH
+        val right = if (edgeToEdge) width.toFloat() else width - insetH
         for (i in 0..visibleLines) {
             val y = insetV + i * gapPx - viewOffset
             if (y < -gapPx || y > height + gapPx) continue

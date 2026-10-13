@@ -15,16 +15,16 @@ class RecognitionTextTest {
     }
 
     @Test
-    fun `spasi yang sudah ada tidak digandakan`() {
+    fun `spasi/baris di ujung dibersihkan lalu hanya satu spasi ditambahkan`() {
         assertEquals("halo ", RecognitionText.prepare("halo ", autoSpace = true))
-        assertEquals("halo\n", RecognitionText.prepare("halo\n", autoSpace = true))
+        assertEquals("halo ", RecognitionText.prepare("halo\n", autoSpace = true))
         assertEquals("halo ", RecognitionText.prepare("  halo  ", autoSpace = true))
     }
 
     @Test
-    fun `tanpa spasi otomatis teks dibiarkan apa adanya`() {
+    fun `tanpa spasi otomatis teks dikirim tanpa tambahan`() {
         assertEquals("halo", RecognitionText.prepare("halo", autoSpace = false))
-        assertEquals("halo ", RecognitionText.prepare(" halo ", autoSpace = false))
+        assertEquals("halo", RecognitionText.prepare(" halo ", autoSpace = false))
     }
 
     @Test

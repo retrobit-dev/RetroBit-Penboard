@@ -157,6 +157,16 @@ object KeyIcons {
                 canvas.drawLine(r - 0.34f * s, cy + 0.13f * s, r - 0.2f * s, cy, paint)
             }
 
+            KeyAction.SYSTEM_HANDWRITING -> {
+                // pena di atas papan kecil (mewakili tulisan tangan bawaan perangkat)
+                canvas.drawLine(l + 0.08f * s, b - 0.12f * s, r - 0.12f * s, b - 0.12f * s, paint)
+                canvas.drawLine(l + 0.08f * s, b - 0.12f * s, l + 0.08f * s, cy + 0.08f * s, paint)
+                canvas.drawLine(r - 0.12f * s, b - 0.12f * s, r - 0.12f * s, cy + 0.08f * s, paint)
+                canvas.drawLine(l + 0.08f * s, cy + 0.08f * s, r - 0.12f * s, cy + 0.08f * s, paint)
+                canvas.drawLine(l + 0.3f * s, t + 0.34f * s, r - 0.3f * s, t + 0.08f * s, paint)
+                canvas.drawLine(l + 0.42f * s, t + 0.46f * s, r - 0.18f * s, t + 0.2f * s, paint)
+            }
+
             KeyAction.ERASE -> {
                 val body = Path().apply {
                     moveTo(l + 0.14f * s, b - 0.44f * s)

@@ -11,7 +11,9 @@ class PenboardConfigTest {
 
     @Test
     fun `preset bawaan selamat dari putaran json`() {
-        Presets.builtins().forEach { original ->
+        Presets.builtins().forEach { preset ->
+            // data yang disimpan selalu sudah disanitasi (grid 3x3 selalu lengkap)
+            val original = preset.sanitized()
             val restored = PenboardConfig.fromJson(JSONObject(original.toJson().toString()))
             assertEquals(original.id, restored.id)
             assertEquals(original.name, restored.name)
@@ -116,8 +118,8 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.GRID_SLOTS, safe.gridKeys.size)
         assertEquals(4, safe.gridButtonCount)
         assertEquals("a", safe.gridKeys.first().text)
-        // slot sisa diisi tombol bawaan (tidak kosong)
-        assertTrue(safe.gridKeys.drop(1).all { it.action != null })
+        // slot sisa diisi tombol bawaan PenboardConfig
+        assertEquals(PenboardConfig.defaultGridKeys()[1].action, safe.gridKeys[1].action)
     }
 
     @Test

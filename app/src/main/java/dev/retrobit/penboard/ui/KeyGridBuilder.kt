@@ -19,7 +19,7 @@ import dev.retrobit.penboard.util.GridMath
 object KeyGridBuilder {
 
     const val COLUMNS = 3
-    private const val SPACING_DP = 4f
+    private const val SPACING_DP = 3f
     /** Tombol grid dibuat sedikit lebih besar dari tinggi tombol biasa agar mudah ditekan. */
     private const val CELL_SCALE = 1.18f
 
@@ -65,8 +65,9 @@ object KeyGridBuilder {
             for (column in 0 until COLUMNS) {
                 val index = row * COLUMNS + column
                 val params = LinearLayout.LayoutParams(cell, cell).apply {
-                    marginStart = spacing / 2
-                    marginEnd = spacing / 2
+                    // kolom pertama tanpa jarak kiri, kolom terakhir menempel tepi kanan
+                    marginStart = if (column == 0) 0 else spacing
+                    marginEnd = 0
                     if (row > 0) topMargin = spacing
                 }
                 if (index >= count) {

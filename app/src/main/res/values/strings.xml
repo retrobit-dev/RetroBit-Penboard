@@ -128,8 +128,15 @@
     <string name="color_dialog_title">Pilih warna</string>
     <string name="color_hex_label">Kode hex</string>
 
+    <!-- Jembatan ke tulisan tangan bawaan perangkat -->
+    <string name="system_handwriting_switched">Beralih ke %1$s. Tulis dengan stylus di panel tulisan tangan perangkat, lalu pilih kembali Penboard bila ingin papan tulis Penboard.</string>
+    <string name="system_handwriting_picker">Pilih keyboard tulisan tangan perangkat (mis. Celia/Huawei Handwriting) dari daftar, lalu pilih kembali Penboard setelah selesai.</string>
+    <string name="system_handwriting_hint">Anda bisa memakai tombol “Tulisan tangan bawaan perangkat” untuk memakai pengenalan tulisan tangan Huawei/Celia.</string>
+    <string name="system_handwriting_action_hint">Penboard tidak bisa memanggil mesin tulisan tangan Huawei secara langsung (tidak ada API untuk aplikasi pihak ketiga). Tombol ini memindahkan Anda ke keyboard tulisan tangan perangkat; Penboard tetap dipakai untuk papan tulisnya.</string>
+
     <!-- Saran perangkat Huawei/Honor -->
     <string name="huawei_tip_title">Catatan untuk perangkat Huawei/Honor</string>
+    <string name="huawei_tip_body_short">Mengenai tulisan tangan Huawei: mesin pengenalan Huawei tidak dapat dipanggil langsung oleh aplikasi lain. Gunakan tombol “Tulisan tangan bawaan perangkat” pada grid tombol untuk berpindah ke keyboard tulisan tangan Huawei, atau gunakan pengenalan bawaan Penboard (butuh Google Play services).</string>
     <string name="huawei_tip_body">Perangkat ini punya tulisan tangan stylus bawaan (Celia/Huawei Handwriting) yang bisa menyerobot saat stylus menyentuh layar, sehingga papan Penboard tidak menerima tulisan.\n\nAgar Penboard bekerja penuh:\n1. Setelan → Sistem &amp; pembaruan → Bahasa &amp; masukan → Keyboard default → pilih Penboard.\n2. Di pengaturan keyboard bawaan (Celia/Huawei), matikan opsi tulisan tangan/stylus dan pengalihan keyboard otomatis.\n3. Bila panel tulisan tangan bawaan tetap muncul, ketuk ikon keyboard di bilah navigasi lalu pilih Penboard.\n\nPenboard juga menolak mode tulisan tangan sistem, jadi papan Penboard selalu yang dipakai saat keyboard Penboard aktif.</string>
     <string name="huawei_tip_hide">Jangan tampilkan saran ini lagi</string>
 

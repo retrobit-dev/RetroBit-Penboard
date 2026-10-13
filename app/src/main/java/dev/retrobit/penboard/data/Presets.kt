@@ -16,6 +16,7 @@ import dev.retrobit.penboard.data.KeyAction.PROFILE_PREV
 import dev.retrobit.penboard.data.KeyAction.SAVE_IMAGE
 import dev.retrobit.penboard.data.KeyAction.SCROLL_NEWER
 import dev.retrobit.penboard.data.KeyAction.SCROLL_OLDER
+import dev.retrobit.penboard.data.KeyAction.SYSTEM_HANDWRITING
 import dev.retrobit.penboard.data.KeyAction.SPACE
 import dev.retrobit.penboard.data.KeyAction.UNDO
 import dev.retrobit.penboard.data.KeyAction.WRITE
@@ -39,7 +40,7 @@ object Presets {
 
     fun builtins(): List<PenboardConfig> = listOf(
         standard(), compact(), numeric(), quickTools(), light(), fullscreen(), penColors(), freeform()
-    )
+    ).map { it.sanitized() }
 
     /** Profil default: papan di kiri + tombol grid 3x3 di kanan. */
     fun standard(): PenboardConfig = PenboardConfig(
@@ -49,6 +50,17 @@ object Presets {
         lineGapDp = 44,
         boardLayout = BoardLayoutMode.BOARD_LEFT_GRID,
         gridButtonCount = 9,
+        gridKeys = listOf(
+            KeyDef.action(RECOGNIZE),
+            KeyDef.action(SPACE),
+            KeyDef.action(ENTER),
+            KeyDef.action(BACKSPACE, repeat = true),
+            KeyDef.action(UNDO),
+            KeyDef.action(CLEAR),
+            KeyDef.action(DELETE_STROKE),
+            KeyDef.action(SYSTEM_HANDWRITING),
+            KeyDef.action(HIDE)
+        ),
         toolbarRows = listOf(
             RowDef.of(
                 1f,

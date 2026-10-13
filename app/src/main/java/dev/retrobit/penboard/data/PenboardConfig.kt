@@ -65,6 +65,7 @@ enum class KeyAction(val id: String, val label: String) {
     SCROLL_NEWER("scrollNewer", "Kembali ke baris baru (turun)"),
     RECOGNIZE("recognize", "Tulisan → teks (pengenalan)"),
     OVERLAY_TOGGLE("overlay", "Papan melayang (overlay)"),
+    SYSTEM_HANDWRITING("systemHandwriting", "Tulisan tangan bawaan perangkat (mis. Huawei)"),
     SAVE_IMAGE("saveImage", "Simpan gambar ke Galeri"),
     COLOR("color", "Warna pena (bergiliran)"),
     PROFILE_PREV("profilePrev", "Profil sebelumnya"),

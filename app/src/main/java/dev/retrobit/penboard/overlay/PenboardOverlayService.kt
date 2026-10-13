@@ -42,6 +42,7 @@ import dev.retrobit.penboard.ime.PenboardInputService
 import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ui.KeyGridBuilder
 import dev.retrobit.penboard.ui.KeyRowsBuilder
+import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
  * Papan tulis melayang: jendela overlay yang bisa digeser di atas aplikasi lain.
@@ -83,7 +84,8 @@ class PenboardOverlayService : Service() {
             configClearAfter = { config.clearAfterRecognize },
             configAutoSpace = { config.autoSpaceAfterWord },
             commit = { text -> commitText(text) },
-            notify = { message -> toast(message) }
+            notify = { message -> toast(message) },
+            onUnavailable = { message -> toast(message + " " + getString(R.string.system_handwriting_hint)) }
         )
     }
 
@@ -244,6 +246,7 @@ class PenboardOverlayService : Service() {
         viewBinding.overlayGrid.removeAllViews()
 
         val gridMode = config.boardLayout == BoardLayoutMode.BOARD_LEFT_GRID
+        viewBinding.overlayBoard.edgeToEdge = gridMode
         viewBinding.overlayGrid.visibility = if (gridMode) View.VISIBLE else View.GONE
         viewBinding.overlayKeyRows.visibility = if (gridMode) View.GONE else View.VISIBLE
         viewBinding.overlayToolbarTop.visibility = if (gridMode) View.GONE else View.VISIBLE
@@ -322,6 +325,19 @@ class PenboardOverlayService : Service() {
             KeyAction.RECOGNIZE -> handwriting.recognize(announce = true)
             KeyAction.COLOR -> cyclePenColor()
             KeyAction.OVERLAY_TOGGLE -> stopSelf()
+            KeyAction.SYSTEM_HANDWRITING -> {
+                val target = SystemHandwriting.pickBest(
+                    SystemHandwriting.candidates(this),
+                    packageName
+                )
+                val opened = if (target != null) {
+                    toast(getString(R.string.system_handwriting_switched, target.label))
+                    SystemHandwriting.openPicker(this)
+                } else {
+                    SystemHandwriting.openPicker(this)
+                }
+                if (!opened) toast(getString(R.string.system_handwriting_picker))
+            }
             KeyAction.SAVE_IMAGE -> saveImage()
             KeyAction.PROFILE_NEXT -> switchProfile(1)
             KeyAction.PROFILE_PREV -> switchProfile(-1)

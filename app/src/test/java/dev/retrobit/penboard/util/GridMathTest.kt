@@ -28,16 +28,29 @@ class GridMathTest {
     }
 
     @Test
-    fun `tombol tidak pernah lebih kecil dari ukuran minimum yang nyaman`() {
+    fun `ukuran minimum dipakai selama masih muat di tinggi papan`() {
+        // lebar layar sempit: tanpa batas minimum, tombol hanya ~45px; minimum menaikkannya
+        val withMinimum = GridMath.cellSizePx(
+            boardHeightPx = 600,
+            availableWidthPx = 400,
+            spacingPx = 0,
+            minCellPx = 140
+        )
+        assertEquals(140, withMinimum)
+        assertTrue("tidak boleh melebihi tinggi papan/baris", withMinimum * 3 <= 600)
+    }
+
+    @Test
+    fun `papan pendek selalu diprioritaskan agar grid tidak melewati tinggi papan`() {
         val cell = GridMath.cellSizePx(
             boardHeightPx = 300,
             availableWidthPx = 200,
             spacingPx = 8,
             minCellPx = 100
         )
-        assertTrue(cell >= 1)
-        // dibatasi juga oleh tinggi papan (300/3 = 100)
-        assertEquals(100, cell)
+        // ruang per baris = (300 - 2*8) / 3 = 94 -> tinggi papan yang menentukan
+        assertEquals((300 - 16) / 3, cell)
+        assertTrue(cell * 3 + 8 * 2 <= 300)
     }
 
     @Test

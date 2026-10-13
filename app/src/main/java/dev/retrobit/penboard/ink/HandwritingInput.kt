@@ -22,7 +22,9 @@ class HandwritingInput(
     private val configClearAfter: () -> Boolean,
     private val configAutoSpace: () -> Boolean,
     private val commit: (String) -> Boolean,
-    private val notify: (String) -> Unit
+    private val notify: (String) -> Unit,
+    /** Dipanggil saat mesin pengenalan tidak tersedia, agar pengguna diarahkan ke alternatifnya. */
+    private val onUnavailable: (String) -> Unit = { }
 ) {
 
     private val handler = Handler(Looper.getMainLooper())
@@ -53,7 +55,7 @@ class HandwritingInput(
         handler.removeCallbacks(autoTask)
         val board = boardProvider() ?: return
         if (!InkRecognition.isSupported) {
-            if (announce) notify(InkRecognition.offlineMessage())
+            if (announce) onUnavailable(InkRecognition.offlineMessage())
             return
         }
         if (!board.hasContent) {
@@ -82,12 +84,12 @@ class HandwritingInput(
                         if (state == ModelStatus.READY) {
                             run(capture, language, shouldClear, announce)
                         } else {
-                            notify(InkRecognition.downloadFailureHint())
+                            onUnavailable(InkRecognition.downloadFailureHint())
                         }
                     }
                 }
 
-                ModelStatus.UNKNOWN -> notify(InkRecognition.downloadFailureHint())
+                ModelStatus.UNKNOWN -> onUnavailable(InkRecognition.downloadFailureHint())
             }
         }
     }
@@ -110,7 +112,7 @@ class HandwritingInput(
             when (error) {
                 RecognitionError.MODEL_MISSING -> notify(MODEL_MISSING_MESSAGE)
                 RecognitionError.EMPTY -> notify(EMPTY_MESSAGE)
-                RecognitionError.NOT_SUPPORTED -> notify(InkRecognition.offlineMessage())
+                RecognitionError.NOT_SUPPORTED -> onUnavailable(InkRecognition.offlineMessage())
                 else -> if (announce) notify(FAILED_MESSAGE)
             }
         }
