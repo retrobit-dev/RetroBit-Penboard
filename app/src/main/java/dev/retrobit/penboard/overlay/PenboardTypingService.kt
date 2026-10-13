@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import dev.retrobit.penboard.R
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.util.AccessibilityIds
