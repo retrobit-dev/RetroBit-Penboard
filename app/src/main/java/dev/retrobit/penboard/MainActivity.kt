@@ -228,6 +228,32 @@ class MainActivity : AppCompatActivity() {
             card,
             getString(if (Settings.canDrawOverlays(this)) R.string.check_overlay_ok else R.string.check_overlay_no)
         )
+
+        // Bahasa & model: penyebab paling umum tulisan "tidak terbaca".
+        if (engineReady) {
+            val language = RecognitionLanguages.label(store.config.recognitionLanguage)
+            val modelLine = Ui.statusText(card, getString(R.string.status_model_checking))
+            InkRecognition.modelStatus(store.config.recognitionLanguage) { status ->
+                modelLine.text = getString(
+                    when (status) {
+                        ModelStatus.READY -> R.string.check_model_ready
+                        ModelStatus.NOT_DOWNLOADED -> R.string.check_model_not_downloaded
+                        else -> R.string.check_model_unknown
+                    },
+                    language
+                )
+            }
+        }
+        // Pesan terakhir mesin: membantu menelusuri bila pengenalan gagal.
+        val engineMessage = InkRecognition.lastErrorMessage()
+        Ui.statusText(
+            card,
+            if (engineMessage.isNullOrBlank()) {
+                getString(R.string.diag_engine_none)
+            } else {
+                getString(R.string.diag_engine_message, engineMessage.take(160))
+            }
+        )
     }
 
     /** Satu langkah panduan dengan tanda selesai/belum. */

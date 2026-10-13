@@ -102,7 +102,12 @@ class HandwritingInput(
         }
         busy = true
         val language = current.recognitionLanguage
-        InkRecognition.recognize(strokes, language) { text, failure ->
+        InkRecognition.recognize(
+            strokes = strokes,
+            language = language,
+            // Model bahasa diunduh otomatis sekali; pengguna diberi tahu supaya tidak menunggu bingung.
+            onDownloading = { notify(context.getString(R.string.msg_model_downloading_auto)) }
+        ) { text, failure ->
             busy = false
             handleResult(text, failure, current, clearAfter, announce, language)
         }
@@ -141,11 +146,28 @@ class HandwritingInput(
                 }
             }
             RecognitionFailure.EMPTY -> if (announce) notify(context.getString(R.string.msg_board_empty))
+            RecognitionFailure.MODEL_NOT_DOWNLOADED -> {
+                // Bukan salah tulisannya: model bahasa memang belum ada di perangkat.
+                // Beri tahu jelas, lalu tawarkan keyboard tulisan tangan perangkat.
+                board.showFlash(context.getString(R.string.flash_no_model))
+                notify(context.getString(R.string.msg_model_failed))
+                onUnavailable(context.getString(R.string.msg_model_offline))
+            }
             else -> {
                 // Papan memberi tahu bahwa tulisannya belum terbaca, walau tanpa suara.
                 board.showFlash(context.getString(R.string.flash_unreadable))
-                if (announce) notify(context.getString(R.string.msg_not_recognized))
+                if (announce) notify(notRecognizedMessage())
             }
+        }
+    }
+
+    /** Pesan gagal baca + alasan teknis dari mesin (bila ada). */
+    private fun notRecognizedMessage(): String {
+        val reason = InkRecognition.lastErrorMessage()
+        return if (reason.isNullOrBlank()) {
+            context.getString(R.string.msg_not_recognized)
+        } else {
+            context.getString(R.string.msg_not_recognized_reason, reason.take(90))
         }
     }
 

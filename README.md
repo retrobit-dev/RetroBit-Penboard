@@ -2,7 +2,15 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.0.4** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.0.5** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.0.5
+
+- **"✗ tidak terbaca" diperbaiki.** Selama ini Penboard mengirim tulisan ke mesin pengenalan tanpa memastikan **model bahasanya sudah terunduh**; ML Kit menolak permintaan itu, dan Penboard salah menerjemahkannya menjadi "tidak terbaca" — padahal masalahnya bukan tulisan Anda.
+  - Sekarang Penboard **memeriksa dulu** status model: kalau sudah ada → langsung dikenali; kalau belum → **diunduh otomatis sekali** (dengan pemberitahuan "±20 MB, tunggu sebentar"), lalu tulisan yang sama langsung dikenali tanpa perlu ditulis ulang.
+  - Bila internet tidak ada, muncul pesan yang benar: **"✗ model bahasa belum ada"** + tawaran pindah ke keyboard tulisan tangan perangkat — bukan lagi "tidak terbaca".
+- **Alasan teknis ikut ditampilkan** saat pengenalan gagal, dan **kartu pemeriksaan** kini menampilkan status model bahasa (siap / belum diunduh) serta pesan terakhir dari mesin pengenalan — memudahkan menelusuri kalau ada masalah.
+- `util/LanguageTags.kt`: mesin pengenalan menerima tag bahasa BCP-47 dengan atau tanpa wilayah (mis. `id-ID` dicoba, lalu `id` — nama model bahasa Indonesia di ML Kit), diuji unit.
 
 ## Yang baru di 3.0.4
 
