@@ -70,7 +70,7 @@ enum class PenButtonAction(val id: String, val label: String, val key: KeyAction
     }
 }
 
-/** Satu tombol pada grid tombol (3 kolom, sampai 4 baris). */
+/** Satu tombol pada grid tombol (3 kolom, sampai 6 baris). */
 data class KeyDef(
     val action: KeyAction = KeyAction.SPACE,
     /** Label khusus; kosong berarti memakai label bawaan aksi. */
@@ -115,7 +115,7 @@ data class PenboardConfig(
     /** Ketebalan goresan mengikuti tekanan stylus (M-Pen dan pena sejenis). */
     val pressureEnabled: Boolean = true,
 
-    // Grid tombol (3 kolom, jumlah baris bisa diatur 1-4)
+    // Grid tombol (3 kolom, jumlah baris bisa diatur 1-6)
     val gridRows: Int = DEFAULT_ROWS,
     val gridButtonCount: Int = DEFAULT_ROWS * COLUMNS,
     val gridKeys: List<KeyDef> = defaultGridKeys(),
@@ -256,7 +256,7 @@ data class PenboardConfig(
     companion object {
         const val SCHEMA_VERSION = 1
 
-        /** Tiga kolom tetap; jumlah baris bisa 1 sampai 4 (12 tombol). */
+        /** Tiga kolom tetap; jumlah baris bisa 1 sampai 6 (18 tombol). */
         const val COLUMNS = GridMath.COLUMNS
         const val MIN_GRID_ROWS = GridMath.MIN_ROWS
         const val MAX_GRID_ROWS = GridMath.MAX_ROWS
@@ -310,7 +310,15 @@ data class PenboardConfig(
             // Baris 4 - tambahan
             KeyDef(KeyAction.DELETE_WORD, repeatOnHold = true),
             KeyDef(KeyAction.UNDO),
-            KeyDef(KeyAction.REDO)
+            KeyDef(KeyAction.REDO),
+            // Baris 5 - sisa tombol keyboard konvensional
+            KeyDef(KeyAction.DELETE_FORWARD, repeatOnHold = true),
+            KeyDef(KeyAction.TAB),
+            KeyDef(KeyAction.CYCLE_PEN),
+            // Baris 6 - papan melayang & tulisan tangan perangkat
+            KeyDef(KeyAction.SYSTEM_HANDWRITING),
+            KeyDef(KeyAction.OVERLAY_TOGGLE),
+            KeyDef(KeyAction.HIDE)
         )
 
         /** Nilai tema retro dipakai juga oleh [withRetroTheme]. */

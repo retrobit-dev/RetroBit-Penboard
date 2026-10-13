@@ -58,6 +58,11 @@ class PenboardConfigTest {
 
     @Test
     fun `jumlah baris dan tombol saling menjaga`() {
+        // Enam baris berarti sampai 18 tombol.
+        val sixRows = PenboardConfig(gridRows = 6, gridButtonCount = 18).sanitized()
+        assertEquals(6, sixRows.gridRows)
+        assertEquals(18, sixRows.gridButtonCount)
+
         // Empat baris berarti sampai 12 tombol.
         val fourRows = PenboardConfig(gridRows = 4, gridButtonCount = 12).sanitized()
         assertEquals(4, fourRows.gridRows)
@@ -68,7 +73,7 @@ class PenboardConfigTest {
         assertEquals(1, tooMany.gridRows)
         assertEquals(PenboardConfig.COLUMNS, tooMany.gridButtonCount)
 
-        // Baris liar dibatasi ke 1-4.
+        // Baris liar dibatasi ke 1-6.
         assertEquals(PenboardConfig.MAX_GRID_ROWS, PenboardConfig(gridRows = 99).sanitized().gridRows)
         assertEquals(PenboardConfig.MIN_GRID_ROWS, PenboardConfig(gridRows = 0).sanitized().gridRows)
     }
@@ -191,6 +196,11 @@ class PenboardConfigTest {
             assertTrue("panah $action tidak ada di grid bawaan", keys.any { it.action == action })
         }
         assertTrue(keys.take(PenboardConfig.COLUMNS).all { it.action.name.startsWith("CURSOR_") })
+        // Baris 5-6 bawaan: sisa tombol keyboard konvensional dan tombol layar.
+        assertTrue(keys.any { it.action == KeyAction.TAB })
+        assertTrue(keys.any { it.action == KeyAction.DELETE_FORWARD })
+        assertTrue(keys.any { it.action == KeyAction.SYSTEM_HANDWRITING })
+        assertEquals(18, keys.size)
     }
 
     @Test

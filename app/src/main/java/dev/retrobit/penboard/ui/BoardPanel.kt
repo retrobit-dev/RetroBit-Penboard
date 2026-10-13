@@ -16,8 +16,8 @@ import dev.retrobit.penboard.util.GridMath
 /**
  * Susunan Penboard ala HiWrite: **papan tulis di kiri sampai tombol, grid tombol di kanan**.
  *
- * - Tiga kolom tombol tetap; jumlah baris 1-4 (diatur pengguna, lihat
- *   [PenboardConfig.gridRows]) sehingga sampai 12 tombol bisa dipasang.
+ * - Tiga kolom tombol tetap; jumlah baris 1-6 (diatur pengguna, lihat
+ *   [PenboardConfig.gridRows]) sehingga sampai 18 tombol bisa dipasang.
  * - Tombol digambar sebagai **ikon** monokrom ([KeyIcons]) mengikuti tema retro
  *   cyberpunk grayscale ePaper, dan label teks hanya dipakai bila aksinya tidak punya ikon.
  *

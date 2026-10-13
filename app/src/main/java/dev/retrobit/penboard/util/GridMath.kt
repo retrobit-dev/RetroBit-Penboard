@@ -4,7 +4,7 @@ package dev.retrobit.penboard.util
  * Ukuran tombol grid.
  *
  * Grid dipasang di kanan papan tulis: **3 kolom tetap**, jumlah baris bisa 1 sampai
- * [MAX_ROWS] (jadi 3-12 tombol). Ukurannya diambil dari tinggi papan dibagi jumlah
+ * [MAX_ROWS] (jadi 3-18 tombol). Ukurannya diambil dari tinggi papan dibagi jumlah
  * baris, tetapi lebarnya tidak pernah melebihi [MAX_WIDTH_FRACTION] layar supaya papan
  * tulis tetap lebar di kiri.
  */
@@ -12,7 +12,7 @@ object GridMath {
 
     const val COLUMNS = 3
     const val MIN_ROWS = 1
-    const val MAX_ROWS = 4
+    const val MAX_ROWS = 6
 
     /** Jumlah baris bawaan. */
     const val ROWS = 3
