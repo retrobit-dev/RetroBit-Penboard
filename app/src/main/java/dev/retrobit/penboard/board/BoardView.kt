@@ -15,6 +15,7 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import dev.retrobit.penboard.util.BoardMath
+import dev.retrobit.penboard.util.ColorMath
 import kotlin.math.abs
 import kotlin.math.hypot
 
@@ -338,7 +339,8 @@ class BoardView @JvmOverloads constructor(
         val radius = boxHeight / 2f
         canvas.drawRoundRect(flashBox, radius, radius, flashPaint)
 
-        flashPaint.color = withAlpha(0xFFFFFFFF.toInt(), (255 * alpha).toInt())
+        // Tema retro memakai aksen terang: teks lencana ikut menyesuaikan supaya terbaca.
+        flashPaint.color = withAlpha(ColorMath.textOn(accentColor), (255 * alpha).toInt())
         val baseline = flashBox.centerY() - (flashPaint.descent() + flashPaint.ascent()) / 2f
         canvas.drawText(text, flashBox.left + padding, baseline, flashPaint)
     }
