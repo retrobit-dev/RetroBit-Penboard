@@ -36,9 +36,10 @@ jobs:
 
       - name: Unit tests
         run: |
+          set +e
           set -o pipefail
           ./gradlew :app:testDebugUnitTest --stacktrace --console=plain 2>&1 | tee /tmp/unit-tests.log
-          status=$?
+          status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             bash .github/scripts/report-gradle-failures.sh /tmp/unit-tests.log "unit test"
           fi
@@ -46,9 +47,10 @@ jobs:
 
       - name: Build debug + release APK
         run: |
+          set +e
           set -o pipefail
           ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace --console=plain 2>&1 | tee /tmp/build.log
-          status=$?
+          status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             bash .github/scripts/report-gradle-failures.sh /tmp/build.log "build apk"
           fi
