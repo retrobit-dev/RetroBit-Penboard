@@ -1,6 +1,7 @@
 package dev.retrobit.penboard.ime
 
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
@@ -48,7 +49,19 @@ class PenboardInputService : InputMethodService() {
         val binding = KeyboardLayoutBinding.inflate(layoutInflater)
         this.binding = binding
         binding.imeRoot.setOnClickListener { /* telan sentuhan di area kosong */ }
-        applyConfig()
+        // Keyboard tidak boleh gagal tampil hanya karena satu pengaturan bermasalah:
+        // bila gagal, jatuh kembali ke profil bawaan.
+        try {
+            applyConfig()
+        } catch (error: Throwable) {
+            Log.w(TAG, "Gagal menerapkan pengaturan, memakai bawaan", error)
+            config = Presets.defaultConfig()
+            try {
+                applyConfig()
+            } catch (fatal: Throwable) {
+                Log.e(TAG, "Gagal menyiapkan tampilan keyboard", fatal)
+            }
+        }
         return binding.root
     }
 
@@ -152,6 +165,15 @@ class PenboardInputService : InputMethodService() {
     // ------------------------------------------------------------ aksi tombol
 
     private fun onKey(key: KeyDef) {
+        try {
+            handleKey(key)
+        } catch (error: Throwable) {
+            Log.w(TAG, "Aksi tombol gagal: " + key.action.id, error)
+        }
+        refreshToolHighlight()
+    }
+
+    private fun handleKey(key: KeyDef) {
         val board = binding?.boardView
         when (key.action) {
             KeyAction.INSERT -> commitText(key.text)
@@ -177,7 +199,6 @@ class PenboardInputService : InputMethodService() {
             }
             KeyAction.HIDE -> requestHideSelf(0)
         }
-        refreshToolHighlight()
     }
 
     private fun commitText(text: String) {
@@ -251,6 +272,14 @@ class PenboardInputService : InputMethodService() {
     }
 
     private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        try {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        } catch (_: Throwable) {
+            // mengabaikan kegagalan menampilkan pesan
+        }
+    }
+
+    private companion object {
+        const val TAG = "PenboardIME"
     }
 }
