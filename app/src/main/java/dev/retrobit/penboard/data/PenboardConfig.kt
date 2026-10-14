@@ -372,7 +372,9 @@ data class PenboardConfig(
          */
         fun defaultBottomKeys(): List<KeyDef> = listOf(
             KeyDef(KeyAction.RECOGNIZE),
-            KeyDef(KeyAction.TEXT),
+            // Bukan TEXT: tombol teks tanpa isi tidak melakukan apa-apa, jadi bawaan
+            // harus aksi yang jelas berguna (enter = baris baru).
+            KeyDef(KeyAction.ENTER),
             KeyDef(KeyAction.DELETE_STROKE),
             KeyDef(KeyAction.CLEAR),
             KeyDef(KeyAction.UNDO),

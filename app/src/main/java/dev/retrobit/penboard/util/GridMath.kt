@@ -67,6 +67,20 @@ object GridMath {
         return if (count <= 0) 0 else (count + cols - 1) / cols
     }
 
+    /**
+     * Tinggi papan tulis yang benar-benar muat di layar.
+     *
+     * [fixedPx] adalah bagian yang tidak bisa mengecil (padding bingkai, bilah judul,
+     * dan baris tombol bawah). Kalau [availablePx] belum diketahui (0), tinggi yang
+     * diminta dipakai apa adanya.
+     */
+    fun fitBoardHeightPx(requestedPx: Int, availablePx: Int, fixedPx: Int, minPx: Int = 1): Int {
+        if (availablePx <= 0) return requestedPx
+        val room = availablePx - fixedPx
+        if (room >= requestedPx) return requestedPx
+        return room.coerceAtLeast(minOf(minPx, requestedPx))
+    }
+
     /** Jumlah baris grid yang perlu ditampilkan untuk [count] tombol. */
     fun rowsFor(count: Int): Int = when {
         count <= 0 -> 1

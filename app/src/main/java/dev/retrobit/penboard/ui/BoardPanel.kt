@@ -148,21 +148,63 @@ class BoardPanel(private val context: Context) {
         )
     }
 
-    /** Terapkan seluruh pengaturan ke papan dan tombol. */
-    fun applyConfig(config: PenboardConfig) {
+    /**
+     * Terapkan seluruh pengaturan ke papan dan tombol.
+     *
+     * [availableHeightPx] adalah tinggi yang disediakan keyboard (bila diketahui).
+     * Papan dipangkas otomatis supaya bingkai + bilah judul + tombol bawah tidak
+     * pernah terpotong di layar kecil.
+     */
+    fun applyConfig(config: PenboardConfig, availableHeightPx: Int = 0) {
         val spacing = (GridMath.SPACING_DP * density).toInt()
-        val boardHeightPx = (config.boardHeightDp * density).toInt()
         val screenWidth = context.resources.displayMetrics.widthPixels
+        val panelPadding = (3 * density).toInt()
+        val minCell = (44 * density).toInt()
+        val titleBarHeight = if (config.windowFrame) (22 * density).toInt() else 0
+        val minBoardHeightPx = (PenboardConfig.MIN_BOARD_HEIGHT_DP * density).toInt()
+
+        val requestedBoardHeightPx = (config.boardHeightDp * density).toInt()
+        val boardHeightPx = if (availableHeightPx > 0) {
+            // Bagian tetap: padding bingkai + bilah judul + baris tombol bawah.
+            val requestedCell = GridMath.cellSizePx(
+                requestedBoardHeightPx,
+                screenWidth,
+                spacing,
+                minCell,
+                config.gridRows
+            )
+            val requestedGridWidth = requestedCell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1)
+            val requestedBoardWidth =
+                (screenWidth - 2 * panelPadding - requestedGridWidth - spacing).coerceAtLeast(1)
+            val requestedBottomRows = GridMath.wrapRows(
+                config.bottomButtonCount,
+                GridMath.columnsFor(requestedBoardWidth, requestedCell, spacing)
+            )
+            val bottomBlock = if (requestedBottomRows > 0) {
+                spacing + requestedBottomRows * (requestedCell + spacing)
+            } else {
+                0
+            }
+            val fixed = 2 * panelPadding +
+                (if (config.windowFrame) titleBarHeight + spacing else 0) +
+                bottomBlock
+            GridMath.fitBoardHeightPx(
+                requestedBoardHeightPx,
+                availableHeightPx,
+                fixed,
+                minBoardHeightPx
+            )
+        } else {
+            requestedBoardHeightPx
+        }
+
         val cell = GridMath.cellSizePx(
             boardHeightPx,
             screenWidth,
             spacing,
-            (44 * density).toInt(),
+            minCell,
             config.gridRows
         )
-        val panelPadding = (3 * density).toInt()
-
-        val titleBarHeight = if (config.windowFrame) (22 * density).toInt() else 0
 
         panel.setPadding(panelPadding, panelPadding, panelPadding, panelPadding)
         panelBackground.radiusPx = config.cornerRadiusDp * density

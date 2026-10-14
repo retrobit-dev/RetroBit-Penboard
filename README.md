@@ -2,7 +2,12 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.1.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.1.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.1.2
+
+- **Tombol bawah bawaan semuanya benar-benar bekerja.** Tombol "teks kosong" yang tidak melakukan apa-apa diganti **enter** — sekarang bawaan bilah bawah = **A+ (jadikan teks), enter, hapus goresan, bersihkan papan, batal**. Ada tesnya: tidak boleh ada tombol bawah bawaan yang aksinya kosong.
+- **Papan tulis tidak lagi terpotong di layar kecil.** Bila ruang yang disediakan keyboard lebih pendek dari tinggi papan + bilah judul + tombol bawah, papan dipangkas otomatis sampai semuanya muat (hitungan di `GridMath.fitBoardHeightPx`, diuji unit). Perilakunya berlaku saat keyboard muncul dan saat ukurannya berubah, termasuk saat orientasi layar berputar.
 
 ## Yang baru di 3.1.1
 
@@ -15,7 +20,7 @@ Versi terbaru: **3.1.1** (lihat [Releases](https://github.com/retrobit-dev/Retro
 **Papan tulis sekarang berbingkai seperti jendela, dan punya tombol minimize.**
 
 - **Bingkai jendela**: garis tepi lebih tegas, **bilah judul** di atas papan (judulnya bisa diganti, bawaan `PENBOARD`), dan **tombol minimize** di kanan bilah judul. Sekali ketuk minimize, papan langsung disembunyikan (keyboard ditutup) dan layar jadi lega; sentuh kolom isian kalau ingin memunculkannya lagi.
-- **Tombol di bawah papan tulis**: tempat menaruh tombol yang bisa diatur — jumlahnya 0–8, tiap tombol bebas dipilih aksinya (dan bisa diberi label serta tahan-untuk-mengulang). Ukurannya sama dengan tombol samping dan mengalir ke baris berikutnya bila tidak muat.
+- **Tombol di bawah papan tulis**: tempat menaruh tombol yang bisa diatur — jumlahnya 0–8, tiap tombol bebas dipilih aksinya (dan bisa diberi label serta tahan-untuk-mengulang). Ukurannya sama dengan tombol samping dan mengalir ke baris berikutnya bila tidak muat. Bawaannya: A+ (jadikan teks), enter, hapus goresan, bersihkan papan, batal.
 - **Ikonnya pixel art asli**: kanvas 12 x 12 piksel yang digambar kotak demi kotak tanpa anti-aliasing (`util/PixelArt.kt`), bukan ikon vektor yang diperkecil. Semua aksi punya ikonnya sendiri — termasuk tombol minimize.
 - Preset **HiWrite** menyalakan bingkai jendela, tombol minimize, dan 5 tombol bawah sekaligus. Keduanya bisa dimatikan di kartu **Jendela papan** dan **Tombol bawah**.
 
@@ -125,6 +130,10 @@ Bilah judul berisi judul jendela + tombol minimize. **Tombol bawah** berada di d
 bingkai yang sama, tepat di bawah area menulis, dengan ukuran sama seperti tombol samping;
 isinya bebas diatur (lihat **Pengaturan yang tersedia**).
 
+Tinggi papan menyesuaikan ruang yang disediakan keyboard: kalau layar tidak cukup untuk
+bingkai + bilah judul + tombol bawah, papan dipangkas otomatis (setidaknya 120 dp) supaya
+tidak ada bagian yang terpotong.
+
 - **Papan tulis** memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol).
 - **Area tombol**: 3 kolom tetap, jumlah baris 1–6 (diatur pengguna), sampai 18 tombol.
 - Setiap tombol bebas dipilih aksinya dan bisa diberi label sendiri.
@@ -168,7 +177,7 @@ Tombol **grid** memakai ikon vektor monokrom; tombol **bilah bawah** memakai iko
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off, judul jendela (bawaan `PENBOARD`) |
-| Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang tiap tombol (ukuran = tombol samping, di bawah area menulis), kembali ke bawaan |
+| Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang tiap tombol (ukuran = tombol samping, di bawah area menulis), kembali ke bawaan (A+, enter, hapus goresan, bersihkan papan, batal) |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

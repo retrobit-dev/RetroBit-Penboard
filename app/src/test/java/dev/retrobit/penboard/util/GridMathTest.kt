@@ -86,6 +86,19 @@ class GridMathTest {
     }
 
     @Test
+    fun `tinggi papan dipangkas supaya seluruh panel muat`() {
+        // Ruang cukup: tinggi yang diminta dipakai apa adanya.
+        assertEquals(400, GridMath.fitBoardHeightPx(400, 900, 200, 120))
+        // Ruang kurang: papan dipangkas sampai sisa ruang setelah bagian tetap.
+        assertEquals(250, GridMath.fitBoardHeightPx(400, 600, 350, 120))
+        // Perangkat sangat kecil: tetap ada lantai minimum, tapi tidak lebih dari yang diminta.
+        assertEquals(120, GridMath.fitBoardHeightPx(400, 300, 350, 120))
+        assertEquals(80, GridMath.fitBoardHeightPx(80, 300, 350, 120))
+        // Tanpa informasi ruang: jangan diubah.
+        assertEquals(400, GridMath.fitBoardHeightPx(400, 0, 350, 120))
+    }
+
+    @Test
     fun `tiga kolom tetap dan baris 1 sampai 6`() {
         assertEquals(3, GridMath.COLUMNS)
         assertEquals(1, GridMath.MIN_ROWS)

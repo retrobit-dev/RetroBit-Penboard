@@ -304,7 +304,7 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.BOTTOM_SLOTS, config.bottomKeys.size)
         assertEquals(
             listOf(
-                KeyAction.RECOGNIZE, KeyAction.TEXT, KeyAction.DELETE_STROKE,
+                KeyAction.RECOGNIZE, KeyAction.ENTER, KeyAction.DELETE_STROKE,
                 KeyAction.CLEAR, KeyAction.UNDO, KeyAction.REDO, KeyAction.CYCLE_PEN, KeyAction.HIDE
             ),
             config.bottomKeys.map { it.action }
@@ -317,6 +317,22 @@ class PenboardConfigTest {
         // Bilah bawah bisa dimatikan seluruhnya.
         val none = PenboardConfig(bottomButtonCount = -4).sanitized()
         assertEquals(PenboardConfig.MIN_BOTTOM_KEYS, none.bottomButtonCount)
+    }
+
+    @Test
+    fun `tiap tombol bawah bawaan benar-benar melakukan sesuatu`() {
+        val defaults = PenboardConfig.defaultBottomKeys()
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, defaults.size)
+        defaults.forEach { key ->
+            // Aksi TEXT tanpa teks hanya "tombol mati"; dengan teks berarti mengirim teks.
+            val deadText = key.action == KeyAction.TEXT && key.text.isBlank()
+            assertTrue("tombol bawah ${key.action} tidak melakukan apa pun", !deadText)
+        }
+        // Tombol yang tampil sejak awal (5 pertama) juga bukan tombol mati.
+        assertTrue(
+            defaults.take(PenboardConfig.DEFAULT_BOTTOM_KEYS)
+                .none { it.action == KeyAction.TEXT && it.text.isBlank() }
+        )
     }
 
     @Test

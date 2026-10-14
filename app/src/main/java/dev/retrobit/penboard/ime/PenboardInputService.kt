@@ -26,7 +26,12 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     private var panel: BoardPanel? = null
     private var handwriting: HandwritingInput? = null
 
-    private val configListener: (PenboardConfig) -> Unit = { config -> panel?.applyConfig(config) }
+    /** Tinggi yang disediakan keyboard (0 = belum diketahui). */
+    private var availableHeightPx = 0
+
+    private val configListener: (PenboardConfig) -> Unit = { config ->
+        panel?.applyConfig(config, availableHeightPx)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -45,6 +50,14 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         val created = BoardPanel(this)
         created.listener = this
         created.applyConfig(store.config)
+        // Tinggi keyboard baru diketahui setelah tampilannya diukur; papan dipangkas
+        // sekali lagi dengan angka itu supaya bingkai + tombol bawah tidak terpotong.
+        created.root.addOnLayoutChangeListener { view, _, top, _, bottom, _, _, _, _ ->
+            val height = bottom - top
+            if (height <= 0 || height == availableHeightPx) return@addOnLayoutChangeListener
+            availableHeightPx = height
+            view.post { panel?.applyConfig(store.config, height) }
+        }
         panel = created
         handwriting = HandwritingInput(
             context = this,
@@ -64,6 +77,16 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         )
         store.addListener(configListener)
         return created.root
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        // Setiap kali keyboard muncul, pastikan ukuran papan masih pas.
+        val height = panel?.root?.height ?: 0
+        if (height > 0) {
+            availableHeightPx = height
+            panel?.applyConfig(store.config, height)
+        }
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
