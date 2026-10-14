@@ -12,6 +12,7 @@ import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ui.BoardPanel
+import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
@@ -28,6 +29,9 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
 
     /** Tinggi yang disediakan keyboard (0 = belum diketahui). */
     private var availableHeightPx = 0
+
+    /** Sisa tarikan sudut yang belum genap 1 dp (agar tarikan kecil tetap terasa). */
+    private var pendingResizeDp = 0f
 
     private val configListener: (PenboardConfig) -> Unit = { config ->
         panel?.applyConfig(config, availableHeightPx)
@@ -53,10 +57,15 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         // Tinggi keyboard baru diketahui setelah tampilannya diukur; papan dipangkas
         // sekali lagi dengan angka itu supaya bingkai + tombol bawah tidak terpotong.
         created.root.addOnLayoutChangeListener { view, _, top, _, bottom, _, _, _, _ ->
-            val height = bottom - top
+            // Tinggi yang tersedia untuk papan = tinggi area keyboard - ruang gerak
+            // yang sedang dipakai, supaya papan tidak tumbuh sendiri saat diangkat.
+            val height = (bottom - top) - created.panelLiftPx
             if (height <= 0 || height == availableHeightPx) return@addOnLayoutChangeListener
             availableHeightPx = height
-            view.post { panel?.applyConfig(store.config, height) }
+            view.post {
+                panel?.applyConfig(store.config, height)
+                restorePanelPosition()
+            }
         }
         panel = created
         handwriting = HandwritingInput(
@@ -81,12 +90,15 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        // Setiap kali keyboard muncul, pastikan ukuran papan masih pas.
-        val height = panel?.root?.height ?: 0
+        // Setiap kali keyboard muncul, pastikan ukuran papan masih pas dan posisinya
+        // kembali seperti terakhir dipindah pengguna.
+        val current = panel
+        val height = (current?.root?.height ?: 0) - (current?.panelLiftPx ?: 0)
         if (height > 0) {
             availableHeightPx = height
-            panel?.applyConfig(store.config, height)
+            current?.applyConfig(store.config, height)
         }
+        restorePanelPosition()
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -115,6 +127,85 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     }
 
     override fun onContentChanged() = Unit
+
+    // ------------------------------------------------------------------ geser & ubah ukuran
+
+    /**
+     * Bilah judul ditarik: papan dipindah ke mana saja di dalam area keyboard
+     * (mode melayang), atau dikunci di tengah kalau fiturnya dimatikan.
+     */
+    override fun onMoveBy(dxPx: Int, dyPx: Int) {
+        val current = panel ?: return
+        if (!store.config.floatingPanel) return
+        // Tarik ke atas (dyPx negatif) = papan diangkat, jadi ruang di bawahnya bertambah.
+        current.placePanel(current.panelLeftPx + dxPx, current.panelLiftPx - dyPx)
+    }
+
+    /**
+     * Sudut kanan bawah ditarik: **kanan/kiri** mengubah lebar papan (area tulis ikut
+     * melebar/menyempit), **atas/bawah** mengubah tinggi papan — ukuran tombol kalau
+     * ukurannya diatur manual, atau tinggi area tulis kalau ukurannya otomatis.
+     */
+    override fun onResizeBy(dxPx: Int, dyPx: Int) {
+        val current = panel ?: return
+        val areaWidth = current.root.width
+        if (areaWidth <= 0) return
+        val config = store.config
+        val density = resources.displayMetrics.density
+
+        var next = config
+        if (dxPx != 0) {
+            val fraction = (current.panelWidthPx + dxPx).toFloat() / areaWidth
+            next = next.copy(
+                panelWidthFraction = fraction.coerceIn(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, 1f)
+            )
+        }
+        if (dyPx != 0) {
+            pendingResizeDp += dyPx / density
+            val deltaDp = pendingResizeDp.toInt()
+            if (deltaDp != 0) {
+                pendingResizeDp -= deltaDp
+                next = if (next.gridCellDp > 0) {
+                    next.copy(gridCellDp = (next.gridCellDp + deltaDp).coerceIn(
+                        PenboardConfig.MIN_CELL_DP,
+                        PenboardConfig.MAX_CELL_DP
+                    ))
+                } else {
+                    next.copy(boardHeightDp = (next.boardHeightDp + deltaDp).coerceIn(
+                        PenboardConfig.MIN_BOARD_HEIGHT_DP,
+                        PenboardConfig.MAX_BOARD_HEIGHT_DP
+                    ))
+                }
+            }
+        }
+        if (next != config) store.update { next }
+    }
+
+    /** Tarikan selesai: simpan posisi papan supaya tetap di situ saat keyboard muncul lagi. */
+    override fun onGestureFinished() {
+        val current = panel ?: return
+        val areaWidth = current.root.width
+        val allowed = current.root.maxHeightPx
+        if (areaWidth <= 0) return
+        val left = GridMath.toFraction(current.panelLeftPx, areaWidth)
+        val lift = if (allowed > 0) GridMath.toFraction(current.panelLiftPx, allowed) else 0f
+        if (left == store.config.panelOffsetX && lift == store.config.panelOffsetY) return
+        store.update { it.copy(panelOffsetX = left, panelOffsetY = lift) }
+    }
+
+    /** Pasang posisi papan dari pengaturan (0 = rapat kiri bawah). */
+    private fun restorePanelPosition() {
+        val current = panel ?: return
+        val areaWidth = current.root.width
+        if (areaWidth <= 0) return
+        if (!store.config.floatingPanel) {
+            current.placePanel(0, 0)
+            return
+        }
+        val allowed = current.root.maxHeightPx
+        val lift = if (allowed > 0) GridMath.fromFraction(store.config.panelOffsetY, allowed) else 0
+        current.placePanel(GridMath.fromFraction(store.config.panelOffsetX, areaWidth), lift)
+    }
 
     private fun handleAction(action: KeyAction, text: String) {
         when (action) {

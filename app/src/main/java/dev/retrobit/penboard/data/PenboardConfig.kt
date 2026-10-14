@@ -89,20 +89,32 @@ data class KeyDef(
     /** Teks yang diinput untuk [KeyAction.TEXT]. */
     val text: String = "",
     /** Ulangi aksi selama tombol ditahan (mis. hapus). */
-    val repeatOnHold: Boolean = false
+    val repeatOnHold: Boolean = false,
+    /**
+     * Lebar tombol **bawah** dibanding tingginya (1 = persegi). Tingginya selalu
+     * mengikuti tombol samping; hanya lebarnya yang bisa diatur pengguna.
+     */
+    val widthMultiplier: Float = 1f
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("action", action.id)
         put("label", label)
         put("text", text)
         put("repeat", repeatOnHold)
+        put("widthMultiplier", widthMultiplier)
     }
 
     companion object {
+        /** Lebar tombol bawah: 1x (persegi) sampai 4x tinggi tombol samping. */
+        const val MIN_WIDTH_MULTIPLIER = GridMath.MIN_WIDTH_MULTIPLIER
+        const val MAX_WIDTH_MULTIPLIER = GridMath.MAX_WIDTH_MULTIPLIER
+
         fun fromJson(json: JSONObject): KeyDef = KeyDef(
             action = KeyAction.fromId(json.optString("action")),
             label = json.optString("label"),
             text = json.optString("text"),
+            widthMultiplier = json.optDouble("widthMultiplier", 1.0).toFloat()
+                .coerceIn(MIN_WIDTH_MULTIPLIER, MAX_WIDTH_MULTIPLIER),
             repeatOnHold = json.optBoolean("repeat", false)
         )
     }
@@ -127,6 +139,8 @@ data class PenboardConfig(
     val pressureEnabled: Boolean = true,
 
     // Grid tombol (3 kolom, jumlah baris bisa diatur 1-6)
+    /** Jumlah kolom tombol samping (1-6). */
+    val gridColumns: Int = GridMath.DEFAULT_COLUMNS,
     val gridRows: Int = DEFAULT_ROWS,
     val gridButtonCount: Int = DEFAULT_ROWS * COLUMNS,
     val gridKeys: List<KeyDef> = defaultGridKeys(),
@@ -169,6 +183,23 @@ data class PenboardConfig(
 
     /** Gaya ikon semua tombol papan: pixel art ([IconStyle.PIXEL]) atau vektor. */
     val iconStyle: IconStyle = IconStyle.PIXEL,
+
+    /**
+     * Sisi tombol samping (dp). `0` berarti **otomatis** (dihitung dari tinggi papan
+     * dan lebar yang tersedia); selain itu [GridMath.MIN_CELL_DP]..[GridMath.MAX_CELL_DP].
+     * Area tulis selalu mengikuti ukuran tombol ini.
+     */
+    val gridCellDp: Int = 0,
+
+    /** Lebar papan dibanding lebar layar (0,45-1). Bisa juga diubah dengan menarik sudut bingkai. */
+    val panelWidthFraction: Float = 1f,
+
+    /** Posisi papan (0-1 dari area keyboard) saat dipindah dengan menarik bingkai atas. */
+    val panelOffsetX: Float = 0f,
+    val panelOffsetY: Float = 0f,
+
+    /** Papan bisa digeser ke mana saja (mode melayang) dengan menarik bingkai atas. */
+    val floatingPanel: Boolean = true,
 
     // ---------------------------------------------------------------- bingkai jendela
     /** Bingkai + bilah judul seperti jendela: ada tombol minimize untuk menyembunyikan papan. */
@@ -219,9 +250,11 @@ data class PenboardConfig(
         showLines = true,
         allowFinger = false,
         pressureEnabled = true,
-        // Tombol: 6 baris x 3 kolom = 18 tombol berikon.
+        // Tombol: 3 kolom x 6 baris = 18 tombol berikon, ukurannya otomatis.
+        gridColumns = COLUMNS,
         gridRows = MAX_GRID_ROWS,
-        gridButtonCount = MAX_GRID_KEYS,
+        gridButtonCount = COLUMNS * MAX_GRID_ROWS,
+        gridCellDp = 0,
         gridKeys = defaultGridKeys(),
         // Jendela & bilah bawah: bingkai + minimize, serta 5 tombol pixel art di bawah papan.
         iconStyle = IconStyle.PIXEL,
@@ -272,6 +305,7 @@ data class PenboardConfig(
         put("showLines", showLines)
         put("allowFinger", allowFinger)
         put("pressureEnabled", pressureEnabled)
+        put("gridColumns", gridColumns)
         put("gridRows", gridRows)
         put("gridButtonCount", gridButtonCount)
         put("gridKeys", JSONArray().apply { gridKeys.forEach { put(it.toJson()) } })
@@ -298,6 +332,11 @@ data class PenboardConfig(
         put("bottomKeys", JSONArray().apply { bottomKeys.forEach { put(it.toJson()) } })
         put("bottomButtonCount", bottomButtonCount)
         put("iconStyle", iconStyle.id)
+        put("gridCellDp", gridCellDp)
+        put("panelWidthFraction", panelWidthFraction)
+        put("panelOffsetX", panelOffsetX)
+        put("panelOffsetY", panelOffsetY)
+        put("floatingPanel", floatingPanel)
         put("windowFrame", windowFrame)
         put("minimizeButton", minimizeButton)
         put("windowTitle", windowTitle)
@@ -306,6 +345,7 @@ data class PenboardConfig(
     /** Semua angka dipangkas ke rentang yang masuk akal. */
     fun sanitized(): PenboardConfig {
         val colors = penColors.map { it }.distinct().take(MAX_PEN_COLORS).ifEmpty { DEFAULT_PEN_COLORS }
+        val columns = gridColumns.coerceIn(MIN_GRID_COLUMNS, MAX_GRID_COLUMNS)
         val rows = gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
         return copy(
             boardHeightDp = boardHeightDp.coerceIn(MIN_BOARD_HEIGHT_DP, MAX_BOARD_HEIGHT_DP),
@@ -313,10 +353,15 @@ data class PenboardConfig(
             penWidthDp = penWidthDp.coerceIn(MIN_PEN_WIDTH_DP, MAX_PEN_WIDTH_DP),
             penColors = colors,
             penColorIndex = penColorIndex.coerceIn(0, colors.size - 1),
+            gridColumns = columns,
             gridRows = rows,
-            // Tombol tidak boleh melebihi jumlah sel yang tersedia di baris yang dipilih.
-            gridButtonCount = gridButtonCount.coerceIn(MIN_GRID_KEYS, rows * COLUMNS),
-            gridKeys = sanitizeKeys(gridKeys),
+            // Tombol tidak boleh melebihi jumlah sel yang tersedia di grid yang dipilih.
+            gridButtonCount = gridButtonCount.coerceIn(MIN_GRID_KEYS, rows * columns),
+            gridKeys = sanitizeKeys(gridKeys, defaultGridKeys(), GRID_SLOTS),
+            gridCellDp = if (gridCellDp <= 0) 0 else gridCellDp.coerceIn(MIN_CELL_DP, MAX_CELL_DP),
+            panelWidthFraction = panelWidthFraction.coerceIn(MIN_PANEL_WIDTH_FRACTION, 1f),
+            panelOffsetX = panelOffsetX.coerceIn(0f, 1f),
+            panelOffsetY = panelOffsetY.coerceIn(0f, 1f),
             panelOpacity = panelOpacity.coerceIn(0, 100),
             boardOpacity = boardOpacity.coerceIn(0, 100),
             buttonOpacity = buttonOpacity.coerceIn(0, 100),
@@ -329,14 +374,17 @@ data class PenboardConfig(
         )
     }
 
-    private fun sanitizeKeys(keys: List<KeyDef>): List<KeyDef> =
-        sanitizeKeys(keys, defaultGridKeys(), GRID_SLOTS)
-
     /** Isi setiap slot: pakai isian pengguna, atau bawaan yang sesuai untuk slot itu. */
     private fun sanitizeKeys(keys: List<KeyDef>, defaults: List<KeyDef>, slots: Int): List<KeyDef> {
         val result = ArrayList<KeyDef>(slots)
         for (index in 0 until slots) {
-            result.add(keys.getOrNull(index) ?: defaults.getOrElse(index) { defaults.last() })
+            val key = keys.getOrNull(index) ?: defaults.getOrElse(index) { defaults.last() }
+            result.add(
+                key.copy(
+                    widthMultiplier = key.widthMultiplier
+                        .coerceIn(KeyDef.MIN_WIDTH_MULTIPLIER, KeyDef.MAX_WIDTH_MULTIPLIER)
+                )
+            )
         }
         return result
     }
@@ -348,12 +396,21 @@ data class PenboardConfig(
     companion object {
         const val SCHEMA_VERSION = 1
 
-        /** Tiga kolom tetap; jumlah baris bisa 1 sampai 6 (18 tombol). */
-        const val COLUMNS = GridMath.COLUMNS
+        /** Kolom 1-6 dan baris 1-6: sampai 36 tombol, semuanya persegi. */
+        const val COLUMNS = GridMath.DEFAULT_COLUMNS
+        const val MIN_GRID_COLUMNS = GridMath.MIN_COLUMNS
+        const val MAX_GRID_COLUMNS = GridMath.MAX_COLUMNS
         const val MIN_GRID_ROWS = GridMath.MIN_ROWS
         const val MAX_GRID_ROWS = GridMath.MAX_ROWS
         const val DEFAULT_ROWS = GridMath.ROWS
-        const val GRID_SLOTS = COLUMNS * MAX_GRID_ROWS
+        const val GRID_SLOTS = MAX_GRID_COLUMNS * MAX_GRID_ROWS
+
+        /** Ukuran tombol: 0 = otomatis, selain itu dp. */
+        const val MIN_CELL_DP = GridMath.MIN_CELL_DP
+        const val MAX_CELL_DP = GridMath.MAX_CELL_DP
+
+        /** Lebar papan dibanding lebar layar. */
+        const val MIN_PANEL_WIDTH_FRACTION = 0.45f
         const val MAX_PEN_COLORS = 6
 
         const val MIN_BOARD_HEIGHT_DP = 120
@@ -441,7 +498,26 @@ data class PenboardConfig(
             // Baris 6 - tulisan tangan perangkat & pemilih keyboard
             KeyDef(KeyAction.SYSTEM_HANDWRITING),
             KeyDef(KeyAction.KEYBOARD_PICKER),
-            KeyDef(KeyAction.HIDE)
+            KeyDef(KeyAction.HIDE),
+            // Slot cadangan (dipakai bila kolom/baris ditambah): papan klip & sisa aksi.
+            KeyDef(KeyAction.SELECT_ALL),
+            KeyDef(KeyAction.CUT),
+            KeyDef(KeyAction.COPY),
+            KeyDef(KeyAction.PASTE),
+            KeyDef(KeyAction.CURSOR_HOME, repeatOnHold = true),
+            KeyDef(KeyAction.CURSOR_END, repeatOnHold = true),
+            KeyDef(KeyAction.DELETE_WORD, repeatOnHold = true),
+            KeyDef(KeyAction.DELETE_FORWARD, repeatOnHold = true),
+            KeyDef(KeyAction.TAB),
+            KeyDef(KeyAction.CLEAR),
+            KeyDef(KeyAction.RECOGNIZE),
+            KeyDef(KeyAction.UNDO),
+            KeyDef(KeyAction.REDO),
+            KeyDef(KeyAction.CYCLE_PEN),
+            KeyDef(KeyAction.SYSTEM_HANDWRITING),
+            KeyDef(KeyAction.KEYBOARD_PICKER),
+            KeyDef(KeyAction.SELECT_ALL),
+            KeyDef(KeyAction.PASTE)
         )
 
         /** Nilai tema retro dipakai juga oleh [withRetroTheme]. */
@@ -473,6 +549,7 @@ data class PenboardConfig(
                 showLines = json.optBoolean("showLines", base.showLines),
                 allowFinger = json.optBoolean("allowFinger", base.allowFinger),
                 pressureEnabled = json.optBoolean("pressureEnabled", base.pressureEnabled),
+                gridColumns = json.optInt("gridColumns", base.gridColumns),
                 gridRows = json.optInt("gridRows", base.gridRows),
                 gridButtonCount = json.optInt("gridButtonCount", base.gridButtonCount),
                 gridKeys = keys,
@@ -502,6 +579,11 @@ data class PenboardConfig(
                 bottomKeys = bottomKeys,
                 bottomButtonCount = json.optInt("bottomButtonCount", base.bottomButtonCount),
                 iconStyle = IconStyle.fromId(json.optString("iconStyle", base.iconStyle.id)),
+                gridCellDp = json.optInt("gridCellDp", base.gridCellDp),
+                panelWidthFraction = json.optDouble("panelWidthFraction", base.panelWidthFraction.toDouble()).toFloat(),
+                panelOffsetX = json.optDouble("panelOffsetX", base.panelOffsetX.toDouble()).toFloat(),
+                panelOffsetY = json.optDouble("panelOffsetY", base.panelOffsetY.toDouble()).toFloat(),
+                floatingPanel = json.optBoolean("floatingPanel", base.floatingPanel),
                 windowFrame = json.optBoolean("windowFrame", base.windowFrame),
                 minimizeButton = json.optBoolean("minimizeButton", base.minimizeButton),
                 windowTitle = json.optString("windowTitle", base.windowTitle)

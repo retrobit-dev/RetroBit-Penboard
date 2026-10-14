@@ -15,7 +15,7 @@ class GridMathTest {
     }
 
     @Test
-    fun `tanpa jarak tombol tetap dibatasi lebar layar`() {
+    fun `tanpa jarak tombol tetap dibatasi lebar`() {
         assertEquals(136, GridMath.cellSizePx(600, 1200, 0, 0))
     }
 
@@ -39,7 +39,6 @@ class GridMathTest {
         // Layar lebar (2000 px): tinggi papan yang menentukan, bukan lebar layar.
         assertEquals(200, GridMath.cellSizePx(600, 2000, 0, 0, rows = 3))
         assertEquals(150, GridMath.cellSizePx(600, 2000, 0, 0, rows = 4))
-        assertEquals(120, GridMath.cellSizePx(600, 2000, 0, 0, rows = 5))
         assertEquals(100, GridMath.cellSizePx(600, 2000, 0, 0, rows = 6))
         // Satu baris: tombolnya boleh tinggi, tetapi lebar layar tetap membatasi.
         assertEquals(226, GridMath.cellSizePx(600, 2000, 0, 0, rows = 1))
@@ -47,60 +46,48 @@ class GridMathTest {
 
     @Test
     fun `jumlah baris di luar rentang tetap aman`() {
-        // Lebih dari 6 baris dipangkas ke 6; kurang dari 1 baris dianggap 1.
         assertEquals(100, GridMath.cellSizePx(600, 2000, 0, 0, rows = 9))
         assertEquals(226, GridMath.cellSizePx(600, 2000, 0, 0, rows = 0))
     }
 
     @Test
-    fun `baris grid mengikuti jumlah tombol`() {
-        assertEquals(1, GridMath.rowsFor(0))
-        assertEquals(1, GridMath.rowsFor(1))
-        assertEquals(1, GridMath.rowsFor(3))
-        assertEquals(2, GridMath.rowsFor(4))
-        assertEquals(3, GridMath.rowsFor(9))
-        assertEquals(4, GridMath.rowsFor(10))
-        assertEquals(4, GridMath.rowsFor(12))
-        assertEquals(5, GridMath.rowsFor(13))
-        assertEquals(6, GridMath.rowsFor(18))
-        assertEquals(6, GridMath.rowsFor(20))
+    fun `ukuran tombol bisa dipilih pengguna dan tetap muat`() {
+        // Dipilih 50 dp pada layar xxhdpi (density 2,75) = 137 px, dan masih muat.
+        assertEquals(137, GridMath.cellSizePx(900, 2000, 0, 0, rows = 3, cellDp = 50, density = 2.75f))
+        // Ukuran yang terlalu besar dipangkas supaya masih muat di tinggi papan.
+        assertEquals(300, GridMath.cellSizePx(900, 2000, 0, 0, rows = 3, cellDp = 400, density = 2.75f, minBoardWidthPx = 600))
+        // Panel sempit: ukuran besar tetap dipangkas oleh lebar yang tersedia.
+        assertEquals(133, GridMath.cellSizePx(900, 700, 0, 0, rows = 3, columns = 3, cellDp = 200, density = 1f, minBoardWidthPx = 300))
     }
 
     @Test
-    fun `baris tombol mengisi tepat setinggi papan`() {
-        // 6 baris, jarak 10 px, papan 600 px: (600 - 50) / 6 = 91 sisa 4 -> empat baris 92.
-        val heights = GridMath.rowHeightsPx(600, 10, 6)
-        assertEquals(6, heights.size)
-        assertEquals(92, heights.first())
-        assertEquals(91, heights.last())
-        assertEquals(600, heights.sum() + 10 * 5)
-
-        // Tanpa sisa: semua baris sama tinggi.
-        val even = GridMath.rowHeightsPx(600, 0, 3)
-        assertEquals(listOf(200, 200, 200), even)
-        assertEquals(600, even.sum())
-
-        // Dua baris dengan jarak: tetap pas.
-        val two = GridMath.rowHeightsPx(443, 3, 2)
-        assertEquals(443, two.sum() + 3)
+    fun `lebar papan membatasi ukuran tombol`() {
+        // Ruang untuk tombol = 1080 - 300 (area tulis) - 8 = 772; 3 kolom -> (772 - 16) / 3 = 252 px.
+        assertEquals(252, GridMath.cellSizePx(900, 1080, 8, 0, rows = 3, columns = 3, minBoardWidthPx = 300))
+        // Enam kolom membuat tombolnya lebih kecil, tetapi tidak kurang dari 1 px.
+        assertTrue(GridMath.cellSizePx(300, 600, 8, 0, rows = 6, columns = 6, minBoardWidthPx = 400) >= 1)
     }
 
     @Test
-    fun `tinggi baris aman untuk angka ekstrem`() {
-        assertEquals(1, GridMath.rowHeightPx(0, 0, 3))
-        assertTrue(GridMath.rowHeightPx(40, 30, 6) >= 1)
-        // Papan terlalu pendek: setiap baris tetap minimal 1 px, tidak pernah nol/negatif.
-        val tiny = GridMath.rowHeightsPx(10, 30, 6)
-        assertEquals(6, tiny.size)
-        assertTrue(tiny.all { it >= 1 })
-        // Baris di luar rentang dipangkas seperti cellSizePx.
-        assertEquals(GridMath.MAX_ROWS, GridMath.rowHeightsPx(600, 0, 99).size)
-        assertEquals(GridMath.MIN_ROWS, GridMath.rowHeightsPx(600, 0, 0).size)
+    fun `area tulis selalu setinggi tombol kali jumlah baris`() {
+        // Persegi: tinggi papan = baris x sisi tombol + jarak antar baris.
+        assertEquals(618, GridMath.boardHeightPx(3, 200, 9))
+        assertEquals(400, GridMath.boardHeightPx(1, 400, 6))
+        assertEquals(3, GridMath.boardHeightPx(2, 0, 3))
+    }
+
+    @Test
+    fun `kolom tombol dihitung dari ukuran tombol`() {
+        assertEquals(554, GridMath.gridWidthPx(3, 180, 7))
+        assertEquals(180, GridMath.gridWidthPx(1, 180, 7))
+        // Lebar area tulis = sisa panel setelah kolom tombol.
+        assertEquals(500, GridMath.boardWidthPx(1080, 9, 554, 8))
+        assertEquals(1, GridMath.boardWidthPx(20, 9, 554, 8))
     }
 
     @Test
     fun `tombol bawah mengalir sesuai lebar papan tulis`() {
-        // Papan 600 px, tombol 100 px, jarak 10 px: (600 + 10) / (100 + 10) = 5,5 -> 5 tombol.
+        // Papan 600 px, tombol 100 px, jarak 10 px: (600 + 10) / (100 + 10) = 5 tombol.
         assertEquals(5, GridMath.columnsFor(600, 100, 10))
         // Papan sempit: tetap satu kolom supaya tombol tidak hilang.
         assertEquals(1, GridMath.columnsFor(40, 100, 10))
@@ -118,24 +105,119 @@ class GridMathTest {
     }
 
     @Test
+    fun `lebar tombol bawah mengikuti pengali`() {
+        // Tinggi tombol samping 80 px; lebar = tinggi x pengali.
+        assertEquals(80, GridMath.buttonWidthPx(80, 1f))
+        assertEquals(160, GridMath.buttonWidthPx(80, 2f))
+        assertEquals(200, GridMath.buttonWidthPx(80, 2.5f))
+        // Di luar rentang ditarik ke 1x-4x supaya tombol tidak pernah hilang.
+        assertEquals(80, GridMath.buttonWidthPx(80, 0.2f))
+        assertEquals(320, GridMath.buttonWidthPx(80, 9f))
+        assertTrue(GridMath.buttonWidthPx(1, 1f) >= 1)
+    }
+
+    @Test
+    fun `tombol bawah dibungkus sesuai lebar masing-masing`() {
+        // Lima tombol persegi 100 px + jarak 10 px: muat satu baris di papan 600 px.
+        assertEquals(
+            listOf(listOf(0, 1, 2, 3, 4)),
+            GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 600, 10)
+        )
+        // Papan sempit 250 px: hanya dua tombol per baris.
+        assertEquals(
+            listOf(listOf(0, 1), listOf(2, 3), listOf(4)),
+            GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 250, 10)
+        )
+        // Tombol berlebar 2x tidak lagi muat di baris pertama, jadi pindah baris.
+        assertEquals(
+            listOf(listOf(0, 1), listOf(2)),
+            GridMath.bottomRowIndexes(3, 100, listOf(1f, 1f, 2f), 250, 10)
+        )
+        // Tanpa tombol: tidak ada baris sama sekali.
+        assertEquals(0, GridMath.bottomRows(0, 100, emptyList(), 600, 10))
+        assertEquals(2, GridMath.bottomRows(4, 100, List(4) { 1f }, 250, 10))
+    }
+
+    @Test
+    fun `kolom tombol tidak menghabiskan lebar area tulis`() {
+        // Layar 1080 px, padding tepi 3 px, area tulis minimum 198 px (72 dp).
+        val usable = 1080 - 2 * 3
+        val minBoard = 198
+        val cell = GridMath.cellSizePx(
+            600, usable, 8, 60, rows = 3, columns = 6, minBoardWidthPx = minBoard
+        )
+        val grid = GridMath.gridWidthPx(6, cell, 8)
+        // Enam kolom pas: sisa lebar panel tepat sama dengan area tulis minimum.
+        assertEquals(minBoard, GridMath.boardWidthPx(1080, 3, grid, 8))
+        assertTrue(grid <= usable - minBoard - 8)
+        // Ukuran tombol pilihan pengguna juga tetap dipangkas oleh lebar area tulis.
+        val explicit = GridMath.cellSizePx(
+            900, usable, 8, 0, rows = 6, columns = 6, cellDp = 160, density = 1f, minBoardWidthPx = minBoard
+        )
+        assertTrue(explicit < 160)
+        val explicitGrid = GridMath.gridWidthPx(6, explicit, 8)
+        assertTrue(GridMath.boardWidthPx(1080, 3, explicitGrid, 8) >= minBoard)
+    }
+
+    @Test
     fun `tinggi papan dipangkas supaya seluruh panel muat`() {
-        // Ruang cukup: tinggi yang diminta dipakai apa adanya.
         assertEquals(400, GridMath.fitBoardHeightPx(400, 900, 200, 120))
-        // Ruang kurang: papan dipangkas sampai sisa ruang setelah bagian tetap.
         assertEquals(250, GridMath.fitBoardHeightPx(400, 600, 350, 120))
-        // Perangkat sangat kecil: tetap ada lantai minimum, tapi tidak lebih dari yang diminta.
         assertEquals(120, GridMath.fitBoardHeightPx(400, 300, 350, 120))
         assertEquals(80, GridMath.fitBoardHeightPx(80, 300, 350, 120))
-        // Tanpa informasi ruang: jangan diubah.
         assertEquals(400, GridMath.fitBoardHeightPx(400, 0, 350, 120))
     }
 
     @Test
-    fun `tiga kolom tetap dan baris 1 sampai 6`() {
-        assertEquals(3, GridMath.COLUMNS)
+    fun `posisi papan selalu di dalam layar`() {
+        // Papan 400 px di layar 1000 px: boleh 0..600.
+        assertEquals(0, GridMath.clampOffset(-50, 400, 1000))
+        assertEquals(600, GridMath.clampOffset(900, 400, 1000))
+        assertEquals(250, GridMath.clampOffset(250, 400, 1000))
+        // Papan lebih besar dari layar: tetap di pojok, tidak pernah negatif.
+        assertEquals(0, GridMath.clampOffset(120, 1200, 1000))
+    }
+
+    @Test
+    fun `posisi papan disimpan sebagai bagian layar`() {
+        assertEquals(0.25f, GridMath.toFraction(250, 1000), 0.0001f)
+        assertEquals(250, GridMath.fromFraction(0.25f, 1000))
+        assertEquals(0f, GridMath.toFraction(250, 0), 0.0001f)
+        // Nilai liar ditarik ke rentang 0..1.
+        assertEquals(0f, GridMath.toFraction(-90, 1000), 0.0001f)
+        assertEquals(1f, GridMath.toFraction(9000, 1000), 0.0001f)
+        assertEquals(1000, GridMath.fromFraction(9f, 1000))
+    }
+
+    @Test
+    fun `kolom dan baris bisa diatur satu sampai enam`() {
+        assertEquals(1, GridMath.columnsOr(0))
+        assertEquals(6, GridMath.columnsOr(99))
+        assertEquals(4, GridMath.columnsOr(4))
+        assertEquals(1, GridMath.rowsOr(-3))
+        assertEquals(6, GridMath.rowsOr(6))
+        assertEquals(36, GridMath.slots(6, 6))
+        assertEquals(3, GridMath.slots(3, 1))
+    }
+
+    @Test
+    fun `baris grid mengikuti jumlah tombol`() {
+        assertEquals(1, GridMath.rowsFor(0))
+        assertEquals(1, GridMath.rowsFor(3))
+        assertEquals(2, GridMath.rowsFor(4))
+        assertEquals(3, GridMath.rowsFor(9))
+        // Empat kolom: 9 tombol butuh 3 baris.
+        assertEquals(3, GridMath.rowsFor(9, columns = 4))
+        assertEquals(1, GridMath.rowsFor(4, columns = 6))
+    }
+
+    @Test
+    fun `tiga kolom bawaan dan baris 1 sampai 6`() {
+        assertEquals(3, GridMath.DEFAULT_COLUMNS)
         assertEquals(1, GridMath.MIN_ROWS)
         assertEquals(6, GridMath.MAX_ROWS)
         assertEquals(3, GridMath.ROWS)
         assertTrue(GridMath.MAX_WIDTH_FRACTION in 0.2f..0.5f)
+        assertTrue(GridMath.MIN_CELL_DP < GridMath.MAX_CELL_DP)
     }
 }

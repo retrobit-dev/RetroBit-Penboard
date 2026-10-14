@@ -39,6 +39,7 @@ import dev.retrobit.penboard.util.GmsStatus
 import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.StylusCompat
 import dev.retrobit.penboard.util.SystemHandwriting
+import kotlin.math.roundToInt
 
 /** Layar pengaturan: mengaktifkan keyboard Penboard dan seluruh pilihan tampilan. */
 class MainActivity : AppCompatActivity() {
@@ -51,8 +52,19 @@ class MainActivity : AppCompatActivity() {
     private var modelStatusText: String? = null
     private var previewPanel: BoardPanel? = null
 
+    /** Sisa tarikan sudut yang belum genap 1 dp (lebar papan memakai pecahan, tinggi memakai dp). */
+    private var pendingResizeDp = 0f
+
     private val configListener: (PenboardConfig) -> Unit = { config ->
-        previewPanel?.applyConfig(config)
+        // Kartu pratinjau selalu memakai ukuran terbaru, jadi tingginya ikut disesuaikan
+        // tanpa perlu menyusun ulang seluruh layar (yang akan menggeser posisi pengguna).
+        previewPanel?.let { panel ->
+            panel.applyConfig(config)
+            (panel.root.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                params.height = panel.panelHeightPx.coerceAtLeast(dp(120f))
+                panel.root.layoutParams = params
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -306,50 +318,90 @@ class MainActivity : AppCompatActivity() {
                 // Di keyboard sungguhan papan benar-benar ditutup; di pratinjau hanya diumumkan.
                 toast(getString(R.string.msg_minimize_preview))
             }
+
+            // Di pratinjau tarikan hanya memindah/mengubah ukuran gambarnya; angka yang
+            // tersimpan diatur dari kartu pengaturan di bawahnya.
+            override fun onMoveBy(dxPx: Int, dyPx: Int) {
+                // Di pratinjau tingginya sudah ditentukan kartu, jadi hanya bisa digeser
+                // ke kiri/kanan (di keyboard sungguhan papan juga bisa diangkat ke atas).
+                panel.placePanel(panel.panelLeftPx + dxPx, panel.panelLiftPx)
+            }
+
+            override fun onResizeBy(dxPx: Int, dyPx: Int) = resizeFromPreview(dxPx, dyPx)
+
+            override fun onGestureFinished() = Unit
         }
-        // Tinggi pratinjau: papan + bilah atas + tombol bawah. Kolom tombol kanan
-        // tingginya sama dengan papan (sejajar atas & bawah), jadi tidak perlu dihitung.
-        val density = resources.displayMetrics.density
-        val spacingPx = (GridMath.SPACING_DP * density).toInt()
-        val boardHeightPx = (store.config.boardHeightDp * density).toInt()
-        val cellPx = GridMath.cellSizePx(
-            boardHeightPx,
-            resources.displayMetrics.widthPixels,
-            spacingPx,
-            (44 * density).toInt(),
-            store.config.gridRows
-        )
-        val barHeightDp = store.config.titleBarHeightDp()
-        val titleBarPx = if (store.config.showsTitleBar) (barHeightDp * density).toInt() + spacingPx else 0
-        // Tombol bawah: tepat di bawah papan dan setinggi tombol samping, jadi hitungannya
-        // memakai rumus yang sama dengan BoardPanel (GridMath.rowHeightPx/columnsFor/wrapRows).
-        val panelPaddingPx = (3 * density).toInt()
-        val gridWidthPx = cellPx * GridMath.COLUMNS + spacingPx * (GridMath.COLUMNS - 1)
-        val boardWidthPx =
-            (resources.displayMetrics.widthPixels - 2 * panelPaddingPx - gridWidthPx - spacingPx)
-                .coerceAtLeast(1)
-        val rowHeightPx = GridMath.rowHeightPx(boardHeightPx, spacingPx, store.config.gridRows)
-        val bottomColumns = GridMath.columnsFor(boardWidthPx, cellPx, spacingPx)
-        val bottomRows = GridMath.wrapRows(store.config.bottomButtonCount, bottomColumns)
-        val bottomBarPx = bottomRows * (rowHeightPx + spacingPx)
-        val previewHeight = boardHeightPx + bottomBarPx + titleBarPx + (24 * density).toInt()
+        // Kartu ini memakai ukuran yang **sama persis** dengan keyboard sungguhan:
+        // semuanya dihitung [BoardPanel.applyConfig], jadi tidak ada angka kembar yang
+        // bisa berbeda dari tampilan aslinya.
+        panel.applyConfig(store.config)
+        panel.placePanel(0, 0)
         card.addView(
             panel.root,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                panel.panelHeightPx.coerceAtLeast(dp(120f))
+            )
         )
-        panel.applyConfig(store.config)
 
-        // Bukti terukur: tinggi papan dan tinggi kolom tombol samping harus sama
-        // supaya tombolnya sejajar dengan area tulis di atas dan bawahnya.
+        // Bukti terukur: tombol harus persegi, dan tinggi kolom tombol harus sama dengan
+        // tinggi area tulis supaya keduanya sejajar di atas maupun di bawah.
+        val square = Ui.statusText(card, getString(R.string.preview_square_wait))
         val align = Ui.statusText(card, getString(R.string.preview_align_wait))
-        Ui.body(card, getString(R.string.preview_icon_style, store.config.iconStyle.label))
-        panel.root.post { updateAlignStatus(align, panel) }
+        Ui.body(card, getString(R.string.preview_cell_style, store.config.iconStyle.label))
+        panel.root.post { updatePreviewStatus(square, align, panel) }
     }
 
-    /** Tampilkan hasil pengukuran: apakah kolom tombol benar-benar sejajar area tulis. */
-    private fun updateAlignStatus(view: TextView, panel: BoardPanel) {
+    /** Ubah ukuran papan dari tarikan sudut di pratinjau (lebar dan tinggi). */
+    private fun resizeFromPreview(dxPx: Int, dyPx: Int) {
+        val width = resources.displayMetrics.widthPixels
+        if (width <= 0) return
+        val config = store.config
+        val density = resources.displayMetrics.density
+        var next = config
+        if (dxPx != 0) {
+            val fraction = (width * config.panelWidthFraction + dxPx).toFloat() / width
+            next = next.copy(
+                panelWidthFraction = fraction.coerceIn(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, 1f)
+            )
+        }
+        if (dyPx != 0) {
+            pendingResizeDp += dyPx / density
+            val delta = pendingResizeDp.toInt()
+            if (delta != 0) {
+                pendingResizeDp -= delta
+                next = if (next.gridCellDp > 0) {
+                    next.copy(
+                        gridCellDp = (next.gridCellDp + delta).coerceIn(
+                            PenboardConfig.MIN_CELL_DP,
+                            PenboardConfig.MAX_CELL_DP
+                        )
+                    )
+                } else {
+                    next.copy(
+                        boardHeightDp = (next.boardHeightDp + delta).coerceIn(
+                            PenboardConfig.MIN_BOARD_HEIGHT_DP,
+                            PenboardConfig.MAX_BOARD_HEIGHT_DP
+                        )
+                    )
+                }
+            }
+        }
+        if (next != config) store.update { next }
+    }
+
+    /** Tampilkan hasil pengukuran pratinjau: tombol persegi & kolom tombol sejajar. */
+    private fun updatePreviewStatus(square: TextView, align: TextView, panel: BoardPanel) {
+        val cell = panel.cellPx
+        val columns = store.config.gridColumns
+        val rows = store.config.gridRows
+        square.text = if (cell > 0) {
+            getString(R.string.preview_square_ok, cell, columns, rows)
+        } else {
+            getString(R.string.preview_square_bad)
+        }
         val (boardPx, gridPx) = panel.measuredHeights()
-        view.text = if (gridPx > 0 && boardPx == gridPx) {
+        align.text = if (gridPx > 0 && boardPx == gridPx) {
             getString(R.string.preview_align_ok, boardPx, gridPx)
         } else {
             getString(R.string.preview_align_bad, boardPx, gridPx)
@@ -436,22 +488,66 @@ class MainActivity : AppCompatActivity() {
     private fun renderGridCard() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_grid), getString(R.string.card_grid_sub))
+        val columns = GridMath.columnsOr(config.gridColumns)
+        val rows = GridMath.rowsOr(config.gridRows)
+
         Ui.sliderRow(
-            card, getString(R.string.setting_grid_rows), config.gridRows,
+            card, getString(R.string.setting_grid_columns), columns,
+            PenboardConfig.MIN_GRID_COLUMNS, PenboardConfig.MAX_GRID_COLUMNS, getString(R.string.unit_columns)
+        ) { value ->
+            // Bila sebelumnya semua sel terpakai, kolom baru langsung terisi; kalau
+            // pengguna memang membatasi jumlah tombol, batas itu yang dipertahankan.
+            // Mengurangi kolom memangkas tombol yang tidak punya tempat lagi.
+            store.update {
+                val full = it.gridButtonCount >= GridMath.slots(columns, rows)
+                val slots = GridMath.slots(value, rows)
+                it.copy(
+                    gridColumns = value,
+                    gridButtonCount = if (full) slots else it.gridButtonCount.coerceIn(1, slots)
+                )
+            }
+        }
+        Ui.sliderRow(
+            card, getString(R.string.setting_grid_rows), rows,
             PenboardConfig.MIN_GRID_ROWS, PenboardConfig.MAX_GRID_ROWS, getString(R.string.unit_rows)
         ) { value ->
-            // Menambah baris langsung mengisi tombol di baris baru; mengurangi baris
-            // otomatis memangkas tombol yang tidak punya tempat lagi.
-            store.update { it.copy(gridRows = value, gridButtonCount = value * GridMath.COLUMNS) }
+            store.update {
+                val full = it.gridButtonCount >= GridMath.slots(columns, rows)
+                val slots = GridMath.slots(columns, value)
+                it.copy(
+                    gridRows = value,
+                    gridButtonCount = if (full) slots else it.gridButtonCount.coerceIn(1, slots)
+                )
+            }
         }
         Ui.sliderRow(
             card, getString(R.string.setting_grid_count), config.gridButtonCount,
-            PenboardConfig.MIN_GRID_KEYS, config.gridRows * GridMath.COLUMNS, getString(R.string.unit_keys)
+            PenboardConfig.MIN_GRID_KEYS, GridMath.slots(columns, rows), getString(R.string.unit_keys)
         ) { value -> store.update { it.copy(gridButtonCount = value) } }
 
+        // Ukuran tombol: otomatis (mengikuti tinggi papan) atau diatur sendiri.
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_cell_auto),
+            getString(R.string.setting_cell_auto_sub),
+            config.gridCellDp <= 0
+        ) { automatic ->
+            store.update {
+                it.copy(gridCellDp = if (automatic) 0 else (autoCellFallbackDp(it)))
+            }
+        }
+        if (config.gridCellDp > 0) {
+            Ui.sliderRow(
+                card, getString(R.string.setting_cell_size), config.gridCellDp,
+                PenboardConfig.MIN_CELL_DP, PenboardConfig.MAX_CELL_DP, getString(R.string.unit_dp)
+            ) { value -> store.update { it.copy(gridCellDp = value) } }
+        }
+        Ui.body(card, getString(R.string.grid_note))
+
         Ui.divider(card)
-        for (index in 0 until PenboardConfig.GRID_SLOTS) {
-            val key = config.gridKeys.getOrNull(index) ?: PenboardConfig.defaultGridKeys()[index]
+        for (index in 0 until GridMath.slots(columns, rows)) {
+            val key = config.gridKeys.getOrNull(index)
+                ?: PenboardConfig.defaultGridKeys().getOrElse(index) { KeyDef() }
             val enabled = index < config.gridButtonCount
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -482,12 +578,38 @@ class MainActivity : AppCompatActivity() {
             store.update {
                 it.copy(
                     gridKeys = PenboardConfig.defaultGridKeys(),
+                    gridColumns = PenboardConfig.COLUMNS,
                     gridRows = PenboardConfig.DEFAULT_ROWS,
-                    gridButtonCount = PenboardConfig.DEFAULT_ROWS * GridMath.COLUMNS
+                    gridCellDp = 0,
+                    gridButtonCount = PenboardConfig.DEFAULT_ROWS * PenboardConfig.COLUMNS
                 )
             }
             render()
         }
+    }
+
+    /**
+     * Ukuran tombol yang dipakai saat pengguna mematikan mode otomatis: sisi tombol
+     * terakhir yang benar-benar dihitung papan (atau nilai tengah bila belum diukur).
+     */
+    private fun autoCellFallbackDp(config: PenboardConfig): Int {
+        val measured = previewPanel?.cellPx ?: 0
+        if (measured > 0) {
+            return (measured / resources.displayMetrics.density).roundToInt()
+                .coerceIn(PenboardConfig.MIN_CELL_DP, PenboardConfig.MAX_CELL_DP)
+        }
+        val screen = resources.displayMetrics.widthPixels
+        val cell = GridMath.cellSizePx(
+            boardHeightPx = (config.boardHeightDp * resources.displayMetrics.density).toInt(),
+            availableWidthPx = screen - 2 * dp(3f),
+            spacingPx = (GridMath.SPACING_DP * resources.displayMetrics.density).toInt(),
+            minCellPx = (GridMath.MIN_TOUCH_DP * resources.displayMetrics.density).toInt(),
+            rows = GridMath.rowsOr(config.gridRows),
+            columns = GridMath.columnsOr(config.gridColumns),
+            minBoardWidthPx = dp(72f)
+        )
+        return (cell / resources.displayMetrics.density).roundToInt()
+            .coerceIn(PenboardConfig.MIN_CELL_DP, PenboardConfig.MAX_CELL_DP)
     }
 
     /**
@@ -515,6 +637,25 @@ class MainActivity : AppCompatActivity() {
             config.windowTitle,
             getString(R.string.setting_window_title_hint)
         ) { value -> store.update { it.copy(windowTitle = value) } }
+        Ui.divider(card)
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_panel_floating),
+            getString(R.string.setting_panel_floating_sub),
+            config.floatingPanel
+        ) { value ->
+            store.update { it.copy(floatingPanel = value, panelOffsetX = 0f, panelOffsetY = 0f) }
+            render()
+        }
+        Ui.sliderRow(
+            card,
+            getString(R.string.setting_panel_width),
+            (config.panelWidthFraction * 100).roundToInt(),
+            (PenboardConfig.MIN_PANEL_WIDTH_FRACTION * 100).roundToInt(),
+            100,
+            getString(R.string.unit_percent)
+        ) { value -> store.update { it.copy(panelWidthFraction = value / 100f) } }
+        Ui.body(card, getString(R.string.window_drag_note))
         Ui.body(card, getString(R.string.window_note))
     }
 
@@ -781,6 +922,18 @@ class MainActivity : AppCompatActivity() {
             body, getString(R.string.setting_repeat), getString(R.string.setting_repeat_sub), current.repeatOnHold
         ) { value -> repeat = value }
 
+        // Tinggi tombol bawah selalu mengikuti tombol samping; lebarnya diatur di sini.
+        var widthMultiplier = current.widthMultiplier
+        Ui.body(body, getString(R.string.setting_bottom_width_sub))
+        Ui.sliderRow(
+            body,
+            getString(R.string.setting_bottom_width),
+            (current.widthMultiplier * 100).roundToInt(),
+            (KeyDef.MIN_WIDTH_MULTIPLIER * 100).roundToInt(),
+            (KeyDef.MAX_WIDTH_MULTIPLIER * 100).roundToInt(),
+            getString(R.string.unit_percent)
+        ) { value -> widthMultiplier = value / 100f }
+
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.bottom_slot_title, index + 1))
             .setView(body)
@@ -788,7 +941,8 @@ class MainActivity : AppCompatActivity() {
                 val updated = current.copy(
                     action = action,
                     label = labelField.text.toString().trim(),
-                    repeatOnHold = repeat
+                    repeatOnHold = repeat,
+                    widthMultiplier = widthMultiplier
                 )
                 store.update { cfg ->
                     cfg.copy(bottomKeys = cfg.bottomKeys.toMutableList().also { it[index] = updated })

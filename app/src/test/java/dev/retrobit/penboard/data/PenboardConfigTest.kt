@@ -13,7 +13,12 @@ class PenboardConfigTest {
         val config = PenboardConfig()
         assertEquals(PenboardConfig.SCHEMA_VERSION, config.schemaVersion)
         assertEquals(PenboardConfig.DEFAULT_ROWS, config.gridRows)
+        assertEquals(PenboardConfig.COLUMNS, config.gridColumns)
         assertEquals(PenboardConfig.COLUMNS * PenboardConfig.DEFAULT_ROWS, config.gridButtonCount)
+        // Ukuran tombol bawaan: otomatis (mengikuti tinggi papan), bukan angka tetap.
+        assertEquals(0, config.gridCellDp)
+        assertEquals(1f, config.panelWidthFraction, 0.0001f)
+        assertTrue(config.floatingPanel)
         assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
         assertEquals(2000, config.autoRecognizeDelayMs)
         assertTrue(config.autoRecognize)
@@ -79,6 +84,68 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `jumlah kolom dan baris menentukan berapa tombol yang muat`() {
+        // Enam kolom x enam baris = 36 tombol; semua kotak itu bisa dipakai.
+        val wide = PenboardConfig(gridColumns = 6, gridRows = 6, gridButtonCount = 36).sanitized()
+        assertEquals(6, wide.gridColumns)
+        assertEquals(6, wide.gridRows)
+        assertEquals(36, wide.gridButtonCount)
+        assertEquals(PenboardConfig.GRID_SLOTS, wide.gridKeys.size)
+
+        // Satu baris tiga kolom: hanya 3 tombol yang boleh tampil.
+        val oneRow = PenboardConfig(gridRows = 1, gridButtonCount = 12).sanitized()
+        assertEquals(1, oneRow.gridRows)
+        assertEquals(PenboardConfig.COLUMNS, oneRow.gridButtonCount)
+
+        // Dua kolom lima baris: 10 sel, jadi 12 tombol dipangkas jadi 10.
+        val twoColumns = PenboardConfig(gridColumns = 2, gridRows = 5, gridButtonCount = 12).sanitized()
+        assertEquals(2, twoColumns.gridColumns)
+        assertEquals(10, twoColumns.gridButtonCount)
+
+        // Kolom liar dibatasi ke 1-6.
+        assertEquals(PenboardConfig.MAX_GRID_COLUMNS, PenboardConfig(gridColumns = 99).sanitized().gridColumns)
+        assertEquals(PenboardConfig.MIN_GRID_COLUMNS, PenboardConfig(gridColumns = 0).sanitized().gridColumns)
+    }
+
+    @Test
+    fun `ukuran tombol persegi dan papan bisa diatur`() {
+        // Ukuran tombol: 0 (otomatis) atau 32-160 dp; selebihnya dipangkas.
+        assertEquals(0, PenboardConfig(gridCellDp = 0).sanitized().gridCellDp)
+        assertEquals(0, PenboardConfig(gridCellDp = -20).sanitized().gridCellDp)
+        assertEquals(PenboardConfig.MIN_CELL_DP, PenboardConfig(gridCellDp = 5).sanitized().gridCellDp)
+        assertEquals(PenboardConfig.MAX_CELL_DP, PenboardConfig(gridCellDp = 9999).sanitized().gridCellDp)
+        assertEquals(64, PenboardConfig(gridCellDp = 64).sanitized().gridCellDp)
+
+        // Lebar papan 45-100 % layar; posisi yang dipindah selalu di dalam 0..1.
+        assertEquals(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, PenboardConfig(panelWidthFraction = 0.1f).sanitized().panelWidthFraction, 0.0001f)
+        assertEquals(1f, PenboardConfig(panelWidthFraction = 4f).sanitized().panelWidthFraction, 0.0001f)
+        assertEquals(0.8f, PenboardConfig(panelWidthFraction = 0.8f).sanitized().panelWidthFraction, 0.0001f)
+        assertEquals(0f, PenboardConfig(panelOffsetX = -3f).sanitized().panelOffsetX, 0.0001f)
+        assertEquals(1f, PenboardConfig(panelOffsetY = 9f).sanitized().panelOffsetY, 0.0001f)
+    }
+
+    @Test
+    fun `lebar tombol bawah diatur sendiri tanpa mengubah tingginya`() {
+        // Tinggi tombol bawah selalu sama dengan tombol samping (rumus GridMath.boardHeightPx),
+        // hanya lebarnya yang bisa berbeda: lebar = tinggi x pengali.
+        val square = KeyDef(KeyAction.ENTER)
+        assertEquals(1f, square.widthMultiplier, 0.0001f)
+        val wide = KeyDef(KeyAction.SPACE, widthMultiplier = 2.5f)
+        assertEquals(80, (32 * wide.widthMultiplier).toInt())
+
+        // Nilai liar dipangkas ke 1x-4x.
+        val clamped = PenboardConfig(
+            bottomKeys = listOf(KeyDef(KeyAction.SPACE, widthMultiplier = 40f))
+        ).sanitized()
+        assertEquals(KeyDef.MAX_WIDTH_MULTIPLIER, clamped.bottomKeys.first().widthMultiplier, 0.0001f)
+
+        // Pengali ikut tersimpan dan dibaca kembali.
+        val restored = KeyDef.fromJson(JSONObject(KeyDef(KeyAction.SPACE, widthMultiplier = 2f).toJson().toString()))
+        assertEquals(KeyAction.SPACE, restored.action)
+        assertEquals(2f, restored.widthMultiplier, 0.0001f)
+    }
+
+    @Test
     fun `preset HiWrite menyetel tata letak dan tema seperti HiWrite`() {
         val custom = PenboardConfig(
             boardHeightDp = 130,
@@ -99,7 +166,10 @@ class PenboardConfigTest {
         // Papan tulis & tombol ala HiWrite.
         assertEquals(200, preset.boardHeightDp)
         assertEquals(PenboardConfig.MAX_GRID_ROWS, preset.gridRows)
-        assertEquals(PenboardConfig.MAX_GRID_KEYS, preset.gridButtonCount)
+        assertEquals(PenboardConfig.COLUMNS, preset.gridColumns)
+        // HiWrite: 3 kolom x 6 baris = 18 tombol, ukurannya otomatis.
+        assertEquals(PenboardConfig.COLUMNS * PenboardConfig.MAX_GRID_ROWS, preset.gridButtonCount)
+        assertEquals(0, preset.gridCellDp)
         assertEquals(PenboardConfig.GRID_SLOTS, preset.gridKeys.size)
         assertTrue(preset.gridKeys.take(PenboardConfig.COLUMNS).all { it.action.name.startsWith("CURSOR_") })
         listOf(KeyAction.SPACE, KeyAction.ENTER, KeyAction.BACKSPACE).forEach { action ->
@@ -133,6 +203,12 @@ class PenboardConfigTest {
             lineGapDp = 52,
             penWidthDp = 5,
             gridButtonCount = 4,
+            gridColumns = 2,
+            gridCellDp = 56,
+            panelWidthFraction = 0.62f,
+            panelOffsetX = 0.25f,
+            panelOffsetY = 0.5f,
+            floatingPanel = false,
             autoRecognizeDelayMs = 1500,
             recognitionLanguage = "en-US",
             penButtonPrimary = PenButtonAction.CLEAR
@@ -142,12 +218,27 @@ class PenboardConfigTest {
         assertEquals(config.lineGapDp, restored.lineGapDp)
         assertEquals(config.penWidthDp, restored.penWidthDp)
         assertEquals(config.gridButtonCount, restored.gridButtonCount)
+        assertEquals(config.gridColumns, restored.gridColumns)
+        assertEquals(config.gridCellDp, restored.gridCellDp)
+        assertEquals(config.panelWidthFraction, restored.panelWidthFraction, 0.0001f)
+        assertEquals(config.panelOffsetX, restored.panelOffsetX, 0.0001f)
+        assertEquals(config.panelOffsetY, restored.panelOffsetY, 0.0001f)
+        assertFalse(restored.floatingPanel)
         assertEquals(config.autoRecognizeDelayMs, restored.autoRecognizeDelayMs)
         assertEquals("en-US", restored.recognitionLanguage)
         assertEquals(PenButtonAction.CLEAR, restored.penButtonPrimary)
         assertEquals(config.penColors, restored.penColors)
         assertEquals(config.boardColor, restored.boardColor)
         assertEquals(config.gridKeys, restored.gridKeys)
+
+        // Lebar tombol bawah ikut tersimpan (tingginya tetap mengikuti tombol samping).
+        val withWidth = PenboardConfig(
+            bottomKeys = PenboardConfig.defaultBottomKeys().toMutableList()
+                .also { it[0] = it[0].copy(widthMultiplier = 1.8f) }
+        ).sanitized()
+        val widthRestored = PenboardConfig.fromJson(JSONObject(withWidth.toJson().toString()))
+        assertEquals(1.8f, widthRestored.bottomKeys.first().widthMultiplier, 0.0001f)
+        assertEquals(withWidth.bottomKeys, widthRestored.bottomKeys)
     }
 
     @Test
@@ -157,7 +248,12 @@ class PenboardConfigTest {
             lineGapDp = 1,
             penWidthDp = 99,
             gridRows = 99,
+            gridColumns = 99,
             gridButtonCount = 77,
+            gridCellDp = 9999,
+            panelWidthFraction = 0.1f,
+            panelOffsetX = -4f,
+            panelOffsetY = 5f,
             cornerRadiusDp = -5,
             autoRecognizeDelayMs = 50,
             panelOpacity = 500,
@@ -168,7 +264,13 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.MAX_BOARD_HEIGHT_DP, wild.boardHeightDp)
         assertEquals(PenboardConfig.MIN_LINE_GAP_DP, wild.lineGapDp)
         assertEquals(PenboardConfig.MAX_PEN_WIDTH_DP, wild.penWidthDp)
+        // Semua sel terisi: 6 kolom x 6 baris = 36 tombol.
         assertEquals(PenboardConfig.MAX_GRID_KEYS, wild.gridButtonCount)
+        assertEquals(PenboardConfig.MAX_GRID_COLUMNS, wild.gridColumns)
+        assertEquals(PenboardConfig.MAX_CELL_DP, wild.gridCellDp)
+        assertEquals(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, wild.panelWidthFraction, 0.0001f)
+        assertEquals(0f, wild.panelOffsetX, 0.0001f)
+        assertEquals(1f, wild.panelOffsetY, 0.0001f)
         assertEquals(PenboardConfig.MIN_RADIUS_DP, wild.cornerRadiusDp)
         assertEquals(PenboardConfig.MIN_AUTO_DELAY_MS, wild.autoRecognizeDelayMs)
         assertEquals(100, wild.panelOpacity)
@@ -248,7 +350,11 @@ class PenboardConfigTest {
         assertTrue(keys.any { it.action == KeyAction.TAB })
         assertTrue(keys.any { it.action == KeyAction.DELETE_FORWARD })
         assertTrue(keys.any { it.action == KeyAction.SYSTEM_HANDWRITING })
-        assertEquals(18, keys.size)
+        // 36 slot: cukup untuk 6 kolom x 6 baris, dan isian tambahannya tetap berfungsi.
+        assertEquals(36, keys.size)
+        assertTrue(keys.any { it.action == KeyAction.PASTE })
+        assertTrue(keys.any { it.action == KeyAction.COPY })
+        assertTrue(keys.take(PenboardConfig.COLUMNS * PenboardConfig.MAX_GRID_ROWS).any { it.action == KeyAction.HIDE })
     }
 
     @Test
