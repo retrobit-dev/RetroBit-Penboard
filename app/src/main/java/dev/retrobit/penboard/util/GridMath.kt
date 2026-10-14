@@ -49,6 +49,24 @@ object GridMath {
         return if (cell < 1) 1 else cell
     }
 
+    /**
+     * Berapa tombol yang muat dalam **satu baris** di bawah papan tulis.
+     *
+     * Tombol bawah memakai ukuran yang sama dengan tombol grid ([cellSizePx]), jadi
+     * jumlahnya dihitung dari lebar papan tulis yang tersisa. Minimal satu tombol.
+     */
+    fun columnsFor(availableWidthPx: Int, cellPx: Int, spacingPx: Int = 0): Int {
+        if (cellPx <= 0) return 1
+        val perRow = (availableWidthPx + spacingPx) / (cellPx + spacingPx)
+        return if (perRow < 1) 1 else perRow
+    }
+
+    /** Jumlah baris yang dipakai [count] tombol bawah bila satu baris memuat [columns] tombol. */
+    fun wrapRows(count: Int, columns: Int): Int {
+        val cols = if (columns < 1) 1 else columns
+        return if (count <= 0) 0 else (count + cols - 1) / cols
+    }
+
     /** Jumlah baris grid yang perlu ditampilkan untuk [count] tombol. */
     fun rowsFor(count: Int): Int = when {
         count <= 0 -> 1

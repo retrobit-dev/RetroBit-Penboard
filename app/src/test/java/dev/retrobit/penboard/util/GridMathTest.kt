@@ -67,6 +67,25 @@ class GridMathTest {
     }
 
     @Test
+    fun `tombol bawah mengalir sesuai lebar papan tulis`() {
+        // Papan 600 px, tombol 100 px, jarak 10 px: (600 + 10) / (100 + 10) = 5,5 -> 5 tombol.
+        assertEquals(5, GridMath.columnsFor(600, 100, 10))
+        // Papan sempit: tetap satu kolom supaya tombol tidak hilang.
+        assertEquals(1, GridMath.columnsFor(40, 100, 10))
+        assertEquals(1, GridMath.columnsFor(600, 0, 10))
+    }
+
+    @Test
+    fun `baris tombol bawah dihitung dari jumlah tombol`() {
+        assertEquals(0, GridMath.wrapRows(0, 3))
+        assertEquals(1, GridMath.wrapRows(3, 3))
+        assertEquals(2, GridMath.wrapRows(4, 3))
+        assertEquals(3, GridMath.wrapRows(8, 3))
+        assertEquals(2, GridMath.wrapRows(8, 5))
+        assertEquals(8, GridMath.wrapRows(8, 0))
+    }
+
+    @Test
     fun `tiga kolom tetap dan baris 1 sampai 6`() {
         assertEquals(3, GridMath.COLUMNS)
         assertEquals(1, GridMath.MIN_ROWS)

@@ -24,13 +24,13 @@
 
     <!-- Kartu: bilah tombol bawah (pixel art) -->
     <string name="card_bottom">Tombol bawah (pixel art)</string>
-    <string name="card_bottom_sub">Deretan tombol di bawah papan tulis, ikonnya pixel art dan isinya bebas diatur.</string>
+    <string name="card_bottom_sub">Tombol tepat di bawah area menulis, di dalam bingkai papan, dengan ukuran sama seperti tombol samping.</string>
     <string name="setting_bottom_show">Tampilkan bilah tombol bawah</string>
-    <string name="setting_bottom_show_sub">Bilah di bawah papan tulis untuk aksi yang paling sering dipakai.</string>
+    <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di bawah area menulis.</string>
     <string name="setting_bottom_count">Jumlah tombol bawah</string>
     <string name="action_bottom_default">Kembalikan bilah bawah</string>
     <string name="bottom_slot_title">Tombol bawah %1$d</string>
-    <string name="bottom_note">Ikonnya digambar sebagai pixel art 12 x 12 (bukan ikon vektor yang diperkecil), jadi tetap tajam di semua ukuran tombol.</string>
+    <string name="bottom_note">Ukurannya sama persis dengan tombol samping dan ikonnya pixel art 12 x 12, jadi tetap tajam di semua ukuran. Bila satu baris tidak cukup, tombolnya mengalir ke baris berikutnya di bawah papan tulis.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>

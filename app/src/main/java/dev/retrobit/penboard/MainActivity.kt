@@ -315,14 +315,18 @@ class MainActivity : AppCompatActivity() {
         )
         val gridHeightPx = cellPx * store.config.gridRows + spacingPx * (store.config.gridRows - 1)
         val titleBarPx = if (store.config.windowFrame) (22 * density).toInt() + spacingPx else 0
-        val bottomBarPx = if (store.config.bottomButtonCount > 0) {
-            minOf(cellPx, (resources.displayMetrics.widthPixels / store.config.bottomButtonCount.coerceAtLeast(1)))
-                .coerceAtLeast((30 * density).toInt()) + spacingPx
-        } else {
-            0
-        }
-        val previewHeight =
-            maxOf(boardHeightPx, gridHeightPx) + titleBarPx + bottomBarPx + (24 * density).toInt()
+        // Tombol bawah: tepat di bawah papan, ukurannya sama dengan tombol samping,
+        // jadi hitungan barisnya memakai rumus yang sama dengan BoardPanel.
+        val panelPaddingPx = (3 * density).toInt()
+        val gridWidthPx = cellPx * GridMath.COLUMNS + spacingPx * (GridMath.COLUMNS - 1)
+        val boardWidthPx =
+            (resources.displayMetrics.widthPixels - 2 * panelPaddingPx - gridWidthPx - spacingPx)
+                .coerceAtLeast(1)
+        val bottomColumns = GridMath.columnsFor(boardWidthPx, cellPx, spacingPx)
+        val bottomRows = GridMath.wrapRows(store.config.bottomButtonCount, bottomColumns)
+        val bottomBarPx = bottomRows * (cellPx + spacingPx)
+        val previewHeight = maxOf(boardHeightPx + bottomBarPx, gridHeightPx) +
+            titleBarPx + (24 * density).toInt()
         card.addView(
             panel.root,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)

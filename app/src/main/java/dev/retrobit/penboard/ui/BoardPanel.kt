@@ -60,9 +60,9 @@ class BoardPanel(private val context: Context) {
     private val titleLabel = AppCompatTextView(context)
     private val minimize = KeyButton(context)
 
-    // Bilah tombol pixel art di bawah papan tulis.
-    private val bottomRow = LinearLayout(context)
-    private val bottomButtons = mutableListOf<KeyButton>()
+    // Papan tulis + tombol pixel art tepat di bawahnya (satu kolom di dalam bingkai).
+    private val boardColumn = LinearLayout(context)
+    private val bottomContainer = LinearLayout(context)
 
     val root = FrameLayout(context)
     val board = BoardView(context)
@@ -91,9 +91,22 @@ class BoardPanel(private val context: Context) {
             gridContainer.addView(row)
         }
 
+        // Papan tulis dan tombol bawahnya berada dalam satu kolom, jadi tombol bawah
+        // selalu tepat di bawah area menulis dan tidak pernah keluar dari bingkai.
+        boardColumn.orientation = LinearLayout.VERTICAL
+        boardColumn.addView(
+            board,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0)
+        )
+        bottomContainer.orientation = LinearLayout.VERTICAL
+        boardColumn.addView(
+            bottomContainer,
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
+
         panelRow.orientation = LinearLayout.HORIZONTAL
         panelRow.gravity = Gravity.CENTER_VERTICAL
-        panelRow.addView(board, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        panelRow.addView(boardColumn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         panelRow.addView(
             gridContainer,
             LinearLayout.LayoutParams(
@@ -119,15 +132,6 @@ class BoardPanel(private val context: Context) {
         minimize.contentDescription = context.getString(R.string.action_minimize)
         titleBar.addView(minimize)
 
-        // ---------------------------------------------------------- bilah bawah (pixel art)
-        bottomRow.orientation = LinearLayout.HORIZONTAL
-        bottomRow.gravity = Gravity.CENTER
-        while (bottomButtons.size < PenboardConfig.BOTTOM_SLOTS) {
-            val button = KeyButton(context)
-            bottomButtons.add(button)
-            bottomRow.addView(button)
-        }
-
         panel.orientation = LinearLayout.VERTICAL
         panel.addView(
             titleBar,
@@ -135,10 +139,6 @@ class BoardPanel(private val context: Context) {
         )
         panel.addView(
             panelRow,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        )
-        panel.addView(
-            bottomRow,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
 
@@ -208,7 +208,10 @@ class BoardPanel(private val context: Context) {
         )
         minimize.showPixels(PixelArt.MINIMIZE, config.buttonTextColor, 0.66f)
 
-        board.layoutParams = LinearLayout.LayoutParams(0, boardHeightPx, 1f)
+        board.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            boardHeightPx
+        )
         board.lineGapPx = config.lineGapDp * density
         board.penColor = config.currentPenColor
         board.penWidthPx = config.penWidthDp * density
@@ -261,60 +264,91 @@ class BoardPanel(private val context: Context) {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply { marginStart = spacing }
 
-        applyBottomBar(config, cell, spacing, panelPadding, screenWidth)
+        val gridWidth = cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1)
+        applyBottomBar(config, cell, spacing, screenWidth, gridWidth, panelPadding)
     }
 
     /**
-     * Bilah tombol **di bawah papan tulis**: isinya bebas diatur pengguna, ikonnya
-     * pixel art ([PixelArt]). Ukuran tombolnya menyesuaikan lebar layar supaya semua
-     * tombol yang dipilih tetap muat tanpa perlu digeser.
+     * Tombol **tepat di bawah area menulis** (masih di dalam bingkai jendela):
+     * ukurannya sama persis dengan tombol samping ([gridCell]), ikonnya pixel art
+     * ([PixelArt]), dan isinya bebas diatur pengguna.
+     *
+     * Kalau satu baris tidak cukup, tombolnya mengalir ke baris berikutnya di bawah
+     * papan tulis (hitungan kolomnya di [GridMath.columnsFor]).
      */
     private fun applyBottomBar(
         config: PenboardConfig,
         gridCell: Int,
         spacing: Int,
-        panelPadding: Int,
-        screenWidth: Int
+        screenWidth: Int,
+        gridWidth: Int,
+        panelPadding: Int
     ) {
+        bottomContainer.removeAllViews()
         val count = config.bottomButtonCount.coerceIn(0, PenboardConfig.BOTTOM_SLOTS)
-        bottomRow.visibility = if (count > 0) View.VISIBLE else View.GONE
-        bottomRow.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = if (count > 0) spacing else 0 }
-        if (count <= 0) return
+        if (count <= 0) {
+            bottomContainer.visibility = View.GONE
+            return
+        }
+        bottomContainer.visibility = View.VISIBLE
 
-        val available = (screenWidth - 2 * panelPadding - spacing * (count - 1)).coerceAtLeast(1)
-        val side = min(gridCell, available / count)
-            .coerceAtLeast((30 * density).toInt())
+        // Lebar yang tersedia untuk tombol bawah = lebar papan tulis.
+        val boardWidth = (screenWidth - 2 * panelPadding - gridWidth - spacing).coerceAtLeast(1)
+        val columns = GridMath.columnsFor(boardWidth, gridCell, spacing)
+        val rows = GridMath.wrapRows(count, columns)
 
         val defaults = PenboardConfig.defaultBottomKeys()
-        bottomButtons.forEachIndexed { index, button ->
-            val key = config.bottomKeys.getOrNull(index) ?: defaults.getOrElse(index) { defaults.last() }
-            button.visibility = if (index < count) View.VISIBLE else View.GONE
-            if (index >= count) return@forEachIndexed
-            button.repeatOnHold = key.repeatOnHold
-            button.onTap = { listener?.onKey(key, key.action) }
-            button.contentDescription = config.labelFor(key)
-            button.layoutParams = LinearLayout.LayoutParams(side, side).apply {
-                marginStart = if (index == 0) 0 else spacing
+        for (rowIndex in 0 until rows) {
+            val row = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.START
             }
-            button.style(
-                radiusPx = config.cornerRadiusDp * density * 0.9f,
-                fillColor = BoardView.withAlpha(config.buttonColor, config.buttonOpacity * 255 / 100),
-                borderColor = BoardView.withAlpha(config.accentColor, 130),
-                labelColor = config.buttonTextColor,
-                textSizePx = side * 0.24f,
-                haptics = config.haptics
+            for (column in 0 until columns) {
+                val index = rowIndex * columns + column
+                if (index >= count) break
+                val key = config.bottomKeys.getOrNull(index)
+                    ?: defaults.getOrElse(index) { defaults.last() }
+                row.addView(buildBottomButton(config, key, gridCell, spacing, column == 0))
+            }
+            bottomContainer.addView(
+                row,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = spacing }
             )
-            // Selalu pakai ikon pixel art: label teks hanya cadangan bila pola tak ada.
-            if (PixelArt.hasPattern(key.action)) {
-                button.text = ""
-                button.showPixels(PixelArt.pattern(key.action), config.buttonTextColor, 0.66f)
-            } else {
-                button.showPixels(null, config.buttonTextColor)
-                button.text = config.labelFor(key)
-            }
+        }
+    }
+
+    /** Satu tombol bawah: ukuran &amp; gayanya sama dengan tombol samping, ikonnya pixel art. */
+    private fun buildBottomButton(
+        config: PenboardConfig,
+        key: KeyDef,
+        side: Int,
+        spacing: Int,
+        first: Boolean
+    ): KeyButton = KeyButton(context).apply {
+        repeatOnHold = key.repeatOnHold
+        onTap = { listener?.onKey(key, key.action) }
+        contentDescription = config.labelFor(key)
+        layoutParams = LinearLayout.LayoutParams(side, side).apply {
+            marginStart = if (first) 0 else spacing
+        }
+        style(
+            radiusPx = config.cornerRadiusDp * density * 0.9f,
+            fillColor = BoardView.withAlpha(config.buttonColor, config.buttonOpacity * 255 / 100),
+            borderColor = BoardView.withAlpha(config.accentColor, 130),
+            labelColor = config.buttonTextColor,
+            textSizePx = side * 0.26f,
+            haptics = config.haptics
+        )
+        // Selalu pakai ikon pixel art: label teks hanya cadangan bila polanya tak ada.
+        if (PixelArt.hasPattern(key.action)) {
+            text = ""
+            showPixels(PixelArt.pattern(key.action), config.buttonTextColor, 0.62f)
+        } else {
+            showPixels(null, config.buttonTextColor)
+            text = config.labelFor(key)
         }
     }
 
