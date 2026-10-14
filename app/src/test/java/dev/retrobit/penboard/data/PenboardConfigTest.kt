@@ -336,6 +336,28 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `gaya ikon bawaan pixel art dan tersimpan bolak-balik`() {
+        assertEquals(IconStyle.PIXEL, PenboardConfig().iconStyle)
+        assertEquals(IconStyle.VECTOR, IconStyle.fromId("vector"))
+        assertEquals(IconStyle.PIXEL, IconStyle.fromId("entah"))
+        assertEquals(IconStyle.PIXEL, IconStyle.fromId(null))
+
+        val vector = PenboardConfig(iconStyle = IconStyle.VECTOR)
+        val restored = PenboardConfig.fromJson(JSONObject(vector.toJson().toString()))
+        assertEquals(IconStyle.VECTOR, restored.iconStyle)
+
+        // Berkas pengaturan lama (tanpa bidang iconStyle) tetap terbaca sebagai pixel art.
+        val legacy = PenboardConfig.fromJson(JSONObject("{\"gridRows\":2}"))
+        assertEquals(IconStyle.PIXEL, legacy.iconStyle)
+    }
+
+    @Test
+    fun `preset HiWrite memakai gaya ikon pixel art`() {
+        val preset = PenboardConfig(iconStyle = IconStyle.VECTOR).withHiWritePreset()
+        assertEquals(IconStyle.PIXEL, preset.iconStyle)
+    }
+
+    @Test
     fun `bingkai jendela dan bilah bawah tersimpan bolak-balik`() {
         val config = PenboardConfig(
             windowFrame = false,

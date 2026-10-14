@@ -106,6 +106,8 @@
     <string name="action_theme_retro">Pakai tema retro cyberpunk grayscale ePaper</string>
     <string name="theme_note">Tema retro cyberpunk: papan warna kertas ePaper, panel hitam dengan garis pindaian, tombol monokrom berikon, huruf mesin tik.</string>
     <string name="setting_scanlines">Garis pindaian ePaper</string>
+    <string name="setting_icon_style">Gaya ikon tombol</string>
+    <string name="setting_icon_style_sub">Pixel art: kotak-kotak 12 x 12 yang tajam (bagian dari tema retro). Vektor: ikon bergaris halus. Berlaku untuk tombol samping, tombol bawah, dan tombol minimize.</string>
     <string name="setting_scanlines_sub">Tekstur garis halus pada panel dan garis panduan putus-putus di papan.</string>
     <string name="grid_slot_label">Tombol %1$d: %2$s</string>
     <string name="grid_slot_title">Tombol grid %1$d</string>

@@ -2,7 +2,13 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.1.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.2.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.2.0
+
+- **Satu gaya ikon untuk seluruh papan.** Sebelumnya hanya bilah bawah yang berikon pixel art; sekarang **tombol samping (grid), tombol bawah, dan tombol minimize** semuanya bisa memakai pixel art 12 x 12 — bawaan baru.
+- **Gaya ikon bisa dipilih** di kartu *Tampilan*: **Pixel art** (bawaan) atau **Vektor** (ikon bergaris halus seperti versi 3.1). Pilihannya disimpan bersama pengaturan lain, dan berkas pengaturan lama tetap terbaca sebagai pixel art.
+- Preset **HiWrite** menyalakan gaya pixel art sekaligus.
 
 ## Yang baru di 3.1.2
 
@@ -164,8 +170,9 @@ tidak ada bagian yang terpotong.
 | panah bawah | sembunyikan keyboard |
 | garis mendatar (pixel art) | minimize: sembunyikan papan (di bilah judul jendela) |
 
-Tombol **grid** memakai ikon vektor monokrom; tombol **bilah bawah** memakai ikon
-**pixel art** 12 x 12 dari `util/PixelArt.kt` (setiap aksi punya polanya sendiri).
+Semua tombol memakai ikon **pixel art** 12 x 12 dari `util/PixelArt.kt` (setiap aksi
+punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus seperti versi
+3.1, ganti **gaya ikon tombol** ke *Vektor* di kartu *Tampilan*.
 
 ## Pengaturan yang tersedia
 
@@ -174,7 +181,7 @@ Tombol **grid** memakai ikon vektor monokrom; tombol **bilah bawah** memakai iko
 | Papan tulis | tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan, ketebalan ikut tekanan stylus, izinkan jari, getaran |
 | Area tombol | **jumlah baris 1–6**, jumlah tombol tampil 1–18, fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
-| Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
+| Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off, judul jendela (bawaan `PENBOARD`) |
 | Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang tiap tombol (ukuran = tombol samping, di bawah area menulis), kembali ke bawaan (A+, enter, hapus goresan, bersihkan papan, batal) |

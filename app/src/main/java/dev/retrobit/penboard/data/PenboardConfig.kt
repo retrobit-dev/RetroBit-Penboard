@@ -55,6 +55,17 @@ enum class KeyAction(val id: String, val label: String) {
 }
 
 /** Aksi tombol samping pena stylus. */
+/** Gaya ikon tombol papan: pixel art 12 x 12, atau ikon vektor bergaris. */
+enum class IconStyle(val id: String, val label: String) {
+    PIXEL("pixel", "Pixel art"),
+    VECTOR("vector", "Vektor");
+
+    companion object {
+        fun fromId(id: String?): IconStyle =
+            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: PIXEL
+    }
+}
+
 enum class PenButtonAction(val id: String, val label: String, val key: KeyAction?) {
     NONE("none", "Tidak ada", null),
     RECOGNIZE("recognize", "Jadikan teks", KeyAction.RECOGNIZE),
@@ -156,6 +167,9 @@ data class PenboardConfig(
     /** Berapa tombol bawah yang tampil; 0 berarti bilah bawah disembunyikan. */
     val bottomButtonCount: Int = DEFAULT_BOTTOM_KEYS,
 
+    /** Gaya ikon semua tombol papan: pixel art ([IconStyle.PIXEL]) atau vektor. */
+    val iconStyle: IconStyle = IconStyle.PIXEL,
+
     // ---------------------------------------------------------------- bingkai jendela
     /** Bingkai + bilah judul seperti jendela: ada tombol minimize untuk menyembunyikan papan. */
     val windowFrame: Boolean = true,
@@ -210,6 +224,7 @@ data class PenboardConfig(
         gridButtonCount = MAX_GRID_KEYS,
         gridKeys = defaultGridKeys(),
         // Jendela & bilah bawah: bingkai + minimize, serta 5 tombol pixel art di bawah papan.
+        iconStyle = IconStyle.PIXEL,
         windowFrame = true,
         minimizeButton = true,
         bottomKeys = defaultBottomKeys(),
@@ -268,6 +283,7 @@ data class PenboardConfig(
         put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
         put("bottomKeys", JSONArray().apply { bottomKeys.forEach { put(it.toJson()) } })
         put("bottomButtonCount", bottomButtonCount)
+        put("iconStyle", iconStyle.id)
         put("windowFrame", windowFrame)
         put("minimizeButton", minimizeButton)
         put("windowTitle", windowTitle)
@@ -467,6 +483,7 @@ data class PenboardConfig(
                 ),
                 bottomKeys = bottomKeys,
                 bottomButtonCount = json.optInt("bottomButtonCount", base.bottomButtonCount),
+                iconStyle = IconStyle.fromId(json.optString("iconStyle", base.iconStyle.id)),
                 windowFrame = json.optBoolean("windowFrame", base.windowFrame),
                 minimizeButton = json.optBoolean("minimizeButton", base.minimizeButton),
                 windowTitle = json.optString("windowTitle", base.windowTitle)

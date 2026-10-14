@@ -3,7 +3,8 @@
 Digambar dari angka yang sama dengan aplikasi:
 - ukuran tombol   : GridMath.cellSizePx (3 kolom, 34% lebar layar, min 44 dp)
 - warna & opacity : tema retro cyberpunk grayscale ePaper (PenboardConfig)
-- tata letak kunci: PenboardConfig.defaultGridKeys()
+- tata letak kunci: PenboardConfig.defaultGridKeys()/defaultBottomKeys()
+- ikon tombol    : util/PixelArt.kt (polanya dibaca dari berkas Kotlin yang sama)
 - bilah tunggu & lencana hasil: BoardView.drawPending / drawFlash
 """
 import pathlib
@@ -114,72 +115,6 @@ def cell_size(board_height_px, available_width_px, spacing_px, min_cell_px, rows
 
 def alpha(color, a):
     return color + (max(0, min(255, int(a))),)
-
-
-def glyph(draw, action, cx, cy, size):
-    """Gambar ikon tombol pada kanvas 24 x 24 (seperti ui/KeyIcons.kt)."""
-    u = size / 24.0
-    w = max(2, int(2.3 * u))
-
-    def p(x, y):
-        return (cx + (x - 12) * u, cy + (y - 12) * u)
-
-    def path(points, width=None):
-        draw.line([p(x, y) for x, y in points], fill=COL_TEXT, width=width or w, joint="curve")
-
-    if action == "CURSOR_LEFT":
-        path([(19, 12), (6, 12)]); path([(10, 7), (5, 12), (10, 17)])
-    elif action == "CURSOR_RIGHT":
-        path([(5, 12), (18, 12)]); path([(14, 7), (19, 12), (14, 17)])
-    elif action == "CURSOR_UP":
-        path([(12, 19), (12, 6)]); path([(7, 11), (12, 5), (17, 11)])
-    elif action == "CURSOR_DOWN":
-        path([(12, 5), (12, 18)]); path([(7, 13), (12, 19), (17, 13)])
-    elif action == "SPACE":
-        path([(4, 18), (4, 13), (20, 13), (20, 18)])
-    elif action == "ENTER":
-        path([(18, 5), (18, 15), (8, 15)]); path([(12, 10), (6, 15), (12, 20)])
-    elif action == "BACKSPACE":
-        path([(9, 5), (20, 5), (20, 19), (9, 19), (3, 12), (9, 5)])
-        path([(12, 9), (17, 15)]); path([(17, 9), (12, 15)])
-    elif action == "DELETE_FORWARD":
-        path([(15, 5), (4, 5), (4, 19), (15, 19), (21, 12), (15, 5)])
-        path([(7, 9), (12, 15)]); path([(12, 9), (7, 15)])
-    elif action == "DELETE_WORD":
-        path([(14, 6), (8, 12), (14, 18)]); path([(20, 6), (14, 12), (20, 18)])
-    elif action == "TAB":
-        path([(21, 6), (21, 18)]); path([(4, 12), (17, 12)]); path([(12, 7), (18, 12), (12, 17)])
-    elif action == "RECOGNIZE":
-        font = ImageFont.truetype(FONT_BOLD, int(size * 0.82))
-        box = draw.textbbox((0, 0), "A+", font=font)
-        draw.text((cx - (box[2] - box[0]) / 2 - box[0], cy - (box[3] - box[1]) / 2 - box[1]),
-                  "A+", font=font, fill=COL_TEXT)
-    elif action == "CLEAR":
-        path([(5, 7), (19, 7)]); path([(10, 4), (14, 4)])
-        path([(7, 7), (7, 19), (17, 19), (17, 7)])
-        path([(10, 10), (10, 16)]); path([(14, 10), (14, 16)])
-    elif action == "CYCLE_PEN":
-        path([(6, 18), (16, 8)], width=max(3, int(3.4 * u)))
-        path([(4, 20), (6, 17), (8, 19)]); path([(16, 8), (19, 5)])
-    elif action == "UNDO":
-        draw.arc([p(5, 8)[0], p(5, 8)[1], p(19, 20)[0], p(19, 20)[1]], 180, 350,
-                 fill=COL_TEXT, width=w)
-        path([(5, 8), (5, 14)]); path([(2, 11), (5, 15), (8, 11)])
-    elif action == "REDO":
-        draw.arc([p(5, 8)[0], p(5, 8)[1], p(19, 20)[0], p(19, 20)[1]], 190, 360,
-                 fill=COL_TEXT, width=w)
-        path([(19, 8), (19, 14)]); path([(16, 11), (19, 15), (22, 11)])
-    elif action == "SYSTEM_HANDWRITING":
-        path([(4, 16), (7, 10), (10, 15), (13, 9), (16, 14), (20, 12)])
-    elif action == "KEYBOARD_PICKER":
-        r = max(2, int(3 * u))
-        draw.rounded_rectangle([p(3, 7)[0], p(3, 7)[1], p(21, 17)[0], p(21, 17)[1]], r,
-                               outline=COL_TEXT, width=w)
-        for x in (6, 11, 16):
-            path([(x, 10.5), (x + 2, 10.5)])
-        path([(8, 14), (16, 14)])
-    elif action == "HIDE":
-        path([(12, 4), (12, 13)]); path([(7, 9), (12, 14), (17, 9)]); path([(5, 18), (19, 18)])
 
 
 def draw_scanlines(img, box, radius, color, spacing=4, a=26):
@@ -319,7 +254,8 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
         draw.rounded_rectangle([x0, y0, x1, y1], max(2, int(RADIUS_DP * D * 0.9)),
                                fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                outline=alpha(COL_ACCENT, 130), width=1)
-        glyph(draw, action, (x0 + x1) / 2, (y0 + y1) / 2, cell * 0.52)
+        draw_pixel_icon(draw, PIXEL_ART.get(action), (x0 + x1) / 2, (y0 + y1) / 2,
+                        cell * 0.62, COL_TEXT)
 
     return img
 

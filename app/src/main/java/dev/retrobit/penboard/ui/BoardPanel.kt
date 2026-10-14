@@ -12,6 +12,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import dev.retrobit.penboard.R
 import dev.retrobit.penboard.board.BoardView
 import dev.retrobit.penboard.data.KeyAction
+import dev.retrobit.penboard.data.IconStyle
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.util.GridMath
@@ -248,7 +249,13 @@ class BoardPanel(private val context: Context) {
             textSizePx = minimizeSide * 0.2f,
             haptics = config.haptics
         )
-        minimize.showPixels(PixelArt.MINIMIZE, config.buttonTextColor, 0.66f)
+        if (config.iconStyle == IconStyle.PIXEL) {
+            minimize.text = ""
+            minimize.showPixels(PixelArt.MINIMIZE, config.buttonTextColor, 0.66f)
+        } else {
+            minimize.text = ""
+            minimize.showGlyph(KeyIcons.minimize, config.buttonTextColor, 0.62f)
+        }
 
         board.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -292,14 +299,7 @@ class BoardPanel(private val context: Context) {
                 textSizePx = cell * 0.26f,
                 haptics = config.haptics
             )
-            val glyph = KeyIcons.glyph(key.action)
-            if (glyph != null) {
-                button.text = ""
-                button.showGlyph(glyph, config.buttonTextColor, 0.5f)
-            } else {
-                button.showGlyph(null, config.buttonTextColor)
-                button.text = config.labelFor(key)
-            }
+            applyIcon(button, config, key, fraction = 0.5f)
         }
         gridContainer.layoutParams = LinearLayout.LayoutParams(
             cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1),
@@ -308,6 +308,29 @@ class BoardPanel(private val context: Context) {
 
         val gridWidth = cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1)
         applyBottomBar(config, cell, spacing, screenWidth, gridWidth, panelPadding)
+    }
+
+    /**
+     * Pasang ikon pada [button] mengikuti gaya pilihan pengguna ([PenboardConfig.iconStyle]):
+     * **pixel art** 12 x 12 ([PixelArt]) atau **ikon vektor** ([KeyIcons]). Label teks
+     * hanya dipakai bila aksinya tidak punya ikon sama sekali.
+     */
+    private fun applyIcon(button: KeyButton, config: PenboardConfig, key: KeyDef, fraction: Float) {
+        val action = key.action
+        if (config.iconStyle == IconStyle.PIXEL && PixelArt.hasPattern(action)) {
+            button.text = ""
+            button.showPixels(PixelArt.pattern(action), config.buttonTextColor, fraction)
+            return
+        }
+        val glyph = KeyIcons.glyph(action)
+        if (glyph != null) {
+            button.text = ""
+            button.showGlyph(glyph, config.buttonTextColor, fraction)
+            return
+        }
+        button.showPixels(null, config.buttonTextColor)
+        button.showGlyph(null, config.buttonTextColor)
+        button.text = config.labelFor(key)
     }
 
     /**
@@ -384,14 +407,7 @@ class BoardPanel(private val context: Context) {
             textSizePx = side * 0.26f,
             haptics = config.haptics
         )
-        // Selalu pakai ikon pixel art: label teks hanya cadangan bila polanya tak ada.
-        if (PixelArt.hasPattern(key.action)) {
-            text = ""
-            showPixels(PixelArt.pattern(key.action), config.buttonTextColor, 0.62f)
-        } else {
-            showPixels(null, config.buttonTextColor)
-            text = config.labelFor(key)
-        }
+        applyIcon(this, config, key, fraction = 0.62f)
     }
 
 }

@@ -23,6 +23,9 @@ object KeyIcons {
 
     fun glyph(action: KeyAction): Glyph? = cache.getOrPut(action) { build(action) }
 
+    /** Ikon tombol minimize (versi vektor): satu garis mendatar, sama seperti versi pixel art. */
+    val minimize: Glyph by lazy { strokePath { moveTo(6f, 12f); lineTo(18f, 12f) } }
+
     private fun strokePath(block: Path.() -> Unit): Glyph = Glyph(Path().apply(block), filled = false)
 
     private fun fillPath(block: Path.() -> Unit): Glyph = Glyph(Path().apply(block), filled = true)

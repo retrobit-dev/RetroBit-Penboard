@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import com.google.android.material.button.MaterialButton
 import dev.retrobit.penboard.data.ConfigStore
+import dev.retrobit.penboard.data.IconStyle
 import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenButtonAction
@@ -630,6 +631,17 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.setting_scanlines_sub),
             config.scanlines
         ) { value -> store.update { it.copy(scanlines = value) } }
+        val iconStyles = IconStyle.entries
+        Ui.spinnerRow(
+            card,
+            getString(R.string.setting_icon_style),
+            iconStyles.map { it.label },
+            iconStyles.indexOf(config.iconStyle).coerceAtLeast(0)
+        ) { index ->
+            store.update { it.copy(iconStyle = iconStyles[index]) }
+            render()
+        }
+        Ui.body(card, getString(R.string.setting_icon_style_sub))
         Ui.divider(card)
         Ui.sliderRow(card, getString(R.string.setting_panel_opacity), config.panelOpacity, 0, 100, "%") { value ->
             store.update { it.copy(panelOpacity = value) }
