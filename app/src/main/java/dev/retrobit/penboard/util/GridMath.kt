@@ -23,6 +23,32 @@ object GridMath {
     const val SPACING_DP = 3f
 
     /**
+     * Tinggi **dasar** satu baris tombol (px) supaya seluruh grid pas setinggi papan:
+     * `(tinggi papan - jarak antar baris) / jumlah baris`.
+     *
+     * Dipakai juga sebagai tinggi tombol bawah supaya ukurannya sama dengan tombol samping.
+     */
+    fun rowHeightPx(boardHeightPx: Int, spacingPx: Int = 0, rows: Int = ROWS): Int {
+        val safeRows = rows.coerceIn(MIN_ROWS, MAX_ROWS)
+        val usable = (boardHeightPx - spacingPx * (safeRows - 1)).coerceAtLeast(1)
+        return (usable / safeRows).coerceAtLeast(1)
+    }
+
+    /**
+     * Tinggi tiap baris tombol (px) — sisa pembagian dibagikan ke baris-baris pertama
+     * supaya `jumlah tinggi baris + jarak antar baris` **tepat sama** dengan tinggi papan.
+     * Dengan begitu tombol kanan sejajar rapi dengan area tulis di atas dan bawahnya.
+     */
+    fun rowHeightsPx(boardHeightPx: Int, spacingPx: Int = 0, rows: Int = ROWS): List<Int> {
+        val safeRows = rows.coerceIn(MIN_ROWS, MAX_ROWS)
+        val usable = boardHeightPx - spacingPx * (safeRows - 1)
+        if (usable <= 0) return List(safeRows) { 1 }
+        val base = (usable / safeRows).coerceAtLeast(1)
+        val extra = usable - base * safeRows
+        return List(safeRows) { index -> base + if (index < extra) 1 else 0 }
+    }
+
+    /**
      * Sisi tombol (px) = sekecil mungkin antara:
      *  - tinggi papan dibagi [rows] baris (dikurangi jarak antar baris),
      *  - batas lebar [MAX_WIDTH_FRACTION] layar.
@@ -36,15 +62,15 @@ object GridMath {
         rows: Int = ROWS
     ): Int {
         val safeRows = rows.coerceIn(MIN_ROWS, MAX_ROWS)
-        val usableHeight = (boardHeightPx - spacingPx * (safeRows - 1)).coerceAtLeast(1)
-        var cell = usableHeight / safeRows
+        val rowHeight = rowHeightPx(boardHeightPx, spacingPx, safeRows)
+        var cell = rowHeight
 
         val budget = (availableWidthPx * MAX_WIDTH_FRACTION).toInt()
         val maxByWidth = (budget - spacingPx * (COLUMNS - 1)) / COLUMNS
         if (maxByWidth in 1 until cell) cell = maxByWidth
 
         if (minCellPx > 0 && cell < minCellPx) {
-            cell = minOf(minCellPx, usableHeight / safeRows)
+            cell = minOf(minCellPx, rowHeight)
         }
         return if (cell < 1) 1 else cell
     }

@@ -77,7 +77,7 @@ class BoardPanel(private val context: Context) {
         board.edgeToEdge = true
 
         gridContainer.orientation = LinearLayout.VERTICAL
-        gridContainer.gravity = Gravity.CENTER_VERTICAL or Gravity.END
+        gridContainer.gravity = Gravity.TOP or Gravity.END
         for (rowIndex in 0 until GridMath.MAX_ROWS) {
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -106,7 +106,9 @@ class BoardPanel(private val context: Context) {
         )
 
         panelRow.orientation = LinearLayout.HORIZONTAL
-        panelRow.gravity = Gravity.CENTER_VERTICAL
+        // Rata atas: papan tulis dan kolom tombol mulai dari garis yang sama, lalu
+        // tingginya dibuat sama persis supaya sejajar atas maupun bawah.
+        panelRow.gravity = Gravity.TOP
         panelRow.addView(boardColumn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         panelRow.addView(
             gridContainer,
@@ -183,8 +185,13 @@ class BoardPanel(private val context: Context) {
                 config.bottomButtonCount,
                 GridMath.columnsFor(requestedBoardWidth, requestedCell, spacing)
             )
+            val requestedRowHeight = GridMath.rowHeightPx(
+                requestedBoardHeightPx,
+                spacing,
+                config.gridRows
+            )
             val bottomBlock = if (requestedBottomRows > 0) {
-                spacing + requestedBottomRows * (requestedCell + spacing)
+                spacing + requestedBottomRows * (requestedRowHeight + spacing)
             } else {
                 0
             }
@@ -280,9 +287,18 @@ class BoardPanel(private val context: Context) {
         board.lineColor = config.lineColor
         board.accentColor = config.accentColor
 
+        // Tombol kanan: tinggi tiap baris dibuat pas sehingga seluruh grid setinggi
+        // area tulis (sejajar atas & bawah). Sisa pembagian dibagi ke baris teratas.
+        val rowHeight = GridMath.rowHeightPx(boardHeightPx, spacing, config.gridRows)
+        val rowHeights = GridMath.rowHeightsPx(boardHeightPx, spacing, config.gridRows)
         val defaults = PenboardConfig.defaultGridKeys()
         gridRows.forEachIndexed { rowIndex, row ->
-            row.visibility = if (config.gridRows > rowIndex) View.VISIBLE else View.GONE
+            val shown = config.gridRows > rowIndex
+            row.visibility = if (shown) View.VISIBLE else View.GONE
+            row.layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                if (shown) rowHeights.getOrElse(rowIndex) { rowHeight } else 0
+            ).apply { topMargin = if (shown && rowIndex > 0) spacing else 0 }
         }
         for (index in 0 until PenboardConfig.GRID_SLOTS) {
             val button = buttons[index]
@@ -291,9 +307,12 @@ class BoardPanel(private val context: Context) {
             button.repeatOnHold = key.repeatOnHold
             button.onTap = { listener?.onKey(key, key.action) }
             button.contentDescription = config.labelFor(key)
-            button.layoutParams = LinearLayout.LayoutParams(cell, cell).apply {
+            val rowIndex = index / GridMath.COLUMNS
+            button.layoutParams = LinearLayout.LayoutParams(
+                cell,
+                rowHeights.getOrElse(rowIndex) { rowHeight }
+            ).apply {
                 marginStart = if (index % GridMath.COLUMNS == 0) 0 else spacing
-                topMargin = if (index >= GridMath.COLUMNS) spacing else 0
             }
             button.style(
                 radiusPx = config.cornerRadiusDp * density * 0.9f,
@@ -307,11 +326,11 @@ class BoardPanel(private val context: Context) {
         }
         gridContainer.layoutParams = LinearLayout.LayoutParams(
             cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1),
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            boardHeightPx
         ).apply { marginStart = spacing }
 
         val gridWidth = cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1)
-        applyBottomBar(config, cell, spacing, screenWidth, gridWidth, panelPadding)
+        applyBottomBar(config, cell, rowHeight, spacing, screenWidth, gridWidth, panelPadding)
     }
 
     /**
@@ -348,6 +367,7 @@ class BoardPanel(private val context: Context) {
     private fun applyBottomBar(
         config: PenboardConfig,
         gridCell: Int,
+        gridRowHeight: Int,
         spacing: Int,
         screenWidth: Int,
         gridWidth: Int,
@@ -377,7 +397,9 @@ class BoardPanel(private val context: Context) {
                 if (index >= count) break
                 val key = config.bottomKeys.getOrNull(index)
                     ?: defaults.getOrElse(index) { defaults.last() }
-                row.addView(buildBottomButton(config, key, gridCell, spacing, column == 0))
+                row.addView(
+                    buildBottomButton(config, key, gridCell, gridRowHeight, spacing, column == 0)
+                )
             }
             bottomContainer.addView(
                 row,
@@ -394,13 +416,14 @@ class BoardPanel(private val context: Context) {
         config: PenboardConfig,
         key: KeyDef,
         side: Int,
+        sideHeight: Int,
         spacing: Int,
         first: Boolean
     ): KeyButton = KeyButton(context).apply {
         repeatOnHold = key.repeatOnHold
         onTap = { listener?.onKey(key, key.action) }
         contentDescription = config.labelFor(key)
-        layoutParams = LinearLayout.LayoutParams(side, side).apply {
+        layoutParams = LinearLayout.LayoutParams(side, sideHeight).apply {
             marginStart = if (first) 0 else spacing
         }
         style(

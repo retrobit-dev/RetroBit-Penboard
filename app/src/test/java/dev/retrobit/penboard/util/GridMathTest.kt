@@ -67,6 +67,38 @@ class GridMathTest {
     }
 
     @Test
+    fun `baris tombol mengisi tepat setinggi papan`() {
+        // 6 baris, jarak 10 px, papan 600 px: (600 - 50) / 6 = 91 sisa 4 -> empat baris 92.
+        val heights = GridMath.rowHeightsPx(600, 10, 6)
+        assertEquals(6, heights.size)
+        assertEquals(92, heights.first())
+        assertEquals(91, heights.last())
+        assertEquals(600, heights.sum() + 10 * 5)
+
+        // Tanpa sisa: semua baris sama tinggi.
+        val even = GridMath.rowHeightsPx(600, 0, 3)
+        assertEquals(listOf(200, 200, 200), even)
+        assertEquals(600, even.sum())
+
+        // Dua baris dengan jarak: tetap pas.
+        val two = GridMath.rowHeightsPx(443, 3, 2)
+        assertEquals(443, two.sum() + 3)
+    }
+
+    @Test
+    fun `tinggi baris aman untuk angka ekstrem`() {
+        assertEquals(1, GridMath.rowHeightPx(0, 0, 3))
+        assertTrue(GridMath.rowHeightPx(40, 30, 6) >= 1)
+        // Papan terlalu pendek: setiap baris tetap minimal 1 px, tidak pernah nol/negatif.
+        val tiny = GridMath.rowHeightsPx(10, 30, 6)
+        assertEquals(6, tiny.size)
+        assertTrue(tiny.all { it >= 1 })
+        // Baris di luar rentang dipangkas seperti cellSizePx.
+        assertEquals(GridMath.MAX_ROWS, GridMath.rowHeightsPx(600, 0, 99).size)
+        assertEquals(GridMath.MIN_ROWS, GridMath.rowHeightsPx(600, 0, 0).size)
+    }
+
+    @Test
     fun `tombol bawah mengalir sesuai lebar papan tulis`() {
         // Papan 600 px, tombol 100 px, jarak 10 px: (600 + 10) / (100 + 10) = 5,5 -> 5 tombol.
         assertEquals(5, GridMath.columnsFor(600, 100, 10))

@@ -86,6 +86,24 @@ def draw_pixel_icon(draw, pattern, cx, cy, size, color):
                                 left + (x + 1) * unit - 1, top + (y + 1) * unit - 1], fill=color)
 
 
+def row_heights(board_height_px, spacing_px, rows):
+    """Salinan GridMath.rowHeightsPx: tinggi tiap baris supaya grid pas setinggi papan."""
+    rows = max(1, min(6, rows))
+    usable = board_height_px - spacing_px * (rows - 1)
+    if usable <= 0:
+        return [1] * rows
+    base = max(1, usable // rows)
+    extra = usable - base * rows
+    return [base + (1 if index < extra else 0) for index in range(rows)]
+
+
+def row_height(board_height_px, spacing_px, rows):
+    """Salinan GridMath.rowHeightPx: tinggi dasar satu baris tombol (dipakai tombol bawah)."""
+    rows = max(1, min(6, rows))
+    usable = max(1, board_height_px - spacing_px * (rows - 1))
+    return max(1, usable // rows)
+
+
 def columns_for(available_width_px, cell_px, spacing_px):
     """Salinan GridMath.columnsFor: berapa tombol muat dalam satu baris."""
     if cell_px <= 0:
@@ -158,6 +176,7 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
     """Panel Penboard: bingkai jendela + bilah judul + papan + grid + bilah tombol bawah."""
     board_h = int(board_height_dp * D)
     cell = cell_size(board_h, PANEL_W, SPACING, MIN_CELL, rows)
+    heights = row_heights(board_h, SPACING, rows)
     grid_w = cell * COLUMNS + SPACING * (COLUMNS - 1)
     board_w = PANEL_W - 2 * PANEL_PADDING - grid_w - SPACING
 
@@ -168,8 +187,9 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
     # berikutnya bila tidak muat selebar papan tulis (GridMath.columnsFor/wrapRows).
     bottom_columns = columns_for(board_w, cell, SPACING) if count else 0
     bottom_rows = wrap_rows(count, bottom_columns) if count else 0
-    bottom_h = bottom_rows * (cell + SPACING) if count else 0
-    grid_h = rows * cell + (rows - 1) * SPACING
+    bottom_h = bottom_rows * (row_height(board_h, SPACING, rows) + SPACING) if count else 0
+    # Grid kanan tepat setinggi papan: sejajar atas dan bawah.
+    grid_h = board_h
     board_stack_h = board_h + bottom_h
     content_h = max(board_stack_h, grid_h)
     panel_h = title_h + content_h + 2 * PANEL_PADDING
@@ -241,31 +261,33 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
                   flash, font=font, fill=alpha((0x0B, 0x0B, 0x0B), 255))
     # tombol bawah: tepat di bawah papan tulis, di dalam bingkai, ukuran = tombol samping
     if count:
+        side_h = row_height(board_h, SPACING, rows)
         for index, action in enumerate(bottom_keys):
             col = index % bottom_columns
             row = index // bottom_columns
             x0 = bl + col * (cell + SPACING)
-            y0 = bt + board_h + SPACING + row * (cell + SPACING)
-            draw.rounded_rectangle([x0, y0, x0 + cell, y0 + cell],
+            y0 = bt + board_h + SPACING + row * (side_h + SPACING)
+            draw.rounded_rectangle([x0, y0, x0 + cell, y0 + side_h],
                                    max(2, int(RADIUS_DP * D * 0.9)),
                                    fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                    outline=alpha(COL_ACCENT, 130), width=1)
-            draw_pixel_icon(draw, PIXEL_ART.get(action), x0 + cell / 2, y0 + cell / 2,
-                            cell * 0.62, COL_TEXT)
+            draw_pixel_icon(draw, PIXEL_ART.get(action), x0 + cell / 2, y0 + side_h / 2,
+                            min(cell, side_h) * 0.62, COL_TEXT)
 
     # tombol samping
     gx = br + SPACING
-    gy = bt + max(0, (content_h - grid_h) // 2)
+    gy = bt
     for index, action in enumerate(keys[: rows * COLUMNS]):
         col, row = index % COLUMNS, index // COLUMNS
+        row_h = heights[row]
         x0 = gx + col * (cell + SPACING)
-        y0 = gy + row * (cell + SPACING)
-        x1, y1 = x0 + cell, y0 + cell
+        y0 = gy + sum(heights[:row]) + row * SPACING
+        x1, y1 = x0 + cell, y0 + row_h
         draw.rounded_rectangle([x0, y0, x1, y1], max(2, int(RADIUS_DP * D * 0.9)),
                                fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                outline=alpha(COL_ACCENT, 130), width=1)
         draw_pixel_icon(draw, PIXEL_ART.get(action), (x0 + x1) / 2, (y0 + y1) / 2,
-                        cell * 0.62, COL_TEXT)
+                        min(cell, row_h) * 0.62, COL_TEXT)
 
     return img
 

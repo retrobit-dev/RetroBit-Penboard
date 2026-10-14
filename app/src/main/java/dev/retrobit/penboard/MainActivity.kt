@@ -303,7 +303,8 @@ class MainActivity : AppCompatActivity() {
                 toast(getString(R.string.msg_minimize_preview))
             }
         }
-        // Tinggi pratinjau mengikuti papan atau grid tombol, mana yang lebih tinggi.
+        // Tinggi pratinjau: papan + bilah atas + tombol bawah. Kolom tombol kanan
+        // tingginya sama dengan papan (sejajar atas & bawah), jadi tidak perlu dihitung.
         val density = resources.displayMetrics.density
         val spacingPx = (GridMath.SPACING_DP * density).toInt()
         val boardHeightPx = (store.config.boardHeightDp * density).toInt()
@@ -314,20 +315,20 @@ class MainActivity : AppCompatActivity() {
             (44 * density).toInt(),
             store.config.gridRows
         )
-        val gridHeightPx = cellPx * store.config.gridRows + spacingPx * (store.config.gridRows - 1)
-        val titleBarPx = if (store.config.windowFrame) (22 * density).toInt() + spacingPx else 0
-        // Tombol bawah: tepat di bawah papan, ukurannya sama dengan tombol samping,
-        // jadi hitungan barisnya memakai rumus yang sama dengan BoardPanel.
+        val barHeightDp = store.config.titleBarHeightDp()
+        val titleBarPx = if (store.config.showsTitleBar) (barHeightDp * density).toInt() + spacingPx else 0
+        // Tombol bawah: tepat di bawah papan dan setinggi tombol samping, jadi hitungannya
+        // memakai rumus yang sama dengan BoardPanel (GridMath.rowHeightPx/columnsFor/wrapRows).
         val panelPaddingPx = (3 * density).toInt()
         val gridWidthPx = cellPx * GridMath.COLUMNS + spacingPx * (GridMath.COLUMNS - 1)
         val boardWidthPx =
             (resources.displayMetrics.widthPixels - 2 * panelPaddingPx - gridWidthPx - spacingPx)
                 .coerceAtLeast(1)
+        val rowHeightPx = GridMath.rowHeightPx(boardHeightPx, spacingPx, store.config.gridRows)
         val bottomColumns = GridMath.columnsFor(boardWidthPx, cellPx, spacingPx)
         val bottomRows = GridMath.wrapRows(store.config.bottomButtonCount, bottomColumns)
-        val bottomBarPx = bottomRows * (cellPx + spacingPx)
-        val previewHeight = maxOf(boardHeightPx + bottomBarPx, gridHeightPx) +
-            titleBarPx + (24 * density).toInt()
+        val bottomBarPx = bottomRows * (rowHeightPx + spacingPx)
+        val previewHeight = boardHeightPx + bottomBarPx + titleBarPx + (24 * density).toInt()
         card.addView(
             panel.root,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)

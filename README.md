@@ -2,7 +2,14 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.2.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.2.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.2.2
+
+- **Tombol samping kanan kini benar-benar sejajar dengan area tulis** — atas dan bawahnya rata. Sebelumnya kolom tombol dipusatkan di tengah sehingga tepinya tidak sama dengan tepi papan.
+- Tinggi tiap baris tombol dihitung ulang supaya **jumlah tinggi baris + jarak antar baris tepat sama dengan tinggi papan** (`GridMath.rowHeightsPx`; sisa pembagian dibagikan ke baris teratas, diuji unit). Jadi tidak ada celah sisa di bawah, juga saat tingginya tidak habis dibagi (mis. 6 baris di papan 242 px).
+- Tombol samping tetap memakai **ikon pixel art** 12 x 12 (bawaan sejak 3.2.0) — sama seperti tombol bawah dan tombol minimize. Kalau di perangkat Anda ikonnya masih bergaris halus, cek kartu **Tampilan → Gaya ikon tombol** dan pilih **Pixel art**.
+- Tombol bawah memakai **tinggi baris yang sama** dengan tombol samping, jadi keduanya benar-benar sebangun.
 
 ## Yang baru di 3.2.1
 
@@ -128,14 +135,19 @@ Versi terbaru: **3.2.1** (lihat [Releases](https://github.com/retrobit-dev/Retro
 +----------------------------------------------+----------------+
 |  PENBOARD                            [ -- ]  |  bilah judul   |
 +----------------------------------------------+----------------+
-|                                              |   [<-] [^] [->] |  baris 1
-|            PAPAN TULIS (kiri)                |   [v] [spasi] [!]|  baris 2
-|      dari tepi kiri sampai ke tombol         |   [x] [A+] [tmr] |  baris 3
-|  [A+][teks][hapus][bersih][batal] [batal]    |   [x2][u] [r]    |  baris 4
-|  ^ tombol bawah, ukurannya sama dengan       |   [x>][tab][wrn] |  baris 5
-|    tombol samping, tepat di bawah papan      |   [tw][pkb][tut] |  baris 6
+|  TEPI ATAS PAPAN = TEPI ATAS TOMBOL          |   [<-] [^] [->] |  baris 1
+|                                              |   [v] [spasi] [!]|  baris 2
+|            PAPAN TULIS (kiri)                |   [x] [A+] [tmr] |  baris 3
+|      dari tepi kiri sampai ke tombol         |   [x2][u] [r]    |  baris 4
+|                                              |   [x>][tab][wrn] |  baris 5
+|  TEPI BAWAH PAPAN = TEPI BAWAH TOMBOL        |   [tw][pkb][tut] |  baris 6
 +----------------------------------------------+----------------+
+|     [A+][enter][hapus][bersih][batal] ...     |  tombol bawah  |
++---------------------------------------------------------------+
 ```
+
+Kolom tombol kanan tingginya **sama persis dengan papan tulis**, dari tepi atas sampai
+tepi bawah, dan tingginya dibagi rata antar baris — jadi terlihat rapi sejajar.
 
 Bilah judul berisi judul jendela + tombol minimize. **Tombol bawah** berada di dalam
 bingkai yang sama, tepat di bawah area menulis, dengan ukuran sama seperti tombol samping;
