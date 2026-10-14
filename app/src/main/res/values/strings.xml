@@ -64,10 +64,14 @@
 
     <!-- Kartu: pratinjau -->
     <string name="card_preview">Pratinjau</string>
-    <string name="card_preview_sub">Tampilannya sama persis dengan yang muncul saat menulis.</string>
+    <string name="card_preview_sub">Tampilannya sama persis dengan yang muncul saat menulis (versi %1$s).</string>
     <string name="preview_key_tap">Tombol %1$s (pratinjau saja).</string>
 
     <!-- Kartu: uji tulis -->
+    <string name="preview_align_wait">Mengukur tata letak…</string>
+    <string name="preview_align_ok">✓ Kolom tombol sejajar area tulis: %1$d px = %2$d px.</string>
+    <string name="preview_align_bad">⚠ Kolom tombol belum sejajar: papan %1$d px, tombol %2$d px.</string>
+    <string name="preview_icon_style">Ikon tombol: %1$s (pixel art = kotak 12 x 12).</string>
     <string name="card_test">Uji tulis</string>
     <string name="card_test_sub">Ketuk kolom ini, lalu pilih keyboard Penboard dan tulis dengan M-Pen.</string>
     <string name="test_hint">Tulis di sini memakai keyboard Penboard...</string>

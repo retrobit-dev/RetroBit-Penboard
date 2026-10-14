@@ -149,6 +149,12 @@ class BoardPanel(private val context: Context) {
             panel,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
+
+        // Jaring pengaman terakhir: berapa pun tinggi papan yang akhirnya terukur
+        // (mis. dipangkas ruang keyboard), kolom tombol langsung disamakan.
+        board.addOnLayoutChangeListener { view, _, top, _, bottom, _, _, _, _ ->
+            syncGridHeight(bottom - top)
+        }
     }
 
     /**
@@ -158,6 +164,32 @@ class BoardPanel(private val context: Context) {
      * Papan dipangkas otomatis supaya bingkai + bilah judul + tombol bawah tidak
      * pernah terpotong di layar kecil.
      */
+    /**
+     * Tinggi kolom tombol yang dipakai terakhir (px), supaya pengaturan ulang tidak
+     * sia-sia ketika tingginya sama.
+     */
+    private var gridHeightPx = 0
+
+    /**
+     * Tinggi papan dan kolom tombol samping (px) **setelah tata letak selesai** —
+     * dipakai halaman pengaturan untuk membuktikan keduanya benar-benar sejajar.
+     */
+    fun measuredHeights(): Pair<Int, Int> = board.height to gridContainer.height
+
+    /**
+     * Paksa kolom tombol setinggi papan yang **terukur** (bukan hanya angka pengaturan).
+     *
+     * Baris tombol memakai `weight`, jadi begitu tinggi kolomnya sama dengan tinggi papan,
+     * baris teratas dan terbawah otomatis rata dengan tepi papan.
+     */
+    private fun syncGridHeight(heightPx: Int) {
+        if (heightPx <= 0 || heightPx == gridHeightPx) return
+        gridHeightPx = heightPx
+        gridContainer.layoutParams = (gridContainer.layoutParams
+            ?: LinearLayout.LayoutParams(0, heightPx)).apply { this.height = heightPx }
+    }
+
+    /** Terapkan seluruh pengaturan ke papan dan tombol. */
     fun applyConfig(config: PenboardConfig, availableHeightPx: Int = 0) {
         val spacing = (GridMath.SPACING_DP * density).toInt()
         val screenWidth = context.resources.displayMetrics.widthPixels
@@ -287,18 +319,21 @@ class BoardPanel(private val context: Context) {
         board.lineColor = config.lineColor
         board.accentColor = config.accentColor
 
-        // Tombol kanan: tinggi tiap baris dibuat pas sehingga seluruh grid setinggi
-        // area tulis (sejajar atas & bawah). Sisa pembagian dibagi ke baris teratas.
+        // Tombol kanan: tinggi tiap baris **dibagi rata dengan weight** sehingga baris
+        // terakhir selalu pas dengan tepi bawah papan (sejajar atas & bawah), berapa pun
+        // tinggi papan yang akhirnya terukur. Tidak ada celah sisa di bawah.
         val rowHeight = GridMath.rowHeightPx(boardHeightPx, spacing, config.gridRows)
-        val rowHeights = GridMath.rowHeightsPx(boardHeightPx, spacing, config.gridRows)
         val defaults = PenboardConfig.defaultGridKeys()
         gridRows.forEachIndexed { rowIndex, row ->
             val shown = config.gridRows > rowIndex
             row.visibility = if (shown) View.VISIBLE else View.GONE
             row.layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                if (shown) rowHeights.getOrElse(rowIndex) { rowHeight } else 0
-            ).apply { topMargin = if (shown && rowIndex > 0) spacing else 0 }
+                0
+            ).apply {
+                weight = if (shown) 1f else 0f
+                topMargin = if (shown && rowIndex > 0) spacing else 0
+            }
         }
         for (index in 0 until PenboardConfig.GRID_SLOTS) {
             val button = buttons[index]
@@ -307,10 +342,9 @@ class BoardPanel(private val context: Context) {
             button.repeatOnHold = key.repeatOnHold
             button.onTap = { listener?.onKey(key, key.action) }
             button.contentDescription = config.labelFor(key)
-            val rowIndex = index / GridMath.COLUMNS
             button.layoutParams = LinearLayout.LayoutParams(
                 cell,
-                rowHeights.getOrElse(rowIndex) { rowHeight }
+                ViewGroup.LayoutParams.MATCH_PARENT
             ).apply {
                 marginStart = if (index % GridMath.COLUMNS == 0) 0 else spacing
             }
@@ -324,6 +358,7 @@ class BoardPanel(private val context: Context) {
             )
             applyIcon(button, config, key, fraction = 0.5f)
         }
+        gridHeightPx = boardHeightPx
         gridContainer.layoutParams = LinearLayout.LayoutParams(
             cell * GridMath.COLUMNS + spacing * (GridMath.COLUMNS - 1),
             boardHeightPx

@@ -286,7 +286,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderPreviewCard() {
-        val card = Ui.card(content, getString(R.string.card_preview), getString(R.string.card_preview_sub))
+        val card = Ui.card(
+            content,
+            getString(R.string.card_preview),
+            getString(R.string.card_preview_sub, appVersion())
+        )
         val panel = previewPanel ?: BoardPanel(this).also { previewPanel = it }
         detach(panel.root)
         panel.listener = object : BoardPanel.Listener {
@@ -334,6 +338,22 @@ class MainActivity : AppCompatActivity() {
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, previewHeight)
         )
         panel.applyConfig(store.config)
+
+        // Bukti terukur: tinggi papan dan tinggi kolom tombol samping harus sama
+        // supaya tombolnya sejajar dengan area tulis di atas dan bawahnya.
+        val align = Ui.statusText(card, getString(R.string.preview_align_wait))
+        Ui.body(card, getString(R.string.preview_icon_style, store.config.iconStyle.label))
+        panel.root.post { updateAlignStatus(align, panel) }
+    }
+
+    /** Tampilkan hasil pengukuran: apakah kolom tombol benar-benar sejajar area tulis. */
+    private fun updateAlignStatus(view: TextView, panel: BoardPanel) {
+        val (boardPx, gridPx) = panel.measuredHeights()
+        view.text = if (gridPx > 0 && boardPx == gridPx) {
+            getString(R.string.preview_align_ok, boardPx, gridPx)
+        } else {
+            getString(R.string.preview_align_bad, boardPx, gridPx)
+        }
     }
 
     private fun renderTestCard() {

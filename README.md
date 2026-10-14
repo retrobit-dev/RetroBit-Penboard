@@ -2,7 +2,13 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.2.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.2.3** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.2.3
+
+- **Penjajaran tombol samping sekarang dikunci oleh tata letak, bukan hitungan angka.** Baris-baris tombol memakai `weight` di dalam kolom yang tingginya **sama dengan tinggi papan**, dan tombol di tiap baris memakai `match_parent`. Artinya berapa pun tinggi papan yang akhirnya terukur (termasuk saat dipangkas ruang keyboard), baris atas selalu rata dengan tepi atas papan dan baris bawah rata dengan tepi bawahnya — tidak ada celah sisa.
+- **Bukti terukur di layar**: kartu *Pratinjau* menampilkan baris seperti *"✓ Kolom tombol sejajar area tulis: 550 px = 550 px"* (dibaca dari tinggi papan dan tinggi kolom tombol yang benar-benar terpasang), plus **gaya ikon yang sedang dipakai**. Kartu itu juga mencantumkan **versi aplikasi**, jadi mudah memastikan APK mana yang terpasang.
+- Bila baris itu menampilkan *⚠ belum sejajar*, angkanya bisa langsung dilaporkan.
 
 ## Yang baru di 3.2.2
 
@@ -147,7 +153,9 @@ Versi terbaru: **3.2.2** (lihat [Releases](https://github.com/retrobit-dev/Retro
 ```
 
 Kolom tombol kanan tingginya **sama persis dengan papan tulis**, dari tepi atas sampai
-tepi bawah, dan tingginya dibagi rata antar baris — jadi terlihat rapi sejajar.
+tepi bawah, dan tingginya dibagi rata antar baris dengan `weight` — jadi terlihat rapi
+sejajar (dijamin tata letak, bukan sekadar hitungan). Kartu *Pratinjau* menampilkan
+angkanya sebagai bukti, mis. *"✓ Kolom tombol sejajar area tulis: 550 px = 550 px"*.
 
 Bilah judul berisi judul jendela + tombol minimize. **Tombol bawah** berada di dalam
 bingkai yang sama, tepat di bawah area menulis, dengan ukuran sama seperti tombol samping;
