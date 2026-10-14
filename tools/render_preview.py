@@ -146,15 +146,22 @@ def draw_board_ink(draw, left, top, right, line_gap):
 
 
 def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
-               title="PENBOARD", bottom_keys=None):
+               title="PENBOARD", bottom_keys=None, frame=True, minimize=True):
+    """Panel Penboard lengkap: bilah judul/mini, papan, grid tombol, dan tombol bawah.
+
+    frame=False -> bingkai dimatikan; bila minimize tetap nyala, yang digambar hanya
+    bilah kecil berisi tombol minimize (persis seperti BoardPanel di aplikasi).
+    """
     bottom_keys = BOTTOM_KEYS if bottom_keys is None else bottom_keys
+    show_bar = frame or minimize
+    title = title if frame else None
     """Panel Penboard: bingkai jendela + bilah judul + papan + grid + bilah tombol bawah."""
     board_h = int(board_height_dp * D)
     cell = cell_size(board_h, PANEL_W, SPACING, MIN_CELL, rows)
     grid_w = cell * COLUMNS + SPACING * (COLUMNS - 1)
     board_w = PANEL_W - 2 * PANEL_PADDING - grid_w - SPACING
 
-    title_h = int(22 * D) if title else 0
+    title_h = int((22 if frame else 18) * D) if show_bar else 0
     bottom_keys = bottom_keys or []
     count = len(bottom_keys)
     # Tombol bawah: ukurannya sama dengan tombol samping (cell), mengalir ke baris
@@ -173,25 +180,28 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
 
     draw.rounded_rectangle([0, 0, PANEL_W - 1, panel_h - 1], radius,
                            fill=alpha(COL_PANEL, 255 * PANEL_OPACITY),
-                           outline=alpha(COL_ACCENT, 190), width=2)
+                           outline=alpha(COL_ACCENT, 190 if frame else 120),
+                           width=2 if frame else 1)
     draw_scanlines(img, (0, 0, PANEL_W - 1, panel_h - 1), radius, COL_ACCENT)
 
-    # bilah judul jendela + garis pemisah
+    # bilah judul jendela (bingkai) + garis pemisah; tanpa bingkai hanya tombol minimize
     if title_h:
-        draw.rectangle([1, 1, PANEL_W - 2, 1 + title_h + PANEL_PADDING],
-                       fill=alpha(COL_ACCENT, 30))
-        draw.line([(1, 2 + title_h + PANEL_PADDING), (PANEL_W - 2, 2 + title_h + PANEL_PADDING)],
-                  fill=alpha(COL_ACCENT, 150), width=1)
-        draw.text((PANEL_PADDING + 4, PANEL_PADDING + (title_h - 12 * D) / 2), title,
-                  font=ImageFont.truetype(FONT_BOLD, int(10 * D)), fill=alpha(COL_ACCENT, 230))
-        # tombol minimize (pixel art) di kanan bilah judul
-        ms = int(18 * D)
-        mx1, my0 = PANEL_W - PANEL_PADDING - 2, PANEL_PADDING + 1
-        draw.rounded_rectangle([mx1 - ms, my0, mx1, my0 + ms], int(RADIUS_DP * D * 0.6),
-                               fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
-                               outline=alpha(COL_ACCENT, 170), width=1)
-        draw_pixel_icon(draw, PIXEL_ART.get("MINIMIZE"), mx1 - ms / 2, my0 + ms / 2,
-                        ms * 0.66, COL_TEXT)
+        if frame:
+            draw.rectangle([1, 1, PANEL_W - 2, 1 + title_h + PANEL_PADDING],
+                           fill=alpha(COL_ACCENT, 30))
+            draw.line([(1, 2 + title_h + PANEL_PADDING), (PANEL_W - 2, 2 + title_h + PANEL_PADDING)],
+                      fill=alpha(COL_ACCENT, 150), width=1)
+            draw.text((PANEL_PADDING + 4, PANEL_PADDING + (title_h - 12 * D) / 2), title,
+                      font=ImageFont.truetype(FONT_BOLD, int(10 * D)), fill=alpha(COL_ACCENT, 230))
+        if minimize:
+            ms = int((18 if frame else 18) * D)
+            mx1 = PANEL_W - PANEL_PADDING - 2
+            my0 = PANEL_PADDING + (1 if frame else 0)
+            draw.rounded_rectangle([mx1 - ms, my0, mx1, my0 + ms], int(RADIUS_DP * D * 0.6),
+                                   fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
+                                   outline=alpha(COL_ACCENT, 170), width=1)
+            draw_pixel_icon(draw, PIXEL_ART.get("MINIMIZE"), mx1 - ms / 2, my0 + ms / 2,
+                            ms * 0.66, COL_TEXT)
 
     bl = PANEL_PADDING
     bt = PANEL_PADDING + title_h + (SPACING if title_h else 0)
@@ -285,6 +295,9 @@ def main():
         ("3. Keyboard Penboard tampil di atas aplikasi lain",
          "papan tulis menempel sebagai keyboard di aplikasi apa pun",
          "ime"),
+        ("4. Bingkai jendela dimatikan - tombol minimize tetap ada",
+         "bilah kecil 18 dp di kanan atas papan (Pengaturan > Jendela papan)",
+         ("plain", draw_panel(3, 176, DEFAULT_KEYS, frame=False))),
     ]
     heights = [header]
     for _, _, item in panels:

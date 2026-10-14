@@ -161,7 +161,9 @@ class BoardPanel(private val context: Context) {
         val screenWidth = context.resources.displayMetrics.widthPixels
         val panelPadding = (3 * density).toInt()
         val minCell = (44 * density).toInt()
-        val titleBarHeight = if (config.windowFrame) (22 * density).toInt() else 0
+        // Bingkai jendela -> bilah judul; bingkai mati tapi minimize nyala -> bilah kecil.
+        val titleBarHeight = (config.titleBarHeightDp() * density).toInt()
+        val showTitleBar = config.showsTitleBar
         val minBoardHeightPx = (PenboardConfig.MIN_BOARD_HEIGHT_DP * density).toInt()
 
         val requestedBoardHeightPx = (config.boardHeightDp * density).toInt()
@@ -187,7 +189,7 @@ class BoardPanel(private val context: Context) {
                 0
             }
             val fixed = 2 * panelPadding +
-                (if (config.windowFrame) titleBarHeight + spacing else 0) +
+                (if (showTitleBar) titleBarHeight + spacing else 0) +
                 bottomBlock
             GridMath.fitBoardHeightPx(
                 requestedBoardHeightPx,
@@ -217,6 +219,8 @@ class BoardPanel(private val context: Context) {
             if (config.windowFrame) 190 else 120
         )
         panelBackground.borderWidthPx = if (config.windowFrame) 1.5f * density else 1f
+        // Bilah judul hanya digambar bila bingkai jendela menyala; bilah kecil minimize
+        // sengaja dibiarkan polos supaya panel tetap terlihat "tanpa bingkai".
         panelBackground.titleBarHeightPx =
             if (config.windowFrame) (titleBarHeight + panelPadding).toFloat() else 0f
         panelBackground.titleBarColor = BoardView.withAlpha(config.accentColor, 30)
@@ -225,20 +229,20 @@ class BoardPanel(private val context: Context) {
         panelBackground.lineSpacingPx = 3f * density
         panel.background = panelBackground
 
-        // ---------------------------------------------------------- bilah judul jendela
-        titleBar.visibility = if (config.windowFrame) View.VISIBLE else View.GONE
+        // ---------------------------------------------------------- bilah judul / bilah kecil
+        titleBar.visibility = if (showTitleBar) View.VISIBLE else View.GONE
         titleBar.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             titleBarHeight
-        ).apply { bottomMargin = if (config.windowFrame) spacing else 0 }
+        ).apply { bottomMargin = if (showTitleBar) spacing else 0 }
+        titleLabel.visibility = if (config.windowFrame) View.VISIBLE else View.GONE
         titleLabel.text = config.effectiveWindowTitle
         titleLabel.setTextColor(
             BoardView.withAlpha(config.accentColor, (config.buttonOpacity * 255 / 100).coerceIn(60, 255))
         )
 
         val minimizeSide = (18 * density).toInt()
-        minimize.visibility =
-            if (config.windowFrame && config.minimizeButton) View.VISIBLE else View.GONE
+        minimize.visibility = if (config.minimizeButton) View.VISIBLE else View.GONE
         minimize.repeatOnHold = false
         minimize.layoutParams = LinearLayout.LayoutParams(minimizeSide, minimizeSide)
         minimize.style(

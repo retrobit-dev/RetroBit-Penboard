@@ -248,6 +248,20 @@ data class PenboardConfig(
     val effectiveWindowTitle: String
         get() = windowTitle.trim().ifBlank { DEFAULT_WINDOW_TITLE }.take(MAX_WINDOW_TITLE)
 
+    /**
+     * Apakah baris atas papan perlu tampil: bilah judul penuh ([windowFrame]), atau
+     * **bilah kecil** berisi tombol minimize saja saat bingkai dimatikan.
+     */
+    val showsTitleBar: Boolean
+        get() = windowFrame || minimizeButton
+
+    /** Tinggi baris atas papan (dp); 0 berarti tidak ada. */
+    fun titleBarHeightDp(): Int = when {
+        windowFrame -> TITLE_BAR_DP
+        minimizeButton -> MINI_BAR_DP
+        else -> 0
+    }
+
     fun toJson(): JSONObject = JSONObject().apply {
         put("schemaVersion", schemaVersion)
         put("boardHeightDp", boardHeightDp)
@@ -356,6 +370,10 @@ data class PenboardConfig(
         const val MAX_BOTTOM_KEYS = 8
         const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
         const val DEFAULT_BOTTOM_KEYS = 5
+
+        /** Tinggi bilah judul jendela (dp) dan bilah kecil minimize tanpa bingkai. */
+        const val TITLE_BAR_DP = 22
+        const val MINI_BAR_DP = 18
 
         /** Bingkai jendela: judul bawaan & panjang maksimumnya. */
         const val DEFAULT_WINDOW_TITLE = "PENBOARD"

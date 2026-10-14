@@ -19,7 +19,7 @@
     <string name="setting_window_title">Judul jendela</string>
     <string name="setting_window_title_hint">PENBOARD</string>
     <string name="action_minimize">Sembunyikan papan</string>
-    <string name="window_note">Bilah judul tidak ikut menutupi tulisan: tingginya 22 dp dan digambar di dalam bingkai panel.</string>
+    <string name="window_note">Bilah judul tidak ikut menutupi tulisan: tingginya 22 dp dan digambar di dalam bingkai panel. Bila bingkainya dimatikan, tombol minimize tetap tersedia sebagai bilah kecil (18 dp) di kanan atas papan.</string>
     <string name="msg_minimize_preview">Papan disembunyikan — di pratinjau ini hanya simulasi.</string>
 
     <!-- Kartu: bilah tombol bawah (pixel art) -->

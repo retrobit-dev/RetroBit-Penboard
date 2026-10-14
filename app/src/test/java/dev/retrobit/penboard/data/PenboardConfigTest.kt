@@ -381,6 +381,24 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `tombol minimize tetap tersedia walau bingkai dimatikan`() {
+        val frameOn = PenboardConfig()
+        assertTrue(frameOn.showsTitleBar)
+        assertEquals(PenboardConfig.TITLE_BAR_DP, frameOn.titleBarHeightDp())
+
+        // Bingkai mati, minimize nyala -> bilah kecil setinggi MINI_BAR_DP.
+        val mini = PenboardConfig(windowFrame = false, minimizeButton = true)
+        assertTrue(mini.showsTitleBar)
+        assertEquals(PenboardConfig.MINI_BAR_DP, mini.titleBarHeightDp())
+        assertTrue(PenboardConfig.MINI_BAR_DP < PenboardConfig.TITLE_BAR_DP)
+
+        // Keduanya mati -> tidak ada baris atas sama sekali.
+        val none = PenboardConfig(windowFrame = false, minimizeButton = false)
+        assertFalse(none.showsTitleBar)
+        assertEquals(0, none.titleBarHeightDp())
+    }
+
+    @Test
     fun `judul jendela dipangkas dan kosong memakai bawaan`() {
         val blank = PenboardConfig(windowTitle = "   ").sanitized()
         assertEquals(PenboardConfig.DEFAULT_WINDOW_TITLE, blank.effectiveWindowTitle)
