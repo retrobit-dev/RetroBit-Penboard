@@ -17,6 +17,9 @@ import dev.retrobit.penboard.data.PenboardConfig
  *   papan menampilkan kilasan hasilnya.
  * - **Manual**: tombol "Teks" atau tombol samping pena.
  * - Tulisan dianggap satu kata, lalu satu spasi ditambahkan untuk kata berikutnya.
+ * - **Baris tulisan = posisi teks**: bila [PenboardConfig.lineOffsetEnabled] menyala,
+ *   menulis di baris pertama memasukkan teks di posisi kursor, baris kedua satu baris di
+ *   bawah kursor (seperti menekan enter sekali), baris ketiga dua baris di bawahnya, dst.
  * - Bila mesin pengenalan bawaan tidak tersedia (mis. perangkat Huawei tanpa
  *   Google Play services), host diberi tahu lewat [onUnavailable] supaya bisa
  *   mengalihkan pengguna ke keyboard tulisan tangan perangkat.
@@ -25,8 +28,12 @@ class HandwritingInput(
     private val context: Context,
     private val board: BoardView,
     private val config: () -> PenboardConfig,
-    /** Kirim teks ke kolom isian; kembalikan true bila teks benar-benar terkirim. */
-    private val commit: (String) -> Boolean,
+    /**
+     * Kirim teks ke kolom isian; kembalikan true bila teks benar-benar terkirim.
+     * [newlines] = berapa enter yang harus dikirim lebih dulu supaya teks muncul di
+     * baris yang ditulis di papan (0 = di posisi kursor).
+     */
+    private val commit: (String, Int) -> Boolean,
     private val notify: (String) -> Unit,
     /** Teks yang sudah ada sebelum kursor (membantu mesin memilih kata). */
     private val preContext: () -> String? = { null },
@@ -100,6 +107,9 @@ class HandwritingInput(
             return
         }
         val raw = board.contentStrokes()
+        // Baris tempat pengguna menulis menentukan posisi teks (bila fiturnya menyala):
+        // baris 1 = di kursor, baris 2 = satu baris di bawah, baris 3 = dua baris di bawah.
+        val newlines = if (current.lineOffsetEnabled) board.newlineOffsetForInk(raw) else 0
         // Beberapa versi tinta (ukuran berbeda) dicoba berurutan oleh mesin bila
         // percobaan sebelumnya tidak menghasilkan teks sama sekali.
         val variants = InkNormalizer.variants(raw, board.lineGapPx)
@@ -122,7 +132,7 @@ class HandwritingInput(
             onDownloading = { notify(context.getString(R.string.msg_model_downloading_auto)) }
         ) { text, failure ->
             busy = false
-            handleResult(text, failure, current, clearAfter, announce, language)
+            handleResult(text, failure, current, clearAfter, announce, language, newlines)
         }
     }
 
@@ -139,14 +149,17 @@ class HandwritingInput(
         current: PenboardConfig,
         clearAfter: Boolean?,
         announce: Boolean,
-        language: String
+        language: String,
+        newlines: Int
     ) {
         if (RecognitionText.isMeaningful(text)) {
             val prepared = RecognitionText.prepare(text, current.autoSpace)
-            val delivered = commit(prepared)
+            val delivered = commit(prepared, newlines)
             if (delivered) {
-                // Papan memberi tahu apa yang baru saja masuk ke kolom isian.
-                board.showFlash("\u2713 " + prepared.trim())
+                // Papan memberi tahu apa yang baru saja masuk ke kolom isian, sekaligus
+                // berapa baris teks itu turun dari kursor (tanda enter).
+                val marker = if (newlines > 0) "\u21b5".repeat(newlines) + " " else ""
+                board.showFlash(marker + "\u2713 " + prepared.trim())
                 if (clearAfter ?: current.clearAfterRecognize) board.clear()
             }
             return

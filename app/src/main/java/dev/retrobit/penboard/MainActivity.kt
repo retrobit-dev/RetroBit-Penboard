@@ -349,6 +349,12 @@ class MainActivity : AppCompatActivity() {
         val square = Ui.statusText(card, getString(R.string.preview_square_wait))
         val align = Ui.statusText(card, getString(R.string.preview_align_wait))
         Ui.body(card, getString(R.string.preview_cell_style, store.config.iconStyle.label))
+        Ui.body(
+            card,
+            getString(
+                if (store.config.lineOffsetEnabled) R.string.preview_line_on else R.string.preview_line_off
+            )
+        )
         panel.root.post { updatePreviewStatus(square, align, panel) }
     }
 
@@ -421,6 +427,13 @@ class MainActivity : AppCompatActivity() {
     private fun renderBoardCard() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_board), getString(R.string.card_board_sub))
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_line_offset),
+            getString(R.string.setting_line_offset_sub),
+            config.lineOffsetEnabled
+        ) { value -> store.update { it.copy(lineOffsetEnabled = value) } }
+        Ui.body(card, getString(R.string.line_offset_note))
         Ui.sliderRow(
             card, getString(R.string.setting_board_height), config.boardHeightDp,
             PenboardConfig.MIN_BOARD_HEIGHT_DP, PenboardConfig.MAX_BOARD_HEIGHT_DP, "dp"

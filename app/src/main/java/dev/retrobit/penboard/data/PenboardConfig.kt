@@ -164,6 +164,12 @@ data class PenboardConfig(
 
     // Pengenalan tulisan
     val autoRecognize: Boolean = true,
+
+    /**
+     * Baris tempat menulis menentukan posisi teks: baris pertama = di posisi kursor,
+     * baris kedua = satu enter (satu baris di bawah kursor), baris ketiga = dua enter.
+     */
+    val lineOffsetEnabled: Boolean = true,
     val autoRecognizeDelayMs: Int = 2000,
     val autoSpace: Boolean = true,
     val clearAfterRecognize: Boolean = true,
@@ -324,6 +330,7 @@ data class PenboardConfig(
         put("haptics", haptics)
         put("scanlines", scanlines)
         put("autoRecognize", autoRecognize)
+        put("lineOffsetEnabled", lineOffsetEnabled)
         put("autoRecognizeDelayMs", autoRecognizeDelayMs)
         put("autoSpace", autoSpace)
         put("clearAfterRecognize", clearAfterRecognize)
@@ -568,6 +575,7 @@ data class PenboardConfig(
                 haptics = json.optBoolean("haptics", base.haptics),
                 scanlines = json.optBoolean("scanlines", base.scanlines),
                 autoRecognize = json.optBoolean("autoRecognize", base.autoRecognize),
+                lineOffsetEnabled = json.optBoolean("lineOffsetEnabled", base.lineOffsetEnabled),
                 autoRecognizeDelayMs = json.optInt("autoRecognizeDelayMs", base.autoRecognizeDelayMs),
                 autoSpace = json.optBoolean("autoSpace", base.autoSpace),
                 clearAfterRecognize = json.optBoolean("clearAfterRecognize", base.clearAfterRecognize),

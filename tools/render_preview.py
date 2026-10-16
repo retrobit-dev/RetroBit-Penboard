@@ -195,9 +195,9 @@ def draw_scanlines(img, box, radius, color, spacing=4, a=26):
     img.paste(layer, (0, 0), Image.composite(layer.split()[3], Image.new("L", img.size, 0), mask))
 
 
-def draw_board_ink(draw, left, top, right, line_gap):
-    """Contoh tulisan tangan pada baris pertama papan."""
-    base = top + line_gap - line_gap * 0.28
+def draw_board_ink(draw, left, top, right, line_gap, line_index=0):
+    """Contoh tulisan tangan pada baris ke-[line_index] (0 = baris pertama)."""
+    base = top + line_gap * (line_index + 1) - line_gap * 0.28
     u = (right - left) / 12.0
     ink = alpha(COL_INK, 235)
 
@@ -237,7 +237,8 @@ def panel_geometry(rows, board_height_dp, columns=3, cell_dp=0, panel_width=None
 
 def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
                title="PENBOARD", bottom_keys=None, frame=True, minimize=True,
-               columns=3, cell_dp=0, panel_width=None, widths=None, marks=None):
+               columns=3, cell_dp=0, panel_width=None, widths=None, marks=None,
+               ink_line=0):
     """Panel Penboard lengkap: bilah judul, papan tulis, kolom tombol persegi, tombol bawah.
 
     frame=False -> bingkai dimatikan; bila minimize tetap nyala, yang digambar hanya
@@ -292,18 +293,24 @@ def draw_panel(rows, board_height_dp, keys, flash=None, pending=None,
     # garis panduan titik-titik
     line_gap = 48 * D if board_h >= 200 * D else 40 * D
     inset = 3 * D
+    number_font = ImageFont.truetype(FONT_PATH, max(9, int(line_gap * 0.30)))
     y = bt + line_gap
+    number = 1
     while y < bb - 4:
         x = bl + inset
         while x < br - inset:
             draw.line([(x, y), (min(x + 2, br - inset), y)], fill=alpha(COL_LINE, 150), width=1)
             x += 7
+        # nomor baris: 1 = teks di posisi kursor, 2 = satu enter, 3 = dua enter
+        draw.text((bl + inset + 2, y - line_gap * 0.5 - line_gap * 0.15),
+                  str(number), font=number_font, fill=alpha(COL_ACCENT, 120))
         y += line_gap
+        number += 1
     # sudut kiri papan rata (edgeToEdge)
     draw.rectangle([bl, bt, bl + radius, bt + radius], fill=alpha(COL_PAPER, 255 * BOARD_OPACITY))
     draw.rectangle([bl, bb - radius, bl + radius, bb], fill=alpha(COL_PAPER, 255 * BOARD_OPACITY))
     if flash:
-        draw_board_ink(draw, bl, bt, br, line_gap)
+        draw_board_ink(draw, bl, bt, br, line_gap, ink_line)
     # bilah tunggu input otomatis
     if pending is not None:
         bar = max(2, int(3 * D))
@@ -408,6 +415,7 @@ def main():
     moved = draw_panel(3, 176, DEFAULT_KEYS, cell_dp=40, panel_width=int(PANEL_W * 0.68),
                        marks=("drag", "corner"), bottom_keys=BOTTOM_KEYS[:3])
     ime = draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
+    second_line = draw_panel(3, 176, DEFAULT_KEYS, flash="\u2713 kata", ink_line=1)
 
     pad = 40
     width = PANEL_W + pad * 2
@@ -431,11 +439,14 @@ def main():
         ("6. Bingkai jendela dimatikan - tombol minimize tetap ada",
          "bilah kecil 18 dp di kanan atas papan (Pengaturan > Jendela papan)",
          ("plain", stretched)),
+        ("7. Menulis di baris ke-2 = teks masuk satu baris di bawah kursor",
+         "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
+         ("field2", second_line)),
     ]
     heights = [header]
     for _, _, (kind, item) in panels:
-        if kind == "field":
-            heights.append(52 + item.height + 60)
+        if kind in ("field", "field2"):
+            heights.append(70 + item.height + 60)
         elif kind == "ime":
             heights.append(APP_MOCK_H + item.height + 60)
         elif kind == "screen":
@@ -444,9 +455,9 @@ def main():
             heights.append(item.height + 60)
     canvas = Image.new("RGBA", (width, sum(heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.3.0 - papan tulis M-Pen yang bisa dipindah & diubah ukurannya",
+    draw.text((pad, 18), "Penboard 3.4.0 - baris tulisan = posisi teks di kolom isian",
               font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "tombol samping persegi (kolom x baris bebas) + tombol bawah setinggi tombol samping",
+    draw.text((pad, 42), "baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter (nomor tercetak di tepi papan)",
               font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
 
     y = header
@@ -456,14 +467,23 @@ def main():
             block = screen_with_panel(img, PANEL_W - img.width - 18, 70, int(176 * D) + 150)
             canvas.alpha_composite(block, (pad, y))
             y += block.height + 34
-        elif kind == "field":
-            strip = Image.new("RGBA", (PANEL_W, 52 + img.height), (0x1A, 0x1A, 0x1A, 255))
+        elif kind in ("field", "field2"):
+            box_h = 44 if kind == "field" else 62
+            strip = Image.new("RGBA", (PANEL_W, box_h + 8 + img.height), (0x1A, 0x1A, 0x1A, 255))
             sd = ImageDraw.Draw(strip)
-            sd.rounded_rectangle([8, 8, PANEL_W - 8, 44], 8, fill=(0x2A, 0x2A, 0x2A, 255),
+            sd.rounded_rectangle([8, 8, PANEL_W - 8, 8 + box_h], 8, fill=(0x2A, 0x2A, 0x2A, 255),
                                  outline=alpha(COL_ACCENT, 60), width=1)
-            sd.text((24, 18), "Halo, aku menulis dengan M-Pen...", font=LABEL_FONT,
-                    fill=alpha(COL_ACCENT, 230))
-            strip.alpha_composite(img, (0, 52))
+            if kind == "field":
+                sd.text((24, 18), "Halo, aku menulis dengan M-Pen...", font=LABEL_FONT,
+                        fill=alpha(COL_ACCENT, 230))
+            else:
+                # kursor berada di baris pertama; kata dari baris ke-2 papan mendarat di bawahnya
+                sd.text((24, 18), "Halo, aku menulis dengan M-Pen", font=LABEL_FONT,
+                        fill=alpha(COL_ACCENT, 230))
+                sd.line([(PANEL_W - 40, 18), (PANEL_W - 40, 36)], fill=alpha(COL_ACCENT, 200), width=2)
+                sd.text((24, 40), "kata\u21b5 di baris berikutnya", font=LABEL_FONT,
+                        fill=alpha(COL_ACCENT, 150))
+            strip.alpha_composite(img, (0, box_h + 8))
             canvas.alpha_composite(strip, (pad, y))
             y += strip.height + 34
         elif kind == "ime":

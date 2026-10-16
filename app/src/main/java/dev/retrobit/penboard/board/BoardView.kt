@@ -62,6 +62,10 @@ class BoardView @JvmOverloads constructor(
         strokeWidth = density
     }
     private val flashPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val lineNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.MONOSPACE
+        textAlign = Paint.Align.LEFT
+    }
     private val backgroundDrawable = GradientDrawable()
     private val flashBox = RectF()
 
@@ -73,6 +77,13 @@ class BoardView @JvmOverloads constructor(
         }
 
     var showLines: Boolean = true
+
+    /**
+     * Cetak nomor baris kecil di tepi kiri papan (hanya terlihat bila garis panduan
+     * menyala). Nomor ini yang dipakai pengguna untuk memilih posisi teks: baris 1 =
+     * di kursor, baris 2 = satu baris di bawah, dan seterusnya.
+     */
+    var lineNumbers: Boolean = false
 
     /** Garis panduan digambar putus-putus halus (bagian dari tema ePaper). */
     var dotLines: Boolean = true
@@ -151,6 +162,31 @@ class BoardView @JvmOverloads constructor(
 
     /** Salinan goresan untuk pengenalan tulisan. */
     fun contentStrokes(): List<Stroke> = strokes.toList()
+
+    /** Jumlah baris panduan yang muat di papan (paling sedikit satu). */
+    val lineCount: Int get() = BoardMath.lineCount(height, lineGapPx)
+
+    /**
+     * Berapa enter yang perlu dikirim supaya teks muncul di baris yang ditulis:
+     * baris pertama = 0 (di posisi kursor), baris kedua = 1, baris ketiga = 2, dst.
+     * Barisnya dibaca dari nilai tengah goresan supaya ekor huruf tidak menyesatkan.
+     */
+    fun newlineOffsetForInk(strokes: List<Stroke> = contentStrokes()): Int {
+        var count = 0
+        for (stroke in strokes) count += stroke.size
+        if (count <= 0) return 0
+        val values = FloatArray(count)
+        var index = 0
+        for (stroke in strokes) {
+            for (point in stroke.points) {
+                values[index] = point.y
+                index++
+            }
+        }
+        val median = BoardMath.medianY(values)
+        val line = BoardMath.lineIndexOf(median, lineGapPx, lineCount)
+        return BoardMath.newlineOffset(line)
+    }
 
     fun undo(): Boolean {
         if (strokes.isEmpty()) return false
@@ -295,10 +331,19 @@ class BoardView @JvmOverloads constructor(
         }
         val left = if (edgeToEdge) 0f else insetH
         val right = if (edgeToEdge) width.toFloat() else width - insetH
+        lineNumberPaint.textSize = (lineGapPx * 0.30f).coerceIn(7f * density, 14f * density)
+        lineNumberPaint.color = withAlpha(accentColor, 120)
         var y = lineGapPx
+        var number = 1
         while (y < height - 1f) {
             canvas.drawLine(left, y, right, y, linePaint)
+            if (lineNumbers) {
+                // Nomor barisnya: 1 = teks di kursor, 2 = satu baris di bawah, dst.
+                val baseline = y - lineGapPx * 0.5f + lineNumberPaint.textSize * 0.36f
+                canvas.drawText(number.toString(), left + 3f * density, baseline, lineNumberPaint)
+            }
             y += lineGapPx
+            number++
         }
     }
 

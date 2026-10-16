@@ -79,6 +79,8 @@
     <string name="preview_align_wait">Mengukur tata letak…</string>
     <string name="preview_align_ok">✓ Kolom tombol sejajar area tulis: %1$d px = %2$d px.</string>
     <string name="preview_align_bad">⚠ Kolom tombol belum sejajar: papan %1$d px, tombol %2$d px.</string>
+    <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter.</string>
+    <string name="preview_line_off">Baris tulisan tidak menggeser teks: hasil tulisan selalu masuk di posisi kursor.</string>
     <string name="preview_cell_style">Ikon tombol: %1$s (pixel art = kotak 12 x 12).</string>
     <string name="preview_square_wait">Menghitung ukuran tombol…</string>
     <string name="preview_square_ok">✓ Tombol persegi %1$d px: %2$d kolom x %3$d baris.</string>
@@ -107,6 +109,10 @@
     <string name="setting_allow_finger_sub">Matikan bila hanya ingin menulis dengan stylus.</string>
     <string name="setting_haptics">Getaran</string>
     <string name="setting_haptics_sub">Getar saat papan atau tombol ditekan.</string>
+    <string name="setting_line_offset">Posisi teks mengikuti baris tulisan</string>
+    <string name="setting_line_offset_sub">Menulis di baris pertama → teks masuk di posisi kursor. Baris kedua → satu baris di bawah kursor (seperti menekan enter). Baris ketiga → dua baris di bawah kursor, dan seterusnya.</string>
+    <string name="line_offset_note">Nomor baris tercetak tipis di tepi kiri papan supaya mudah dilihat: 1, 2, 3, … Di kolom isian yang hanya satu baris, enter dilewati (kolomnya tidak bisa menerimanya) dan teksnya tetap dikirim.</string>
+
     <string name="setting_pen_buttons">Tombol samping pena</string>
     <string name="setting_pen_button_primary">Tombol samping (klik)</string>
     <string name="setting_pen_button_secondary">Tombol samping (tahan/kedua)</string>

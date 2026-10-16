@@ -2,7 +2,27 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.3.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.4.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.4.0
+
+- **Baris tempat menulis menentukan posisi teks di kolom isian.** Menulis di **baris pertama**
+  papan → teks masuk **tepat di posisi kursor**. Menulis di **baris kedua** → satu baris **di
+  bawah** kursor (sama seperti menekan **enter sekali**). Menulis di **baris ketiga** → dua
+  baris di bawah kursor (seperti **enter dua kali**), dan seterusnya. Bisa dimatikan di
+  *Papan tulis → Posisi teks mengikuti baris tulisan*.
+- Barisnya dibaca dari **nilai tengah (`median`) semua titik goresan**, bukan dari ekor huruf —
+  jadi huruf seperti "g" atau "y" yang turun ke baris berikutnya tidak salah menaikkan posisi
+  (`BoardMath.medianY` + `BoardMath.lineIndexOf`, diuji unit).
+- **Nomor baris tercetak tipis di tepi kiri papan** (1, 2, 3, …) supaya kelihatan baris mana yang
+  sedang dipakai; nomornya ikut hilang bila *garis panduan* dimatikan.
+- Agar tidak membingungkan, **enter hanya dikirim ke kolom isian yang memang bisa multi-baris**.
+  Di kolom satu baris (mis. kotak pencarian), baris tulisan tidak menggeser apa pun dan teksnya
+  tetap dikirim seperti biasa.
+- Lencana hasil di papan ikut menyebut posisinya: `↵ ✓ kata` berarti teks itu turun satu baris
+  dari kursor.
+- Batas percobaan aman: paling banyak 8 baris (`BoardMath.MAX_LINE_OFFSET`) supaya goresan nyasar
+  tidak mengirim deretan enter panjang.
 
 ## Yang baru di 3.3.0
 
@@ -155,11 +175,12 @@ Versi terbaru: **3.3.0** (lihat [Releases](https://github.com/retrobit-dev/Retro
 
 1. Pasang APK, buka Penboard, ikuti **panduan 3 langkah** di halaman utama.
 2. Tulis satu kata dengan M-Pen. Begitu tidak ada goresan baru selama **2 detik**, tulisan otomatis menjadi teks + satu spasi, jadi kata berikutnya tinggal ditulis.
-3. Butuh memindahkan kursor atau menambah spasi/enter? Pakai tombol ikon di kanan papan.
-4. Ingin memaksa jadi teks sekarang? Ketuk tombol ikon **"A + percikan"** (Teks), atau tekan **tombol samping M-Pen**.
-5. Mau layar lega? Ketuk tombol **minimize** (garis mendatar) di kanan bilah judul jendela — papan langsung disembunyikan.
-6. Papan menutupi bagian yang ingin dilihat? **Tarik bilah judulnya** untuk memindahkan, atau **tarik sudut kanan bawahnya** untuk mengubah lebar dan tingginya.
-7. Ingin menulis di atas aplikasi lain? Penboard sudah keyboard: panelnya menempel di atas aplikasi apa pun yang sedang dipakai. Mau pindah ke tulisan tangan Huawei dan kembali? Ketuk tombol ikon **papan tombol kecil** (pemilih keyboard).
+3. Mau teksnya masuk di **baris berikutnya**? Tulis saja di **baris kedua** papan (paling banyak 8 baris). Nomor baris tercetak di tepi kiri papan.
+4. Butuh memindahkan kursor atau menambah spasi/enter? Pakai tombol ikon di kanan papan.
+5. Ingin memaksa jadi teks sekarang? Ketuk tombol ikon **"A + percikan"** (Teks), atau tekan **tombol samping M-Pen**.
+6. Mau layar lega? Ketuk tombol **minimize** (garis mendatar) di kanan bilah judul jendela — papan langsung disembunyikan.
+7. Papan menutupi bagian yang ingin dilihat? **Tarik bilah judulnya** untuk memindahkan, atau **tarik sudut kanan bawahnya** untuk mengubah lebar dan tingginya.
+8. Ingin menulis di atas aplikasi lain? Penboard sudah keyboard: panelnya menempel di atas aplikasi apa pun yang sedang dipakai. Mau pindah ke tulisan tangan Huawei dan kembali? Ketuk tombol ikon **papan tombol kecil** (pemilih keyboard).
 
 ## Susunan papan
 
@@ -188,6 +209,11 @@ terakhir, berapa pun ukuran tombolnya. Kartu *Pratinjau* menampilkan angkanya se
 mis. *"✓ Tombol persegi 108 px: 3 kolom x 3 baris"* dan *"✓ Kolom tombol sejajar area tulis:
 550 px = 550 px"*. Tarikan pada bilah judul (pindah) dan sudut kanan bawah (ubah ukuran) juga
 bisa dicoba langsung di kartu itu; angkanya diatur di kartu *Jendela papan*.
+
+**Baris tulisan = posisi teks.** Baris panduan papan bernomor (1, 2, 3, …) dan nomor itu
+menentukan posisi hasil tulisan: baris 1 = di posisi kursor, baris 2 = satu enter (satu baris
+di bawah kursor), baris 3 = dua enter, sampai 8 baris. Di kolom isian satu baris, enter
+dilewati. Bisa dimatikan di pengaturan papan.
 
 Bilah judul berisi judul jendela + tombol minimize, dan dipakai sebagai **pegangan untuk
 memindahkan papan**. **Tombol bawah** berada di dalam bingkai yang sama, tepat di bawah area
@@ -238,7 +264,7 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 
 | Bagian | Isi |
 | --- | --- |
-| Papan tulis | tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan, ketebalan ikut tekanan stylus, izinkan jari, getaran |
+| Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
 | Area tombol | **jumlah kolom 1–6** dan **jumlah baris 1–6** (sampai 36 tombol), jumlah tombol tampil, **ukuran sisi tombol** (otomatis atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |

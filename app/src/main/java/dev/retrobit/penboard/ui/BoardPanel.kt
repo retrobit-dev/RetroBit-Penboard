@@ -352,6 +352,7 @@ class BoardPanel(private val context: Context) {
         board.allowFinger = config.allowFinger
         board.pressureEnabled = config.pressureEnabled
         board.showLines = config.showLines
+        board.lineNumbers = config.lineOffsetEnabled
         board.dotLines = config.scanlines
         board.haptics = config.haptics
         board.edgeToEdge = true

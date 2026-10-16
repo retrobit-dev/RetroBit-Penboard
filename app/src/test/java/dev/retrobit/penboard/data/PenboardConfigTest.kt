@@ -108,6 +108,26 @@ class PenboardConfigTest {
     }
 
     @Test
+    fun `baris tulisan menentukan posisi teks dan tersimpan bolak-balik`() {
+        // Bawaan: menyala, jadi baris tulisan langsung dipakai sebagai posisi teks.
+        assertTrue(PenboardConfig().lineOffsetEnabled)
+
+        // Bisa dimatikan, dan pilihannya ikut tersimpan.
+        val off = PenboardConfig(lineOffsetEnabled = false)
+        val restored = PenboardConfig.fromJson(JSONObject(off.toJson().toString()))
+        assertFalse(restored.lineOffsetEnabled)
+
+        // Berkas pengaturan lama (tanpa bidang ini) tetap menyala seperti bawaan.
+        assertTrue(PenboardConfig.fromJson(JSONObject("{\"gridRows\":2}")).lineOffsetEnabled)
+    }
+
+    @Test
+    fun `preset HiWrite tidak mengubah posisi teks`() {
+        val preset = PenboardConfig(lineOffsetEnabled = false).withHiWritePreset()
+        assertFalse(preset.lineOffsetEnabled)
+    }
+
+    @Test
     fun `ukuran tombol persegi dan papan bisa diatur`() {
         // Ukuran tombol: 0 (otomatis) atau 32-160 dp; selebihnya dipangkas.
         assertEquals(0, PenboardConfig(gridCellDp = 0).sanitized().gridCellDp)

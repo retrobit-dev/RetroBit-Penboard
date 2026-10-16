@@ -3,6 +3,7 @@ package dev.retrobit.penboard.ime
 import android.inputmethodservice.InputMethodService
 import android.view.KeyEvent
 import android.view.View
+import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import dev.retrobit.penboard.R
@@ -72,7 +73,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             context = this,
             board = created.board,
             config = { store.config },
-            commit = { text -> commitText(text) },
+            commit = { text, newlines -> commitRecognized(text, newlines) },
             notify = { message -> toast(message) },
             // Huruf yang sudah ada sebelum kursor: membantu mesin memilih kata.
             preContext = {
@@ -294,6 +295,30 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     private fun contextMenu(id: Int) {
         val connection = currentInputConnection ?: return
         connection.performContextMenuAction(id)
+    }
+
+    /**
+     * Kirim hasil tulisan ke kolom isian. Bila pengguna menulis di baris kedua papan,
+     * satu enter dikirim lebih dulu supaya teksnya mendarat satu baris di bawah kursor;
+     * baris ketiga = dua enter, dan seterusnya ([BoardView.newlineOffsetForInk]).
+     *
+     * Di kolom isian yang hanya satu baris, enter dilewati (kolomnya tidak bisa
+     * menerimanya) dan teksnya tetap dikirim seperti biasa.
+     */
+    private fun commitRecognized(text: String, newlines: Int): Boolean {
+        val connection = currentInputConnection ?: return false
+        if (newlines > 0 && acceptsNewlines()) {
+            connection.commitText("\n".repeat(newlines), 1)
+        }
+        connection.commitText(text, 1)
+        return true
+    }
+
+    /** Kolom isian yang hanya satu baris tidak bisa menerima enter (mis. kotak pencarian). */
+    private fun acceptsNewlines(): Boolean {
+        val type = currentInputEditorInfo?.inputType ?: return true
+        if ((type and InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) return false
+        return (type and InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0
     }
 
     private fun commitText(text: String): Boolean {

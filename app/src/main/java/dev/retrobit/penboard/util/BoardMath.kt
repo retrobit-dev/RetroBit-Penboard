@@ -27,6 +27,38 @@ object BoardMath {
     }
 
     /**
+     * Berapa kali "enter" dipakai supaya teks muncul di baris tempat pengguna menulis.
+     *
+     * Baris pertama (indeks 0) = teks masuk **di posisi kursor**, baris kedua = **1 enter**
+     * (satu baris di bawah kursor), baris ketiga = **2 enter**, dan seterusnya.
+     * Dibatasi [maxOffset] supaya tulisan nyasar tidak mengirim deretan enter panjang.
+     */
+    fun newlineOffset(lineIndex: Int, maxOffset: Int = MAX_LINE_OFFSET): Int =
+        lineIndex.coerceIn(0, maxOffset.coerceAtLeast(0))
+
+    /**
+     * Nilai tengah (median) dari kumpulan koordinat y goresan.
+     *
+     * Median dipakai karena ia tidak terpengaruh ekor goresan panjang (mis. ekor huruf
+     * di baris paling bawah), jadi baris tempat pengguna menulis bisa ditebak stabil.
+     * Larik kosong dianggap 0.
+     */
+    fun medianY(values: FloatArray): Float {
+        if (values.isEmpty()) return 0f
+        val sorted = values.copyOf()
+        sorted.sort()
+        val middle = sorted.size / 2
+        return if (sorted.size % 2 == 1) {
+            sorted[middle]
+        } else {
+            (sorted[middle - 1] + sorted[middle]) / 2f
+        }
+    }
+
+    /** Batas jumlah baris yang bisa digeser oleh baris tulisan. */
+    const val MAX_LINE_OFFSET = 8
+
+    /**
      * Faktor ketebalan goresan dari tekanan stylus (0..1).
      * Dibatasi 0,75x sampai 1,25x supaya goresan tetap terbaca mesin pengenalan:
      * terlalu tipis atau terlalu tebal membuat tulisan sulit dikenali.
