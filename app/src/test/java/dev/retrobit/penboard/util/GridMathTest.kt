@@ -180,16 +180,22 @@ class GridMathTest {
             listOf(listOf(0, 1, 2, 3, 4)),
             GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 600, 10)
         )
-        // Papan sempit 250 px: tiga tombol pertama tampil, dua sisanya tidak
-        // (tidak ada baris kedua — sisa ruang dibiarkan kosong).
+        // Papan sempit 250 px: 100 + 10 + 100 = 210 muat; tombol ketiga butuh 320,
+        // jadi hanya dua yang tampil (tidak ada baris kedua — sisa ruang kosong).
         assertEquals(
-            listOf(listOf(0, 1, 2)),
+            listOf(listOf(0, 1)),
             GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 250, 10)
         )
-        // Tombol berlebar 2x: hanya dua yang muat, tombol ketiga tidak ditampilkan.
+        // Tombol berlebar 2x tidak muat setelah dua tombol 1x: hanya dua yang tampil.
         assertEquals(
             listOf(listOf(0, 1)),
             GridMath.bottomRowIndexes(3, 100, listOf(1f, 1f, 2f), 250, 10)
+        )
+        // Bila tombol pertama sendiri sudah lebih lebar dari papan, tetap ditampilkan
+        // supaya barisnya tidak kosong.
+        assertEquals(
+            listOf(listOf(0)),
+            GridMath.bottomRowIndexes(2, 300, List(2) { 1f }, 250, 10)
         )
         // Tanpa tombol: tidak ada baris sama sekali; selain itu selalu tepat 1 baris.
         assertEquals(0, GridMath.bottomRows(0, 100, emptyList(), 600, 10))
