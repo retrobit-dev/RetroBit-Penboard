@@ -241,7 +241,6 @@ object GridMath {
             .coerceAtLeast(1)
 
     /**
-    /**
      * Jarak kiri tiap tombol bawah pada **satu baris** supaya baris itu memenuhi
      * seluruh lebar panel (tombol tetap sebesar yang dipilih; sisa ruang dibagi rata
      * menjadi jarak antar tombol).
