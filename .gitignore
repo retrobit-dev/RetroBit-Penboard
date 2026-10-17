@@ -7,3 +7,7 @@
 keystore.properties
 *.keystore
 *.jks
+
+# Berkas sementara Python (render pratinjau)
+__pycache__/
+*.pyc
