@@ -184,16 +184,6 @@ def max_cell_by_width(usable_width, board_width, columns, spacing_px=0):
     return max(1, (room - spacing_px * (columns - 1)) // columns)
 
 
-def bottom_row_gaps(widths, available_width, spacing_px=0):
-    """Salinan GridMath.bottomRowGaps: sisa lebar dibagi rata antar tombol."""
-    if not widths:
-        return []
-    used = sum(widths) + spacing_px * (len(widths) - 1)
-    gaps = len(widths) - 1
-    extra = max(0, available_width - used) // gaps if gaps > 0 else 0
-    return [0 if index == 0 else spacing_px + extra for index in range(len(widths))]
-
-
 def cell_size(board_height, available_width, spacing_px=0, min_cell_px=0, rows=3,
               columns=3, cell_dp=0, density=1.0, min_board_width_px=0):
     """Salinan GridMath.cellSizePx: tombol persegi, dibatasi tinggi & lebar."""
@@ -436,8 +426,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
         row_h = geo["bottom_rows"][row_index]
         row_widths = [button_width_px(cell, widths[index] if widths and index < len(widths) else 1.0)
                       for index in indexes]
-        # Jarak memakai lebar isi panel (sama dengan BoardPanel), bukan lebar papan.
-        gaps = bottom_row_gaps(row_widths, panel_w - 2 * PANEL_PADDING, SPACING)
+        # Tombol bersebelahan dengan jarak tetap, sama seperti tombol samping (rata kiri).
         x_cursor = bl
         for position, index in enumerate(indexes):
             action = bottom_keys[index]
@@ -450,7 +439,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
                                    outline=alpha(COL_ACCENT, 130), width=1)
             draw_pixel_icon(draw, PIXEL_ART.get(action), x_cursor + width / 2, y0 + height / 2,
                             min(width, height) * 0.62, COL_TEXT)
-            x_cursor += width + (gaps[position + 1] if position + 1 < len(gaps) else SPACING)
+            x_cursor += width + SPACING
         y_row += row_h + SPACING
 
     # tombol samping: semuanya persegi (sisi = cell)
@@ -526,7 +515,7 @@ def main():
     longer = draw_panel(5, DEFAULT_KEYS)
     ime = draw_panel(3, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
     second_line = draw_panel(3, DEFAULT_KEYS, flash="\u2713 kata", ink_line=1)
-    many_bottom = draw_panel(3, DEFAULT_KEYS, bottom_keys=(BOTTOM_KEYS * 4)[:12])
+    many_bottom = draw_panel(3, DEFAULT_KEYS, bottom_keys=(BOTTOM_KEYS * 3)[:5])
     five_rows = draw_panel(3, DEFAULT_KEYS, rows=5)
 
     pad = 40
@@ -557,8 +546,8 @@ def main():
         ("8. Baris ke-2 = teks satu baris di bawah kursor",
          "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
          ("field2", second_line)),
-        ("9. Tombol atas sampai 16, tiap baris selebar papan",
-         "sisa ruang dibagi rata; tombol yang tidak muat turun ke baris berikutnya",
+        ("9. Tombol atas maksimal 5, rata kiri",
+         "jarak antar tombol sama seperti tombol samping; tidak dilebarkan",
          ("plain", many_bottom)),
         ("10. Kolom tombol 3 x 5 - area tulis tetap 3 baris",
          "baris tombol bisa mengikuti area tulis atau diatur sendiri 1-6",
@@ -578,9 +567,9 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.2 - baris tombol samping diatur sendiri",
+    draw.text((pad, 18), "Penboard 3.5.3 - tombol atas maks 5, jarak seragam",
               font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "ukuran otomatis = tinggi satu baris tulisan; kolom tombol rata atas",
+    draw.text((pad, 42), "tombol atas rata kiri; jaraknya sama dengan tombol samping",
               font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
 
     y = header

@@ -240,30 +240,6 @@ object GridMath {
             .roundToInt()
             .coerceAtLeast(1)
 
-    /**
-     * Jarak kiri tiap tombol bawah pada **satu baris** supaya baris itu memenuhi
-     * seluruh lebar panel (tombol tetap sebesar yang dipilih; sisa ruang dibagi rata
-     * menjadi jarak antar tombol).
-     *
-     * Indeks pertama selalu 0 (menempel di tepi kiri). Baris berisi satu tombol tidak
-     * punya sisa ruang untuk dibagi, jadi tombolnya tetap di kiri.
-     */
-    fun bottomRowGaps(
-        widthsPx: List<Int>,
-        availableWidthPx: Int,
-        spacingPx: Int = 0
-    ): List<Int> {
-        if (widthsPx.isEmpty()) return emptyList()
-        val used = widthsPx.sum() + spacingPx * (widthsPx.size - 1)
-        val gaps = widthsPx.size - 1
-        val extra = if (gaps > 0) {
-            (availableWidthPx - used).coerceAtLeast(0) / gaps
-        } else {
-            0
-        }
-        return widthsPx.mapIndexed { index, _ -> if (index == 0) 0 else spacingPx + extra }
-    }
-
     /** Tinggi tiap baris tombol bawah: baris setinggi tombol tertinggi di baris itu
      * (tombolnya sendiri dipusatkan secara vertikal saat dipasang).
      */

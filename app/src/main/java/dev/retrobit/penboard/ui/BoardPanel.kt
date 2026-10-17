@@ -30,8 +30,8 @@ import kotlin.math.roundToInt
  * - Di atas papan ada **bingkai jendela**: bilah judul (bisa ditarik untuk memindah
  *   papan) dengan tombol minimize, dan **sudut kanan bawah** bisa ditarik untuk
  *   mengubah lebar papan sekaligus ukuran tombolnya.
- * - Di atas papan ada **bilah tombol atas** (dulu "tombol bawah"): jumlahnya sampai 16,
- *   barisnya memenuhi lebar papan, dan ukurannya mengikuti tombol samping.
+ * - Di atas papan ada **bilah tombol atas** (dulu "tombol bawah"): maksimal 5, rata
+ *   kiri dengan jarak yang sama seperti tombol samping, ukurannya mengikuti tombol samping.
  * - Ikon tombol mengikuti [PenboardConfig.iconStyle] (pixel art atau vektor).
  */
 class BoardPanel(private val context: Context) {
@@ -296,7 +296,7 @@ class BoardPanel(private val context: Context) {
         var bottomRows: List<List<Int>> = emptyList()
         var bottomRowHeights: List<Int> = emptyList()
         // 1 = sesuai pilihan pengguna. Hanya mengecil bila panel benar-benar tidak muat
-        // (mis. 16 tombol bawah dengan ukuran tombol manual yang besar).
+        // (mis. 5 tombol atas dengan ukuran tombol manual yang besar).
         var bottomScale = 1f
         fun barCell(): Int = (cell * bottomScale).roundToInt().coerceAtLeast(1)
         fun layoutBottom() {
@@ -607,18 +607,13 @@ class BoardPanel(private val context: Context) {
                 // Tombol berukuran berbeda tetap sejajar di tengah barisnya.
                 gravity = Gravity.CENTER_VERTICAL
             }
-            // Baris memenuhi lebar papan: sisa ruang dibagi rata menjadi jarak antar
-            // tombol, jadi tidak ada lagi celah kosong di ujung kanan.
-            val gaps = GridMath.bottomRowGaps(
-                indexes.map { index -> GridMath.buttonWidthPx(side, bottomMultiplier(config, index)) },
-                availableWidth,
-                spacing
-            )
+            // Tombol bersebelahan dengan jarak yang **sama seperti tombol samping**,
+            // rata kiri: tidak ada jarak yang dilebarkan untuk memenuhi lebar papan.
             for ((position, index) in indexes.withIndex()) {
                 val key = config.bottomKeys.getOrNull(index)
                     ?: defaults.getOrElse(index) { defaults.last() }
                 row.addView(
-                    buildBottomButton(config, key, side, gaps.getOrElse(position) { spacing }, index)
+                    buildBottomButton(config, key, side, if (position == 0) 0 else spacing, index)
                 )
             }
             bottomContainer.addView(

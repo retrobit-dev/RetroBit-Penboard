@@ -489,11 +489,12 @@ data class PenboardConfig(
         const val MAX_GRID_KEYS = GRID_SLOTS
 
         /**
-         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai 16 tombol.
-         * Barisnya memenuhi lebar papan; tombol yang tidak muat turun ke baris berikutnya.
+         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai **5 tombol**.
+         * Semuanya bersebelahan dengan jarak yang sama seperti tombol samping dan
+         * rata kiri; tombol yang tidak muat turun ke baris berikutnya.
          */
         const val MIN_BOTTOM_KEYS = 0
-        const val MAX_BOTTOM_KEYS = 16
+        const val MAX_BOTTOM_KEYS = 5
         const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
         const val DEFAULT_BOTTOM_KEYS = 5
 
@@ -527,8 +528,8 @@ data class PenboardConfig(
          * keyboard konvensional, lalu tombol papan tulis.
          */
         /**
-         * Bilah **bawah papan** bawaan: aksi papan tulis yang paling sering dipakai,
-         * digambar dengan ikon pixel art ([dev.retrobit.penboard.util.PixelArt]).
+         * Bilah **atas papan** bawaan (maksimal 5): aksi papan tulis yang paling sering
+         * dipakai, digambar dengan ikon pixel art ([dev.retrobit.penboard.util.PixelArt]).
          */
         fun defaultBottomKeys(): List<KeyDef> = listOf(
             KeyDef(KeyAction.RECOGNIZE),
@@ -537,10 +538,7 @@ data class PenboardConfig(
             KeyDef(KeyAction.ENTER),
             KeyDef(KeyAction.DELETE_STROKE),
             KeyDef(KeyAction.CLEAR),
-            KeyDef(KeyAction.UNDO),
-            KeyDef(KeyAction.REDO),
-            KeyDef(KeyAction.CYCLE_PEN),
-            KeyDef(KeyAction.HIDE)
+            KeyDef(KeyAction.UNDO)
         )
 
         fun defaultGridKeys(): List<KeyDef> = listOf(

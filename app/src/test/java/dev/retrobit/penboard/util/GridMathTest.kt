@@ -1,5 +1,6 @@
 package dev.retrobit.penboard.util
 
+import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.PenboardConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -294,24 +295,15 @@ class GridMathTest {
     }
 
     @Test
-    fun `baris tombol atas memenuhi lebar papan`() {
-        // Tiga tombol 100 px + dua jarak 6 px = 312; sisa 168 dibagi dua = 84 per jarak.
-        assertEquals(listOf(0, 90, 90), GridMath.bottomRowGaps(listOf(100, 100, 100), 480, 6))
-        // Baris yang sudah penuh tetap memakai jarak dasar.
-        assertEquals(listOf(0, 6, 6), GridMath.bottomRowGaps(listOf(100, 100, 100), 312, 6))
-        // Satu tombol tidak punya ruang untuk dibagi; baris kosong tidak menghasilkan apa-apa.
-        assertEquals(listOf(0), GridMath.bottomRowGaps(listOf(100), 480, 6))
-        assertEquals(emptyList<Int>(), GridMath.bottomRowGaps(emptyList(), 480, 6))
-        // Lebar baris setelah dibagi = lebar panel.
-        val widths = listOf(70, 130, 70)
-        val gaps = GridMath.bottomRowGaps(widths, 540, 4)
-        assertEquals(540, widths.sum() + gaps.sum())
-    }
-
-    @Test
-    fun `bilah atas memuat sampai enam belas tombol`() {
-        assertEquals(16, PenboardConfig.MAX_BOTTOM_KEYS)
-        assertEquals(16, PenboardConfig.BOTTOM_SLOTS)
+    fun `tombol atas maksimal lima dan rata kiri`() {
+        // Batas jumlah tombol atas: 0-5.
+        assertEquals(5, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(5, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(5, PenboardConfig.defaultBottomKeys().size)
+        // Semua tombol bawaan benar-benar bekerja (bukan TEXT kosong).
+        PenboardConfig.defaultBottomKeys().forEach { key ->
+            assertTrue(!(key.action == KeyAction.TEXT && key.text.isBlank()))
+        }
     }
 
     @Test

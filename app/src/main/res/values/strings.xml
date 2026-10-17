@@ -32,7 +32,7 @@
 
     <!-- Kartu: bilah tombol atas (pixel art) -->
     <string name="card_bottom">Tombol atas (pixel art)</string>
-    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Sampai 16 tombol; setiap baris otomatis memenuhi lebar papan. Tinggi dan lebarnya bisa diatur sendiri per tombol.</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Maksimal <b>5 tombol</b>, rata kiri dan bersebelahan dengan jarak yang sama seperti tombol samping. Tinggi dan lebarnya bisa diatur sendiri per tombol.</string>
     <string name="setting_bottom_show">Tampilkan bilah tombol atas</string>
     <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
     <string name="setting_bottom_count">Jumlah tombol atas</string>
@@ -41,7 +41,7 @@
     <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
     <string name="action_bottom_default">Kembalikan bilah tombol atas</string>
     <string name="bottom_slot_title">Tombol atas %1$d</string>
-    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis. Jumlahnya sampai 16; setiap baris otomatis memenuhi lebar papan (sisa ruang dibagi rata), dan tombol yang tidak muat turun ke baris berikutnya. Ukuran dasarnya mengikuti tombol samping, tetapi lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya. Ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
+    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis. Jumlahnya maksimal 5, rata kiri dan bersebelahan dengan jarak yang sama seperti tombol samping (bukan dilebarkan memenuhi papan); bila tidak muat, tombolnya turun ke baris berikutnya. Ukuran dasarnya mengikuti tombol samping, tetapi lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya. Ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
