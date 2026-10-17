@@ -2,7 +2,24 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.4.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.0
+
+- **Area tulis 3 baris secara bawaan.** Tinggi papan = jumlah baris x jarak baris, jadi 3 baris
+  = 3 x jarak baris panduan. Barisnya bisa ditambah (sampai 6) di *Papan tulis → Jumlah baris
+  area tulis*; tinggi papan ikut menyesuaikan.
+- **Baris tombol samping selalu sama dengan baris area tulis.** Tidak ada lagi pengaturan baris
+  tombol yang terpisah: 3 baris tulisan = 3 baris tombol, 6 baris tulisan = 6 baris tombol.
+- **Tombol samping sejajar atas saja.** Kolom tombol dirata-ataskan dengan tepi atas area tulis;
+  kalau ukurannya lebih kecil dari papan, bagian bawahnya boleh kosong (tidak dipaksa penuh).
+- **Tombol bawah dipindah ke ATAS area tulis**, masih di dalam bingkai jendela, tepat di bawah
+  bilah judul.
+- **Semua tombol bisa diatur ukurannya**: sisi tombol samping (otomatis atau 32–160 dp), serta
+  **lebar dan tinggi tiap tombol bawah** (0,6x–4x lebar, 0,6x–2x tinggi dari ukuran tombol
+  samping). Ikon menyesuaikan ukuran tombolnya.
+- Jarak baris dipangkas otomatis bila ruang keyboard tidak cukup untuk semua baris area tulis,
+  dan ukuran tombol otomatis dibatasi sisa ruang itu — tidak ada yang terpotong.
 
 ## Yang baru di 3.4.1
 
@@ -208,25 +225,28 @@ Versi terbaru: **3.4.1** (lihat [Releases](https://github.com/retrobit-dev/Retro
 +-----------------------------------------------------+-----------------+
 |  PENBOARD                               [<-->] [ - ]| tarik = pindah  |
 +-----------------------------------------------------+-----------------+
+|  [A+][enter][hapus][bersih][batal][undo]...          |  tombol bawah   |
++-----------------------------------------------------+-----------------+
 |  TEPI ATAS PAPAN = TEPI ATAS TOMBOL        |  [<-]  |  [^]  |  [->]  |   baris 1
 |                                            | (kotak | (kotak| (kotak |           <- sisi tombol
 |            PAPAN TULIS (kiri)              |  sama) |  sama)|  sama) |   baris 2   = panjang
-|      lebarnya = lebar papan - kolom tombol |  [v]   | [spasi]| [enter]|   baris 3   = lebar
-|                                            |  [x]   | [A+]  | [tmr]  |   baris 4
-|  TEPI BAWAH PAPAN = TEPI BAWAH TOMBOL      |  [x2]  | [u]   | [r]    |   baris 5
+|      lebarnya = isi panel - kolom tombol   |  [v]   | [spasi]| [enter]|   baris 3   = lebar
+|      tingginya = 3 baris (bawaan)          |  [x]   | [A+]  | [tmr]  |   baris 4
+|                                            |        |       |        |   (bila ditambah)
 +-----------------------------------------------------+-----------------+
-|   [A+][enter][hapus][bersih][batal][undo]...         |  tombol bawah   |
-+---------------------------------------------------------------------------+
         sudut kanan bawah = tarik untuk mengubah lebar & tinggi papan
 ```
 
-Kolom tombol kanan tingginya **sama persis dengan papan tulis** dan tombolnya **persegi**
-(`baris x sisi tombol + jarak antar baris = tinggi papan`, `GridMath.boardHeightPx`) — jadi
-tepi atas papan selalu rata dengan baris pertama dan tepi bawahnya rata dengan baris
-terakhir, berapa pun ukuran tombolnya. Kartu *Pratinjau* menampilkan angkanya sebagai bukti,
-mis. *"✓ Tombol persegi 108 px: 3 kolom x 3 baris"* dan *"✓ Kolom tombol sejajar area tulis:
-550 px = 550 px"*. Tarikan pada bilah judul (pindah) dan sudut kanan bawah (ubah ukuran) juga
-bisa dicoba langsung di kartu itu; angkanya diatur di kartu *Jendela papan*.
+
+Kolom tombol kanan **rata atas** dengan area tulis, dan **jumlah barisnya sama** dengan baris
+area tulis. Tombolnya **persegi**; tingginya = sisi tombol (bisa otomatis = jarak baris, atau
+disetel 32–160 dp), jadi kalau ukurannya lebih kecil dari jarak baris, kolom tombol berhenti di
+tengah papan — memang begitu yang diminta (sejajar atas saja).
+
+Kartu *Pratinjau* menampilkan bukti terukur, mis. *"✓ Tombol persegi 108 px: 3 kolom x 3 baris"*
+dan *"✓ Baris tombol samping = baris area tulis: 3 = 3 (rata atas)"*. Tarikan pada bilah judul
+(pindah) dan sudut kanan bawah (ubah ukuran) juga bisa dicoba langsung di kartu itu; angkanya
+diatur di kartu *Jendela papan*.
 
 **Baris tulisan = posisi teks.** Baris panduan papan bernomor (1, 2, 3, …) dan nomor itu
 menentukan posisi hasil tulisan: baris 1 = di posisi kursor, baris 2 = satu enter (satu baris
@@ -234,18 +254,22 @@ di bawah kursor), baris 3 = dua enter, sampai 8 baris. Di kolom isian satu baris
 dilewati. Bisa dimatikan di pengaturan papan.
 
 Bilah judul berisi judul jendela + tombol minimize, dan dipakai sebagai **pegangan untuk
-memindahkan papan**. **Tombol bawah** berada di dalam bingkai yang sama, tepat di bawah area
-menulis, dengan **tinggi sama seperti tombol samping** dan lebar yang bisa diatur per tombol;
-isinya bebas diatur (lihat **Pengaturan yang tersedia**).
+memindahkan papan**. **Tombol bawah** berada di dalam bingkai yang sama, **di atas area
+menulis** (tepat di bawah bilah judul); ukuran dasarnya mengikuti tombol samping, tetapi
+**lebar dan tinggi tiap tombol bisa diatur sendiri**; isinya bebas diatur (lihat
+**Pengaturan yang tersedia**).
 
 Tinggi papan menyesuaikan ruang yang disediakan keyboard: kalau layar tidak cukup untuk
-bingkai + bilah judul + tombol bawah, papan & ukuran tombolnya dipangkas otomatis (papan
-setidaknya 120 dp) supaya tidak ada bagian yang terpotong.
+bingkai + bilah judul + tombol bawah + semua baris tulisan, **jarak baris dan ukuran tombol
+dipangkas otomatis** (jarak baris tidak pernah di bawah 1 px) supaya tidak ada bagian yang
+terpotong.
 
 - **Papan tulis** memakai lebar sebanyak mungkin di kiri (sampai menyentuh tombol), dan
   melebar/menyempit mengikuti **Lebar papan** atau tarikan sudut.
-- **Area tombol**: 1–6 kolom dan 1–6 baris (diatur pengguna), sampai **36 tombol persegi**.
-- **Ukuran tombol**: otomatis (dari tinggi papan & lebar tersedia) atau disetel sendiri 32–160 dp.
+- **Area tulis**: 1–6 baris (bawaan **3**), tinggi = baris x jarak baris.
+- **Area tombol**: kolom 1–6, **baris selalu = baris area tulis** (sampai 36 tombol persegi).
+- **Ukuran tombol**: samping otomatis (sisi = jarak baris) atau 32–160 dp; bawah punya
+  pengali lebar (1x–4x) dan tinggi (0,6x–2x) sendiri.
 - Setiap tombol bebas dipilih aksinya dan bisa diberi label sendiri.
 
 ## Daftar tombol (ikon)
@@ -282,13 +306,13 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 
 | Bagian | Isi |
 | --- | --- |
-| Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), tinggi papan, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
-| Area tombol | **jumlah kolom 1–6** dan **jumlah baris 1–6** (sampai 36 tombol), jumlah tombol tampil, **ukuran sisi tombol** (otomatis atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
+| Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), **jumlah baris area tulis 1–6 (bawaan 3)**, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
+| Area tombol | **jumlah kolom 1–6** (barisnya otomatis = baris area tulis), jumlah tombol tampil, **ukuran sisi tombol** (otomatis atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off (tetap ada sebagai bilah kecil bila bingkainya dimatikan), judul jendela (bawaan `PENBOARD`), **papan bisa dipindah / diangkat** (tarik bilah judul), **lebar papan 45–100 %** (atau tarik sudut kanan bawah) |
-| Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang + **lebar 1x–4x tinggi tombol samping** tiap tombol (tingginya selalu = tombol samping, di dalam bingkai tepat di bawah area menulis), kembali ke bawaan (A+, enter, hapus goresan, bersihkan papan, batal) |
+| Tombol bawah | tampil/tidak, **jumlah 0–8**, aksi + label + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan (A+, enter, hapus goresan, bersihkan papan, batal) |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

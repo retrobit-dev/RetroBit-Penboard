@@ -105,6 +105,61 @@ class GridMathTest {
     }
 
     @Test
+    fun `baris area tulis menentukan tinggi papan`() {
+        // Satu baris = satu jarak baris. Bawaan 3 baris, 48 px per baris = 144 px.
+        assertEquals(3, GridMath.DEFAULT_LINES)
+        assertEquals(144, GridMath.boardHeightForLines(3, 48))
+        assertEquals(48, GridMath.boardHeightForLines(1, 48))
+        assertEquals(288, GridMath.boardHeightForLines(6, 48))
+        // Nilai liar tetap aman.
+        assertEquals(48, GridMath.boardHeightForLines(0, 48))
+        assertEquals(288, GridMath.boardHeightForLines(99, 48))
+        assertEquals(3, GridMath.boardHeightForLines(3, 0))
+    }
+
+    @Test
+    fun `jarak baris dipangkas bila ruang keyboard tidak cukup`() {
+        // Ruang 600 px, fixed 150 px, 3 baris -> sisa 150 px per baris; diminta 80 px.
+        assertEquals(80, GridMath.fitLineGapPx(80, 600, 3, 150))
+        // Ruang sempit: 300 px, fixed 150 px, 3 baris -> 50 px per baris.
+        assertEquals(50, GridMath.fitLineGapPx(80, 300, 3, 150))
+        // Tidak pernah nol atau negatif.
+        assertTrue(GridMath.fitLineGapPx(80, 100, 3, 150) >= 1)
+        assertTrue(GridMath.fitLineGapPx(80, 0, 3, 150) >= 1)
+        // Tinggi belum diketahui: jarak yang diminta dipakai apa adanya.
+        assertEquals(80, GridMath.fitLineGapPx(80, 0, 3, 0))
+    }
+
+    @Test
+    fun `tinggi tombol bawah punya pengali sendiri`() {
+        // Tinggi dasar = sisi tombol samping (80 px).
+        assertEquals(80, GridMath.buttonHeightPx(80, 1f))
+        assertEquals(120, GridMath.buttonHeightPx(80, 1.5f))
+        assertEquals(48, GridMath.buttonHeightPx(80, 0.6f))
+        // Di luar rentang ditarik ke 0,6x-2x.
+        assertEquals(48, GridMath.buttonHeightPx(80, 0.1f))
+        assertEquals(160, GridMath.buttonHeightPx(80, 9f))
+        assertTrue(GridMath.buttonHeightPx(1, 0.6f) >= 1)
+    }
+
+    @Test
+    fun `baris tombol bawah setinggi tombol tertinggi di barisnya`() {
+        val rows = listOf(listOf(0, 1), listOf(2))
+        // Tombol ke-1 dua kali lebih tinggi: baris pertama ikut setinggi itu.
+        assertEquals(listOf(160, 80), GridMath.bottomRowHeights(rows, 80, listOf(1f, 2f, 1f)))
+        // Tanpa tombol: tidak ada baris dan tidak ada tinggi.
+        assertEquals(emptyList<Int>(), GridMath.bottomRowHeights(emptyList(), 80, emptyList()))
+    }
+
+    @Test
+    fun `tinggi bilah tombol bawah menjumlahkan barisnya`() {
+        assertEquals(0, GridMath.bottomBarHeightPx(emptyList(), 6))
+        assertEquals(80, GridMath.bottomBarHeightPx(listOf(80), 6))
+        // Dua baris: 80 + 6 (jarak) + 120.
+        assertEquals(206, GridMath.bottomBarHeightPx(listOf(80, 120), 6))
+    }
+
+    @Test
     fun `lebar tombol bawah mengikuti pengali`() {
         // Tinggi tombol samping 80 px; lebar = tinggi x pengali.
         assertEquals(80, GridMath.buttonWidthPx(80, 1f))

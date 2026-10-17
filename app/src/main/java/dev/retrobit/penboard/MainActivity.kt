@@ -351,9 +351,11 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.preview_cell_style, store.config.iconStyle.label))
         Ui.body(
             card,
-            getString(
-                if (store.config.lineOffsetEnabled) R.string.preview_line_on else R.string.preview_line_off
-            )
+            if (store.config.lineOffsetEnabled) {
+                getString(R.string.preview_line_on, store.config.gridRows)
+            } else {
+                getString(R.string.preview_line_off)
+            }
         )
         panel.root.post { updatePreviewStatus(square, align, panel) }
     }
@@ -384,10 +386,12 @@ class MainActivity : AppCompatActivity() {
                         )
                     )
                 } else {
+                    // Tinggi papan = baris x jarak baris, jadi tarikan vertikal
+                    // mengubah jarak baris (dan ukuran tombolnya ikut menyesuaikan).
                     next.copy(
-                        boardHeightDp = (next.boardHeightDp + delta).coerceIn(
-                            PenboardConfig.MIN_BOARD_HEIGHT_DP,
-                            PenboardConfig.MAX_BOARD_HEIGHT_DP
+                        lineGapDp = (next.lineGapDp + delta).coerceIn(
+                            PenboardConfig.MIN_LINE_GAP_DP,
+                            PenboardConfig.MAX_LINE_GAP_DP
                         )
                     )
                 }
@@ -406,11 +410,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             getString(R.string.preview_square_bad)
         }
-        val (boardPx, gridPx) = panel.measuredHeights()
-        align.text = if (gridPx > 0 && boardPx == gridPx) {
-            getString(R.string.preview_align_ok, boardPx, gridPx)
+        val (gridRows, boardRows) = panel.measuredRows()
+        align.text = if (gridRows > 0 && gridRows == boardRows) {
+            getString(R.string.preview_align_ok, gridRows, boardRows)
         } else {
-            getString(R.string.preview_align_bad, boardPx, gridPx)
+            getString(R.string.preview_align_bad, gridRows, boardRows)
         }
     }
 
@@ -435,9 +439,9 @@ class MainActivity : AppCompatActivity() {
         ) { value -> store.update { it.copy(lineOffsetEnabled = value) } }
         Ui.body(card, getString(R.string.line_offset_note))
         Ui.sliderRow(
-            card, getString(R.string.setting_board_height), config.boardHeightDp,
-            PenboardConfig.MIN_BOARD_HEIGHT_DP, PenboardConfig.MAX_BOARD_HEIGHT_DP, "dp"
-        ) { value -> store.update { it.copy(boardHeightDp = value) } }
+            card, getString(R.string.setting_board_lines), config.boardLines,
+            PenboardConfig.MIN_BOARD_LINES, PenboardConfig.MAX_BOARD_LINES, getString(R.string.unit_rows)
+        ) { value -> store.update { it.copy(boardLines = value) } }
         Ui.sliderRow(
             card, getString(R.string.setting_line_gap), config.lineGapDp,
             PenboardConfig.MIN_LINE_GAP_DP, PenboardConfig.MAX_LINE_GAP_DP, "dp"
@@ -502,7 +506,8 @@ class MainActivity : AppCompatActivity() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_grid), getString(R.string.card_grid_sub))
         val columns = GridMath.columnsOr(config.gridColumns)
-        val rows = GridMath.rowsOr(config.gridRows)
+        // Baris tombol samping selalu sama dengan baris area tulis.
+        val rows = GridMath.linesOr(config.boardLines)
 
         Ui.sliderRow(
             card, getString(R.string.setting_grid_columns), columns,
@@ -520,19 +525,8 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-        Ui.sliderRow(
-            card, getString(R.string.setting_grid_rows), rows,
-            PenboardConfig.MIN_GRID_ROWS, PenboardConfig.MAX_GRID_ROWS, getString(R.string.unit_rows)
-        ) { value ->
-            store.update {
-                val full = it.gridButtonCount >= GridMath.slots(columns, rows)
-                val slots = GridMath.slots(columns, value)
-                it.copy(
-                    gridRows = value,
-                    gridButtonCount = if (full) slots else it.gridButtonCount.coerceIn(1, slots)
-                )
-            }
-        }
+        // Baris tombol tidak punya slider sendiri: selalu mengikuti baris area tulis.
+        Ui.body(card, getString(R.string.grid_rows_follow, rows))
         Ui.sliderRow(
             card, getString(R.string.setting_grid_count), config.gridButtonCount,
             PenboardConfig.MIN_GRID_KEYS, GridMath.slots(columns, rows), getString(R.string.unit_keys)
@@ -589,12 +583,13 @@ class MainActivity : AppCompatActivity() {
         Ui.divider(card)
         Ui.outlinedButton(card, getString(R.string.action_grid_default)) {
             store.update {
+                val lines = GridMath.DEFAULT_LINES
                 it.copy(
                     gridKeys = PenboardConfig.defaultGridKeys(),
                     gridColumns = PenboardConfig.COLUMNS,
-                    gridRows = PenboardConfig.DEFAULT_ROWS,
+                    gridRows = lines,
                     gridCellDp = 0,
-                    gridButtonCount = PenboardConfig.DEFAULT_ROWS * PenboardConfig.COLUMNS
+                    gridButtonCount = lines * PenboardConfig.COLUMNS
                 )
             }
             render()
@@ -613,11 +608,14 @@ class MainActivity : AppCompatActivity() {
         }
         val screen = resources.displayMetrics.widthPixels
         val cell = GridMath.cellSizePx(
-            boardHeightPx = (config.boardHeightDp * resources.displayMetrics.density).toInt(),
+            boardHeightPx = GridMath.boardHeightForLines(
+                config.boardLines,
+                (config.lineGapDp * resources.displayMetrics.density).toInt()
+            ),
             availableWidthPx = screen - 2 * dp(3f),
             spacingPx = (GridMath.SPACING_DP * resources.displayMetrics.density).toInt(),
             minCellPx = (GridMath.MIN_TOUCH_DP * resources.displayMetrics.density).toInt(),
-            rows = GridMath.rowsOr(config.gridRows),
+            rows = GridMath.linesOr(config.boardLines),
             columns = GridMath.columnsOr(config.gridColumns),
             minBoardWidthPx = dp(72f)
         )
@@ -937,6 +935,7 @@ class MainActivity : AppCompatActivity() {
 
         // Tinggi tombol bawah selalu mengikuti tombol samping; lebarnya diatur di sini.
         var widthMultiplier = current.widthMultiplier
+        var heightMultiplier = current.heightMultiplier
         Ui.body(body, getString(R.string.setting_bottom_width_sub))
         Ui.sliderRow(
             body,
@@ -946,6 +945,14 @@ class MainActivity : AppCompatActivity() {
             (KeyDef.MAX_WIDTH_MULTIPLIER * 100).roundToInt(),
             getString(R.string.unit_percent)
         ) { value -> widthMultiplier = value / 100f }
+        Ui.sliderRow(
+            body,
+            getString(R.string.setting_bottom_height),
+            (current.heightMultiplier * 100).roundToInt(),
+            (KeyDef.MIN_HEIGHT_MULTIPLIER * 100).roundToInt(),
+            (KeyDef.MAX_HEIGHT_MULTIPLIER * 100).roundToInt(),
+            getString(R.string.unit_percent)
+        ) { value -> heightMultiplier = value / 100f }
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.bottom_slot_title, index + 1))
@@ -955,7 +962,8 @@ class MainActivity : AppCompatActivity() {
                     action = action,
                     label = labelField.text.toString().trim(),
                     repeatOnHold = repeat,
-                    widthMultiplier = widthMultiplier
+                    widthMultiplier = widthMultiplier,
+                    heightMultiplier = heightMultiplier
                 )
                 store.update { cfg ->
                     cfg.copy(bottomKeys = cfg.bottomKeys.toMutableList().also { it[index] = updated })

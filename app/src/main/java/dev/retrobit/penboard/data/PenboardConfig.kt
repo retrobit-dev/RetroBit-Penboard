@@ -94,7 +94,12 @@ data class KeyDef(
      * Lebar tombol **bawah** dibanding tingginya (1 = persegi). Tingginya selalu
      * mengikuti tombol samping; hanya lebarnya yang bisa diatur pengguna.
      */
-    val widthMultiplier: Float = 1f
+    val widthMultiplier: Float = 1f,
+    /**
+     * Tinggi tombol **bawah** dibanding tombol samping (1 = setinggi tombol samping).
+     * Lebar dan tingginya bisa diatur sendiri-sendiri.
+     */
+    val heightMultiplier: Float = 1f
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("action", action.id)
@@ -102,12 +107,15 @@ data class KeyDef(
         put("text", text)
         put("repeat", repeatOnHold)
         put("widthMultiplier", widthMultiplier)
+        put("heightMultiplier", heightMultiplier)
     }
 
     companion object {
         /** Lebar tombol bawah: 1x (persegi) sampai 4x tinggi tombol samping. */
         const val MIN_WIDTH_MULTIPLIER = GridMath.MIN_WIDTH_MULTIPLIER
         const val MAX_WIDTH_MULTIPLIER = GridMath.MAX_WIDTH_MULTIPLIER
+        const val MIN_HEIGHT_MULTIPLIER = GridMath.MIN_HEIGHT_MULTIPLIER
+        const val MAX_HEIGHT_MULTIPLIER = GridMath.MAX_HEIGHT_MULTIPLIER
 
         fun fromJson(json: JSONObject): KeyDef = KeyDef(
             action = KeyAction.fromId(json.optString("action")),
@@ -115,6 +123,8 @@ data class KeyDef(
             text = json.optString("text"),
             widthMultiplier = json.optDouble("widthMultiplier", 1.0).toFloat()
                 .coerceIn(MIN_WIDTH_MULTIPLIER, MAX_WIDTH_MULTIPLIER),
+            heightMultiplier = json.optDouble("heightMultiplier", 1.0).toFloat()
+                .coerceIn(MIN_HEIGHT_MULTIPLIER, MAX_HEIGHT_MULTIPLIER),
             repeatOnHold = json.optBoolean("repeat", false)
         )
     }
@@ -128,7 +138,8 @@ data class PenboardConfig(
     val schemaVersion: Int = SCHEMA_VERSION,
 
     // Papan tulis
-    val boardHeightDp: Int = 176,
+    /** Jumlah baris area tulis (bawaan 3). Tingginya = baris x jarak garis panduan. */
+    val boardLines: Int = GridMath.DEFAULT_LINES,
     val lineGapDp: Int = 44,
     val penWidthDp: Int = 3,
     val penColors: List<Int> = DEFAULT_PEN_COLORS,
@@ -242,24 +253,24 @@ data class PenboardConfig(
 
     /**
      * Preset **HiWrite** (gaya Huawei): satu ketukan untuk menyalakan seluruh saran
-     * ala HiWrite — papan tulis tinggi, 6 baris tombol berikon (18 tombol), tema
-     * retro cyberpunk grayscale ePaper, dan input otomatis 2 detik.
+     * ala HiWrite — papan tulis 4 baris (tombol samping jadi 4x3 = 12 tombol berikon),
+     * tema retro cyberpunk grayscale ePaper, dan input otomatis 2 detik.
      *
-     * Pengaturan pribadi yang tidak berhubungan dibiarkan apa adanya: bahasa tulisan,
-     * tombol samping pena, dan tinggi papan tulis.
+     * Pengaturan pribadi yang tidak berhubungan dibiarkan apa adanya: bahasa tulisan
+     * dan tombol samping pena.
      */
     fun withHiWritePreset(): PenboardConfig = withRetroTheme().copy(
-        // Papan tulis: lebih tinggi supaya enak ditulis, pena 3 dp.
-        boardHeightDp = 200,
+        // Papan tulis: 4 baris supaya enak ditulis, pena 3 dp.
+        boardLines = 4,
         lineGapDp = 48,
         penWidthDp = 3,
         showLines = true,
         allowFinger = false,
         pressureEnabled = true,
-        // Tombol: 3 kolom x 6 baris = 18 tombol berikon, ukurannya otomatis.
+        // Tombol: 3 kolom, barisnya mengikuti area tulis (4 baris = 12 tombol), ukuran otomatis.
         gridColumns = COLUMNS,
-        gridRows = MAX_GRID_ROWS,
-        gridButtonCount = COLUMNS * MAX_GRID_ROWS,
+        gridRows = 4,
+        gridButtonCount = COLUMNS * 4,
         gridCellDp = 0,
         gridKeys = defaultGridKeys(),
         // Jendela & bilah bawah: bingkai + minimize, serta 5 tombol pixel art di bawah papan.
@@ -303,7 +314,7 @@ data class PenboardConfig(
 
     fun toJson(): JSONObject = JSONObject().apply {
         put("schemaVersion", schemaVersion)
-        put("boardHeightDp", boardHeightDp)
+        put("boardLines", boardLines)
         put("lineGapDp", lineGapDp)
         put("penWidthDp", penWidthDp)
         put("penColors", JSONArray().apply { penColors.forEach { put(it.toLong() and 0xFFFFFFFFL) } })
@@ -353,9 +364,11 @@ data class PenboardConfig(
     fun sanitized(): PenboardConfig {
         val colors = penColors.map { it }.distinct().take(MAX_PEN_COLORS).ifEmpty { DEFAULT_PEN_COLORS }
         val columns = gridColumns.coerceIn(MIN_GRID_COLUMNS, MAX_GRID_COLUMNS)
-        val rows = gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
+        val lines = boardLines.coerceIn(MIN_BOARD_LINES, MAX_BOARD_LINES)
+        // Baris tombol samping selalu sama dengan baris area tulis.
+        val rows = lines
         return copy(
-            boardHeightDp = boardHeightDp.coerceIn(MIN_BOARD_HEIGHT_DP, MAX_BOARD_HEIGHT_DP),
+            boardLines = boardLines.coerceIn(MIN_BOARD_LINES, MAX_BOARD_LINES),
             lineGapDp = lineGapDp.coerceIn(MIN_LINE_GAP_DP, MAX_LINE_GAP_DP),
             penWidthDp = penWidthDp.coerceIn(MIN_PEN_WIDTH_DP, MAX_PEN_WIDTH_DP),
             penColors = colors,
@@ -389,7 +402,9 @@ data class PenboardConfig(
             result.add(
                 key.copy(
                     widthMultiplier = key.widthMultiplier
-                        .coerceIn(KeyDef.MIN_WIDTH_MULTIPLIER, KeyDef.MAX_WIDTH_MULTIPLIER)
+                        .coerceIn(KeyDef.MIN_WIDTH_MULTIPLIER, KeyDef.MAX_WIDTH_MULTIPLIER),
+                    heightMultiplier = key.heightMultiplier
+                        .coerceIn(KeyDef.MIN_HEIGHT_MULTIPLIER, KeyDef.MAX_HEIGHT_MULTIPLIER)
                 )
             )
         }
@@ -420,8 +435,9 @@ data class PenboardConfig(
         const val MIN_PANEL_WIDTH_FRACTION = 0.45f
         const val MAX_PEN_COLORS = 6
 
-        const val MIN_BOARD_HEIGHT_DP = 120
-        const val MAX_BOARD_HEIGHT_DP = 340
+        const val MIN_BOARD_LINES = GridMath.MIN_LINES
+        const val MAX_BOARD_LINES = GridMath.MAX_LINES
+        const val DEFAULT_BOARD_LINES = GridMath.DEFAULT_LINES
         const val MIN_LINE_GAP_DP = 28
         const val MAX_LINE_GAP_DP = 76
         const val MIN_PEN_WIDTH_DP = 1
@@ -548,7 +564,7 @@ data class PenboardConfig(
             } ?: base.bottomKeys
             return PenboardConfig(
                 schemaVersion = json.optInt("schemaVersion", SCHEMA_VERSION),
-                boardHeightDp = json.optInt("boardHeightDp", base.boardHeightDp),
+                boardLines = json.optInt("boardLines", base.boardLines),
                 lineGapDp = json.optInt("lineGapDp", base.lineGapDp),
                 penWidthDp = json.optInt("penWidthDp", base.penWidthDp),
                 penColors = colors,

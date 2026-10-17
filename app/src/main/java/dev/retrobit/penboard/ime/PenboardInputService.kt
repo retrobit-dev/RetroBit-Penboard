@@ -172,9 +172,11 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
                         PenboardConfig.MAX_CELL_DP
                     ))
                 } else {
-                    next.copy(boardHeightDp = (next.boardHeightDp + deltaDp).coerceIn(
-                        PenboardConfig.MIN_BOARD_HEIGHT_DP,
-                        PenboardConfig.MAX_BOARD_HEIGHT_DP
+                    // Tinggi papan = baris x jarak baris, jadi tarikan vertikal mengubah
+                    // jarak baris; ukuran tombol otomatis mengikuti tinggi baris itu.
+                    next.copy(lineGapDp = (next.lineGapDp + deltaDp).coerceIn(
+                        PenboardConfig.MIN_LINE_GAP_DP,
+                        PenboardConfig.MAX_LINE_GAP_DP
                     ))
                 }
             }

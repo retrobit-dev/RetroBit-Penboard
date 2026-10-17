@@ -22,6 +22,11 @@ object GridMath {
     const val MIN_ROWS = 1
     const val MAX_ROWS = 6
 
+    /** Baris area tulis: bawaan 3 baris, bisa ditambah sampai 6. */
+    const val MIN_LINES = 1
+    const val MAX_LINES = 6
+    const val DEFAULT_LINES = 3
+
     /** Jumlah baris bawaan. */
     const val ROWS = 3
 
@@ -42,7 +47,36 @@ object GridMath {
     const val MIN_WIDTH_MULTIPLIER = 1f
     const val MAX_WIDTH_MULTIPLIER = 4f
 
+    /** Tinggi tombol bawah dibanding tombol samping: 0,6x sampai 2x. */
+    const val MIN_HEIGHT_MULTIPLIER = 0.6f
+    const val MAX_HEIGHT_MULTIPLIER = 2f
+
     fun columnsOr(value: Int): Int = value.coerceIn(MIN_COLUMNS, MAX_COLUMNS)
+
+    /** Jumlah baris area tulis (1-6). Baris tombol samping selalu mengikuti angka ini. */
+    fun linesOr(value: Int): Int = value.coerceIn(MIN_LINES, MAX_LINES)
+
+    /**
+     * Tinggi area tulis (px) untuk [lines] baris. Satu baris = satu jarak garis panduan,
+     * jadi area tulis bawaan 3 baris tingginya 3 x jarak baris.
+     */
+    fun boardHeightForLines(lines: Int, lineGapPx: Int): Int =
+        linesOr(lines) * lineGapPx.coerceAtLeast(1)
+
+    /**
+     * Jarak baris yang **benar-benar dipakai** setelah ruang keyboard diperhitungkan.
+     *
+     * Kalau layar tidak cukup untuk seluruh baris, jarak barisnya dipangkas (tidak pernah
+     * di bawah 1 px) supaya papan tetap muat dan tidak ada yang terpotong. [availablePx] 0
+     * berarti tinggi belum diketahui, jadi jarak yang diminta dipakai apa adanya.
+     */
+    fun fitLineGapPx(requestedPx: Int, availablePx: Int, lines: Int, fixedPx: Int): Int {
+        val safeLines = linesOr(lines)
+        if (availablePx <= 0) return requestedPx
+        val room = availablePx - fixedPx
+        if (room <= 0) return 1
+        return minOf(requestedPx, room / safeLines).coerceAtLeast(1)
+    }
 
     fun rowsOr(value: Int): Int = value.coerceIn(MIN_ROWS, MAX_ROWS)
 
@@ -139,11 +173,37 @@ object GridMath {
         }
     }
 
-    /** Lebar satu tombol bawah (px): tinggi tombol samping x pengali lebarnya. */
+    /** Lebar satu tombol bawah (px): sisi tombol samping x pengali lebarnya. */
     fun buttonWidthPx(cellPx: Int, widthMultiplier: Float): Int =
         (cellPx * widthMultiplier.coerceIn(MIN_WIDTH_MULTIPLIER, MAX_WIDTH_MULTIPLIER))
             .roundToInt()
             .coerceAtLeast(1)
+
+    /** Tinggi satu tombol bawah (px): sisi tombol samping x pengali tingginya. */
+    fun buttonHeightPx(cellPx: Int, heightMultiplier: Float): Int =
+        (cellPx * heightMultiplier.coerceIn(MIN_HEIGHT_MULTIPLIER, MAX_HEIGHT_MULTIPLIER))
+            .roundToInt()
+            .coerceAtLeast(1)
+
+    /**
+     * Tinggi tiap baris tombol bawah: baris setinggi tombol tertinggi di baris itu
+     * (tombolnya sendiri dipusatkan secara vertikal saat dipasang).
+     */
+    fun bottomRowHeights(
+        rows: List<List<Int>>,
+        cellPx: Int,
+        heightMultipliers: List<Float>
+    ): List<Int> = rows.map { indexes ->
+        indexes.maxOf { index ->
+            buttonHeightPx(cellPx, heightMultipliers.getOrElse(index) { 1f })
+        }
+    }
+
+    /** Tinggi seluruh bilah tombol bawah (px), termasuk jarak antar barisnya. */
+    fun bottomBarHeightPx(rowHeights: List<Int>, spacingPx: Int): Int {
+        if (rowHeights.isEmpty()) return 0
+        return rowHeights.sum() + spacingPx * (rowHeights.size - 1)
+    }
 
     /**
      * Susunan tombol bawah: indeks tombol untuk setiap baris.

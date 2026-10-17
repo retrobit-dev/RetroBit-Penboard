@@ -30,15 +30,16 @@
 
     <!-- Kartu: bilah tombol bawah (pixel art) -->
     <string name="card_bottom">Tombol bawah (pixel art)</string>
-    <string name="card_bottom_sub">Tombol tepat di bawah area menulis, di dalam bingkai papan, dengan ukuran sama seperti tombol samping.</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Tinggi dan lebarnya bisa diatur sendiri per tombol.</string>
     <string name="setting_bottom_show">Tampilkan bilah tombol bawah</string>
-    <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di bawah area menulis.</string>
+    <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
     <string name="setting_bottom_count">Jumlah tombol bawah</string>
     <string name="setting_bottom_width">Lebar tombol</string>
-    <string name="setting_bottom_width_sub">Tinggi tombol bawah selalu sama dengan tombol samping; hanya lebarnya yang bisa diatur sendiri (1x = persegi).</string>
+    <string name="setting_bottom_height">Tinggi tombol</string>
+    <string name="setting_bottom_width_sub">Ukuran dasar tombol bawah mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
     <string name="action_bottom_default">Kembalikan bilah bawah</string>
     <string name="bottom_slot_title">Tombol bawah %1$d</string>
-    <string name="bottom_note">Tingginya selalu sama persis dengan tombol samping (lihat bagian &quot;Tombol papan&quot;), lebarnya bisa diatur per tombol, dan ikonnya pixel art 12 x 12 supaya tetap tajam. Tombol tetap berada di dalam bingkai jendela; bila satu baris tidak cukup, tombolnya mengalir ke baris berikutnya di bawah papan tulis.</string>
+    <string name="bottom_note">Tombol bawah berada di dalam bingkai jendela, tepat di atas area menulis. Ukuran dasarnya mengikuti tombol samping, tetapi lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya. Ikonnya pixel art 12 x 12 supaya tetap tajam; bila satu baris tidak cukup, tombolnya mengalir ke baris berikutnya.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
@@ -77,9 +78,9 @@
 
     <!-- Kartu: uji tulis -->
     <string name="preview_align_wait">Mengukur tata letak…</string>
-    <string name="preview_align_ok">✓ Kolom tombol sejajar area tulis: %1$d px = %2$d px.</string>
-    <string name="preview_align_bad">⚠ Kolom tombol belum sejajar: papan %1$d px, tombol %2$d px.</string>
-    <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter.</string>
+    <string name="preview_align_ok">✓ Baris tombol samping = baris area tulis: %1$d = %2$d (rata atas).</string>
+    <string name="preview_align_bad">⚠ Baris tombol belum sama dengan baris area tulis: tombol %1$d, tulisan %2$d.</string>
+    <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter. Baris tombol samping = %1$d, sama dengan baris tulisan.</string>
     <string name="preview_line_off">Baris tulisan tidak menggeser teks: hasil tulisan selalu masuk di posisi kursor.</string>
     <string name="preview_cell_style">Ikon tombol: %1$s (pixel art = kotak 12 x 12).</string>
     <string name="preview_square_wait">Menghitung ukuran tombol…</string>
@@ -93,7 +94,7 @@
     <!-- Kartu: papan tulis -->
     <string name="card_board">Papan tulis</string>
     <string name="card_board_sub">Ukuran, pena, dan tombol samping pena.</string>
-    <string name="setting_board_height">Tinggi papan</string>
+    <string name="setting_board_lines">Jumlah baris area tulis</string>
     <string name="setting_line_gap">Jarak garis panduan</string>
     <string name="setting_pen_width">Tebal pena</string>
     <string name="setting_pen_colors">Warna pena (ketuk untuk mengubah)</string>
@@ -119,9 +120,9 @@
 
     <!-- Kartu: tombol 3x3 -->
     <string name="card_grid">Tombol papan</string>
-    <string name="card_grid_sub">Semua tombol samping persegi (panjang = lebar) dan jumlahnya bisa diatur: 1-6 kolom dan 1-6 baris, sampai 36 tombol. Tinggi area tulis mengikuti ukuran dan jumlah tombol, jadi papan selalu sejajar dengan kolom tombol.</string>
+    <string name="card_grid_sub">Semua tombol samping persegi (panjang = lebar). Jumlah barisnya selalu sama dengan baris area tulis, dan jumlah kolomnya bisa 1-6. Tombol rata atas dengan area tulis; ukurannya bisa otomatis atau diatur sendiri.</string>
     <string name="setting_grid_columns">Jumlah kolom tombol</string>
-    <string name="setting_grid_rows">Jumlah baris area tombol</string>
+    <string name="grid_rows_follow">Baris tombol samping selalu sama dengan baris area tulis (%1$d baris). Tambah atau kurangi barisnya di atas.</string>
     <string name="unit_columns">kolom</string>
     <string name="setting_cell_auto">Ukuran tombol otomatis</string>
     <string name="setting_cell_auto_sub">Bila aktif, sisi tombol dihitung dari tinggi papan dan lebar yang tersedia. Matikan untuk menyetelnya sendiri: area tulis ikut membesar atau mengecil mengikuti tombol.</string>
@@ -140,7 +141,7 @@
     <string name="grid_slot_title">Tombol grid %1$d</string>
     <string name="action_change">Ubah</string>
     <string name="action_grid_default">Kembalikan tombol bawaan</string>
-    <string name="grid_note">Tombol persegi: tingginya selalu sama dengan lebarnya, dan tinggi area tulis = jumlah baris x sisi tombol + jarak antar baris. Menambah kolom membuat area tulis lebih sempit, menambah baris membuatnya lebih tinggi; papan memangkas sendiri supaya tetap muat di layar.</string>
+    <string name="grid_note">Tombol persegi dan rata atas dengan area tulis. Bila ukurannya otomatis, sisi tombol = jarak baris area tulis (jadi satu baris tombol setinggi satu baris tulisan). Ukuran sendiri memakai angka 32-160 dp; menambah kolom membuat area tulis lebih sempit, menambah baris membuat papan lebih tinggi. Papan memangkas sendiri supaya tetap muat di layar.</string>
     <string name="setting_action">Fungsi</string>
     <string name="setting_custom_label">Label sendiri (opsional)</string>
     <string name="setting_custom_text">Teks yang diinput (untuk fungsi abc)</string>
