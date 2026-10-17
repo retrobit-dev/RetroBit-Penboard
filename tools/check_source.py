@@ -2,7 +2,10 @@
 
 1. semua `R.string.x` yang dipakai ada di `strings.xml`, dan tidak ada string yang menganggur;
 2. seluruh XML di `res/` (termasuk manifest) bisa diurai;
-3. tanda kurung setiap berkas Kotlin seimbang.
+3. tanda kurung setiap berkas Kotlin seimbang;
+4. view yang dipakai ulang (diambil dari daftar, mis. `buttons[index]`) dilepas dulu
+   dengan `removeView` sebelum `addView` lagi — kalau tidak, Android melempar
+   IllegalStateException "The specified child already has a parent" (force close 3.3.0).
 
 Catatan: string dibuang **sebelum** komentar, karena teks seperti "market://..." atau
 "https://..." memuat `//` yang bukan komentar. Kesalahan urutan itu pernah membuat
@@ -23,6 +26,38 @@ def strip_noise(text: str) -> str:
     text = STRING_LITERAL.sub('""', text)
     text = LINE_COMMENT.sub("", text)
     return BLOCK_COMMENT.sub("", text)
+
+
+# Jarak pemeriksaan ke belakang untuk mencari `removeView` sebelum `addView` (karakter).
+LOOKBACK = 4000
+
+LIST_INDEXED_VIEW = re.compile(r"val (\w+) = (\w+)\[[^\]]+\]")
+
+
+def reused_view_warnings(root: pathlib.Path) -> list:
+    """View yang diambil dari daftar lalu dipasang ulang harus dilepas dari induk lama.
+
+    Android tidak mengizinkan satu View punya dua induk: `addView` pada view yang masih
+    menempel di induk lama langsung melempar IllegalStateException ("The specified child
+    already has a parent"). Inilah penyebab aplikasi force close pada 3.3.0/3.4.0, saat
+    tombol grid dipakai ulang tanpa dilepas lebih dulu.
+
+    Pemeriksaannya berbasis **urutan**: sebelum `addView(<nama>)` harus ada
+    `removeView(<nama>)` di bagian kode sebelumnya (jarak maksimum [LOOKBACK] karakter).
+    """
+    warnings = []
+    for path in sorted((root / "app/src").rglob("*.kt")):
+        text = path.read_text()
+        for name, source in LIST_INDEXED_VIEW.findall(text):
+            for match in re.finditer(r"addView\(\s*" + name + r"\s*\)", text):
+                window = text[max(0, match.start() - LOOKBACK):match.start()]
+                if re.search(r"removeView\(\s*" + name + r"\s*\)", window):
+                    continue
+                warnings.append(
+                    f"{path}: '{name}' dari {source} dipasang ulang tanpa removeView lebih dulu"
+                )
+                break
+    return warnings
 
 
 def main() -> int:
@@ -64,9 +99,12 @@ def main() -> int:
     print(f"string dipakai: {len(used)} / didefinisikan: {len(strings)}")
     print("MISSING:", missing)
     print("UNUSED:", unused)
+    reused = reused_view_warnings(root)
+
     print("XML BAD:", bad_xml)
     print("KOTLIN UNBALANCED:", unbalanced)
-    return 1 if (missing or bad_xml or unbalanced) else 0
+    print("ADDVIEW TANPA REMOVEVIEW:", reused)
+    return 1 if (missing or bad_xml or unbalanced or reused) else 0
 
 
 if __name__ == "__main__":

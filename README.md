@@ -2,7 +2,25 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.4.0** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.4.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.4.1
+
+- **Perbaikan force close (aplikasi langsung berhenti).** Sejak 3.3.0 tombol grid dipakai ulang
+  setiap pengaturan diterapkan, tetapi belum dilepas dari induk lamanya. Android tidak
+  mengizinkan satu `View` punya dua induk, jadi `addView` melempar
+  `IllegalStateException: The specified child already has a parent` dan aplikasi berhenti.
+  Pemicunya bukan satu tombol tertentu: pengaturan diterapkan lebih dari sekali saat layar
+  pengaturan dibuka, saat satu pengaturan diubah, dan saat keyboard muncul (tingginya diukur
+  lalu pengaturan diterapkan ulang) — karena itu terasa "selalu" force close.
+- **Perbaikannya**: tombol grid **dan** tombol bawah sekarang dilepas dulu dari baris lamanya
+  sebelum disusun ulang (`removeView` sebelum `addView`).
+- **Penjaga regresi**: `tools/check_source.py` punya aturan baru
+  `ADDVIEW TANPA REMOVEVIEW` yang menolak view daftar yang dipasang ulang tanpa `removeView`
+  lebih dulu. Aturan ini sudah diuji dengan meniru bug lama: salinan yang rusak membuat
+  pemeriksa gagal (`exit 1`), versi yang benar lolos.
+- Tidak ada perubahan tampilan atau perilaku lain: semua fitur 3.4.0 (baris tulisan = posisi
+  teks, nomor baris) tetap sama.
 
 ## Yang baru di 3.4.0
 

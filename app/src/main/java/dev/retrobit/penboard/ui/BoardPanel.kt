@@ -388,6 +388,11 @@ class BoardPanel(private val context: Context) {
         cell: Int,
         spacing: Int
     ) {
+        // Tombol grid dipakai ulang setiap pengaturan diterapkan. Sebuah View hanya boleh
+        // punya SATU induk: kalau tombol masih menempel di baris lama, addView() ke baris
+        // baru melempar IllegalStateException ("child already has a parent"). Itulah yang
+        // membuat aplikasi force close begitu pengaturan berubah / keyboard muncul.
+        for (button in buttons) (button.parent as? ViewGroup)?.removeView(button)
         gridContainer.removeAllViews()
         val defaults = PenboardConfig.defaultGridKeys()
         val slots = GridMath.slots(columns, rows)
@@ -441,6 +446,8 @@ class BoardPanel(private val context: Context) {
         spacing: Int,
         boardWidth: Int
     ) {
+        // Sama seperti tombol grid: lepaskan dulu dari baris lama sebelum disusun ulang.
+        for (button in bottomButtons) (button.parent as? ViewGroup)?.removeView(button)
         bottomContainer.removeAllViews()
         val count = bottomCount(config)
         if (count <= 0) {
@@ -491,7 +498,7 @@ class BoardPanel(private val context: Context) {
         spacing: Int,
         first: Boolean,
         index: Int
-    ): KeyButton = KeyButton(context).apply {
+    ): KeyButton = bottomButtons[index].apply {
         repeatOnHold = key.repeatOnHold
         onTap = { listener?.onKey(key, key.action) }
         contentDescription = config.labelFor(key)
