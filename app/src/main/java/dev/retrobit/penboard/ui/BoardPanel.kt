@@ -277,7 +277,7 @@ class BoardPanel(private val context: Context) {
                 (config.gridCellDp * density).toInt().coerceIn(1, maxCellByHeight)
             } else {
                 GridMath.cellSizePx(
-                    boardHeightPx = boardHeight,
+                    boardHeightPx = GridMath.boardHeightForLines(lines, lineGap),
                     availableWidthPx = usableWidth,
                     spacingPx = spacing,
                     minCellPx = minCell,
