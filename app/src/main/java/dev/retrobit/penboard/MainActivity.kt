@@ -559,10 +559,14 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.unit_rows)
             ) { value ->
                 store.update {
+                    // Bila sebelumnya semua sel terpakai, baris baru langsung terisi;
+                    // kalau pengguna membatasi jumlah tombol, batas itu dipertahankan.
+                    val oldSlots = GridMath.slots(it.gridColumns, it.effectiveGridRows)
+                    val full = it.gridButtonCount >= oldSlots
+                    val slots = GridMath.slots(it.gridColumns, value)
                     it.copy(
                         gridRows = value,
-                        gridButtonCount = it.gridButtonCount
-                            .coerceAtMost(GridMath.slots(it.gridColumns, value))
+                        gridButtonCount = if (full) slots else it.gridButtonCount.coerceAtMost(slots)
                     )
                 }
             }
