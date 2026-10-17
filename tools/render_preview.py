@@ -286,7 +286,7 @@ def draw_board_ink(draw, left, top, right, line_gap, line_index=0):
 
 def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, minimize=True,
                    bottom_count=0, widths=None, heights=None, line_gap_dp=LINE_GAP_DP,
-                   board_fraction=DEFAULT_BOARD_FRACTION):
+                   board_fraction=DEFAULT_BOARD_FRACTION, rows=None):
     """Ukuran-ukuran panel, dihitung dengan rumus yang sama seperti BoardPanel.
 
     - area tulis: tinggi = baris x jarak baris
@@ -295,7 +295,8 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
     """
     panel_w = panel_width or PANEL_W
     lines = lines_or(lines)
-    rows = lines
+    # Baris tombol bisa mengikuti area tulis (None) atau diatur sendiri 1-6.
+    rows = lines if rows is None else rows_or(rows)
     columns = columns_or(columns)
     title_h = int((22 if frame else 18) * D) if (frame or minimize) else 0
     line_gap_px = int(line_gap_dp * D)
@@ -306,7 +307,8 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
     board_w = board_width_for(usable_w, board_fraction, MIN_BOARD_W,
                               grid_width_px(columns, MIN_CELL, SPACING), SPACING)
     max_cell_w = max_cell_by_width(usable_w, board_w, columns, SPACING)
-    cell = cell_size(board_h, usable_w, SPACING, MIN_CELL, rows, columns, 0, D, board_w)
+    # Ukuran otomatis = tinggi satu baris tulisan, berapa pun baris tombolnya.
+    cell = cell_size(board_h, usable_w, SPACING, MIN_CELL, lines, columns, 0, D, board_w)
     if cell_dp > 0:
         cell = int(cell_dp * D)
     cell = max(1, min(cell, max_cell_w))
@@ -333,7 +335,8 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
 def draw_panel(lines, keys, flash=None, pending=None,
                title="PENBOARD", bottom_keys=None, frame=True, minimize=True,
                columns=3, cell_dp=0, panel_width=None, widths=None, heights=None, marks=None,
-               ink_line=0, line_gap_dp=LINE_GAP_DP, board_fraction=DEFAULT_BOARD_FRACTION):
+               ink_line=0, line_gap_dp=LINE_GAP_DP, board_fraction=DEFAULT_BOARD_FRACTION,
+               rows=None):
     """Panel Penboard lengkap: bilah judul, papan tulis, kolom tombol persegi, tombol bawah.
 
     frame=False -> bingkai dimatikan; bila minimize tetap nyala, yang digambar hanya
@@ -345,7 +348,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
     bottom_count = len(bottom_keys)
     geo = panel_geometry(lines, columns, cell_dp, panel_width,
                          frame, minimize, bottom_count, widths, heights, line_gap_dp,
-                         board_fraction)
+                         board_fraction, rows)
     panel_w, panel_h = geo["panel_w"], geo["panel_h"]
     cell, board_h, board_w, grid_w = geo["cell"], geo["board_h"], geo["board_w"], geo["grid_w"]
     title_h = geo["title_h"]
@@ -524,6 +527,7 @@ def main():
     ime = draw_panel(3, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
     second_line = draw_panel(3, DEFAULT_KEYS, flash="\u2713 kata", ink_line=1)
     many_bottom = draw_panel(3, DEFAULT_KEYS, bottom_keys=(BOTTOM_KEYS * 4)[:12])
+    five_rows = draw_panel(3, DEFAULT_KEYS, rows=5)
 
     pad = 40
     width = PANEL_W + pad * 2
@@ -532,46 +536,51 @@ def main():
         ("1. Keyboard Penboard - 3 kolom x 3 baris (bawaan)",
          "semua tombol samping persegi; tinggi area tulis = 3 x sisi tombol",
          ("field", baseline)),
-        ("2. Empat kolom tombol (baris tetap = baris area tulis)",
+        ("2. Empat kolom tombol (baris = baris area tulis)",
          "kolom 1-6; tombol rata atas dengan area tulis, ukurannya menyesuaikan",
          ("plain", wide_grid)),
-        ("3. Ukuran semua tombol diatur: sisi 32 dp, satu tombol bawah 2x lebar & 1,5x tinggi",
+        ("3. Ukuran tombol 32 dp, tombol atas 2x lebar 1,5x tinggi",
          "Pengaturan > Tombol papan (ukuran) dan editor tiap tombol bawah (lebar/tinggi)",
          ("plain", small_cells)),
         ("4. Area tulis ditambah jadi 5 baris (bawaan 3 baris)",
          "baris tombol samping otomatis ikut jadi 5, rata atas dengan area tulis",
          ("plain", longer)),
-        ("5. Papan dipindah (tarik bilah judul) & dilebarkan (tarik sudut)",
+        ("5. Papan dipindah & dilebarkan (tarik sudut)",
          "bilah judul = pegangan pindah, sudut kanan bawah = pegangan ubah ukuran",
          ("screen", moved)),
         ("6. Keyboard Penboard tampil di atas aplikasi lain",
          "papan tulis menempel sebagai keyboard di aplikasi apa pun",
          ("ime", ime)),
-        ("7. Bingkai jendela dimatikan - tombol minimize tetap ada",
+        ("7. Bingkai dimatikan - tombol minimize tetap ada",
          "bilah kecil 18 dp di kanan atas papan (Pengaturan > Jendela papan)",
          ("plain", stretched)),
-        ("8. Menulis di baris ke-2 = teks masuk satu baris di bawah kursor",
+        ("8. Baris ke-2 = teks satu baris di bawah kursor",
          "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
          ("field2", second_line)),
-        ("9. Tombol atas sampai 16 - setiap baris memenuhi lebar papan",
+        ("9. Tombol atas sampai 16, tiap baris selebar papan",
          "sisa ruang dibagi rata; tombol yang tidak muat turun ke baris berikutnya",
          ("plain", many_bottom)),
+        ("10. Kolom tombol 3 x 5 - area tulis tetap 3 baris",
+         "baris tombol bisa mengikuti area tulis atau diatur sendiri 1-6",
+         ("plain", five_rows)),
     ]
     canvas_heights = [header]
     for _, _, (kind, item) in panels:
+        # 44 px untuk judul+keterangan contoh, 34 px jarak ke contoh berikutnya.
+        extra = 44 + 34
         if kind in ("field", "field2"):
-            canvas_heights.append(70 + item.height + 60)
+            canvas_heights.append(70 + item.height + extra)
         elif kind == "ime":
-            canvas_heights.append(APP_MOCK_H + item.height + 60)
+            canvas_heights.append(APP_MOCK_H + item.height + extra)
         elif kind == "screen":
-            canvas_heights.append(int(3 * LINE_GAP_DP * D) + int(3 * D) * 2 + int(22 * D) + 120 + 60)
+            canvas_heights.append(int(3 * LINE_GAP_DP * D) + int(3 * D) * 2 + int(22 * D) + 120 + extra)
         else:
-            canvas_heights.append(item.height + 60)
+            canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.1 - lebar area tulis & 16 tombol atas",
+    draw.text((pad, 18), "Penboard 3.5.2 - baris tombol samping diatur sendiri",
               font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "tombol tidak terpotong; baris tombol atas memenuhi lebar papan",
+    draw.text((pad, 42), "ukuran otomatis = tinggi satu baris tulisan; kolom tombol rata atas",
               font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
 
     y = header

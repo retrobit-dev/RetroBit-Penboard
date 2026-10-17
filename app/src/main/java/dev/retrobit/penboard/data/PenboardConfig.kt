@@ -152,7 +152,14 @@ data class PenboardConfig(
     // Grid tombol (3 kolom, jumlah baris bisa diatur 1-6)
     /** Jumlah kolom tombol samping (1-6). */
     val gridColumns: Int = GridMath.DEFAULT_COLUMNS,
+    /** Baris tombol samping saat [gridRowsFollow] dimatikan (1-6). */
     val gridRows: Int = DEFAULT_ROWS,
+    /**
+     * `true` (bawaan): baris tombol samping selalu sama dengan baris area tulis.
+     * `false`: baris tombol diatur sendiri lewat [gridRows] — boleh lebih banyak
+     * daripada baris tulisan, mis. 3 kolom x 5 baris tombol untuk area tulis 3 baris.
+     */
+    val gridRowsFollow: Boolean = true,
     val gridButtonCount: Int = DEFAULT_ROWS * COLUMNS,
     val gridKeys: List<KeyDef> = defaultGridKeys(),
     val penButtonPrimary: PenButtonAction = PenButtonAction.RECOGNIZE,
@@ -279,6 +286,7 @@ data class PenboardConfig(
         // Tombol: 3 kolom, barisnya mengikuti area tulis (4 baris = 12 tombol), ukuran otomatis.
         gridColumns = COLUMNS,
         gridRows = 4,
+        gridRowsFollow = true,
         gridButtonCount = COLUMNS * 4,
         gridCellDp = 0,
         gridKeys = defaultGridKeys(),
@@ -314,6 +322,19 @@ data class PenboardConfig(
     val showsTitleBar: Boolean
         get() = windowFrame || minimizeButton
 
+    /**
+     * Jumlah baris tombol samping yang benar-benar dipakai.
+     *
+     * Bila [gridRowsFollow] aktif (bawaan), angkanya mengikuti baris area tulis;
+     * selain itu memakai [gridRows] yang diatur sendiri (1-6).
+     */
+    val effectiveGridRows: Int
+        get() = if (gridRowsFollow) {
+            boardLines.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
+        } else {
+            gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
+        }
+
     /** Tinggi baris atas papan (dp); 0 berarti tidak ada. */
     fun titleBarHeightDp(): Int = when {
         windowFrame -> TITLE_BAR_DP
@@ -333,6 +354,7 @@ data class PenboardConfig(
         put("pressureEnabled", pressureEnabled)
         put("gridColumns", gridColumns)
         put("gridRows", gridRows)
+        put("gridRowsFollow", gridRowsFollow)
         put("gridButtonCount", gridButtonCount)
         put("gridKeys", JSONArray().apply { gridKeys.forEach { put(it.toJson()) } })
         put("penButtonPrimary", penButtonPrimary.id)
@@ -375,8 +397,8 @@ data class PenboardConfig(
         val colors = penColors.map { it }.distinct().take(MAX_PEN_COLORS).ifEmpty { DEFAULT_PEN_COLORS }
         val columns = gridColumns.coerceIn(MIN_GRID_COLUMNS, MAX_GRID_COLUMNS)
         val lines = boardLines.coerceIn(MIN_BOARD_LINES, MAX_BOARD_LINES)
-        // Baris tombol samping selalu sama dengan baris area tulis.
-        val rows = lines
+        // Baris tombol: mengikuti area tulis (bawaan) atau angka sendiri 1-6.
+        val rows = if (gridRowsFollow) lines else gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS)
         return copy(
             boardLines = boardLines.coerceIn(MIN_BOARD_LINES, MAX_BOARD_LINES),
             lineGapDp = lineGapDp.coerceIn(MIN_LINE_GAP_DP, MAX_LINE_GAP_DP),
@@ -384,7 +406,9 @@ data class PenboardConfig(
             penColors = colors,
             penColorIndex = penColorIndex.coerceIn(0, colors.size - 1),
             gridColumns = columns,
-            gridRows = rows,
+            // Angka pilihan pengguna disimpan walau sedang mode mengikuti area tulis,
+            // supaya saat sakelarnya dimatikan pilihannya tidak hilang.
+            gridRows = gridRows.coerceIn(MIN_GRID_ROWS, MAX_GRID_ROWS),
             // Tombol tidak boleh melebihi jumlah sel yang tersedia di grid yang dipilih.
             gridButtonCount = gridButtonCount.coerceIn(MIN_GRID_KEYS, rows * columns),
             gridKeys = sanitizeKeys(gridKeys, defaultGridKeys(), GRID_SLOTS),
@@ -596,6 +620,7 @@ data class PenboardConfig(
                 pressureEnabled = json.optBoolean("pressureEnabled", base.pressureEnabled),
                 gridColumns = json.optInt("gridColumns", base.gridColumns),
                 gridRows = json.optInt("gridRows", base.gridRows),
+                gridRowsFollow = json.optBoolean("gridRowsFollow", base.gridRowsFollow),
                 gridButtonCount = json.optInt("gridButtonCount", base.gridButtonCount),
                 gridKeys = keys,
                 penButtonPrimary = PenButtonAction.fromId(json.optString("penButtonPrimary", base.penButtonPrimary.id)),

@@ -65,22 +65,28 @@ class PenboardConfigTest {
     fun `jumlah baris dan tombol saling menjaga`() {
         // Enam baris area tulis berarti tombolnya sampai 18 (3 kolom x 6 baris).
         val sixRows = PenboardConfig(boardLines = 6, gridButtonCount = 18).sanitized()
-        assertEquals(6, sixRows.gridRows)
+        assertEquals(6, sixRows.effectiveGridRows)
         assertEquals(18, sixRows.gridButtonCount)
 
         // Empat baris area tulis berarti sampai 12 tombol.
         val fourRows = PenboardConfig(boardLines = 4, gridButtonCount = 12).sanitized()
-        assertEquals(4, fourRows.gridRows)
+        assertEquals(4, fourRows.effectiveGridRows)
         assertEquals(12, fourRows.gridButtonCount)
 
         // Tombol dipangkas bila melebihi jumlah sel di baris yang dipilih.
         val tooMany = PenboardConfig(boardLines = 1, gridButtonCount = 9).sanitized()
-        assertEquals(1, tooMany.gridRows)
+        assertEquals(1, tooMany.effectiveGridRows)
         assertEquals(PenboardConfig.COLUMNS, tooMany.gridButtonCount)
 
-        // Baris liar dibatasi ke 1-6 (lewat boardLines; gridRows selalu mengikutinya).
-        assertEquals(PenboardConfig.MAX_GRID_ROWS, PenboardConfig(boardLines = 99).sanitized().gridRows)
-        assertEquals(PenboardConfig.MIN_GRID_ROWS, PenboardConfig(boardLines = 0).sanitized().gridRows)
+        // Baris liar dibatasi ke 1-6 (lewat boardLines saat mode mengikuti).
+        assertEquals(
+            PenboardConfig.MAX_GRID_ROWS,
+            PenboardConfig(boardLines = 99).sanitized().effectiveGridRows
+        )
+        assertEquals(
+            PenboardConfig.MIN_GRID_ROWS,
+            PenboardConfig(boardLines = 0).sanitized().effectiveGridRows
+        )
     }
 
     @Test
@@ -88,13 +94,13 @@ class PenboardConfigTest {
         // Enam kolom x enam baris = 36 tombol; semua kotak itu bisa dipakai.
         val wide = PenboardConfig(gridColumns = 6, boardLines = 6, gridButtonCount = 36).sanitized()
         assertEquals(6, wide.gridColumns)
-        assertEquals(6, wide.gridRows)
+        assertEquals(6, wide.effectiveGridRows)
         assertEquals(36, wide.gridButtonCount)
         assertEquals(PenboardConfig.GRID_SLOTS, wide.gridKeys.size)
 
         // Satu baris tiga kolom: hanya 3 tombol yang boleh tampil.
         val oneRow = PenboardConfig(boardLines = 1, gridButtonCount = 12).sanitized()
-        assertEquals(1, oneRow.gridRows)
+        assertEquals(1, oneRow.effectiveGridRows)
         assertEquals(PenboardConfig.COLUMNS, oneRow.gridButtonCount)
 
         // Dua kolom lima baris: 10 sel, jadi 12 tombol dipangkas jadi 10.
@@ -167,12 +173,13 @@ class PenboardConfigTest {
     }
 
     @Test
-    fun `baris area tulis bawaan tiga dan baris tombol selalu sama`() {
-        // Bawaan: 3 baris area tulis.
+    fun `baris tombol mengikuti area tulis atau diatur sendiri`() {
+        // Bawaan: 3 baris area tulis, baris tombol mengikuti.
         assertEquals(3, PenboardConfig().boardLines)
         assertEquals(PenboardConfig.DEFAULT_BOARD_LINES, PenboardConfig().boardLines)
+        assertTrue(PenboardConfig().gridRowsFollow)
 
-        // Berapa pun baris yang dipilih, baris tombol samping mengikuti.
+        // Mode mengikuti: berapa pun baris area tulis, baris tombol sama.
         for (lines in PenboardConfig.MIN_BOARD_LINES..PenboardConfig.MAX_BOARD_LINES) {
             val config = PenboardConfig(
                 boardLines = lines,
@@ -180,10 +187,32 @@ class PenboardConfigTest {
                 gridButtonCount = lines * 3
             ).sanitized()
             assertEquals(lines, config.boardLines)
-            assertEquals(lines, config.gridRows)
+            assertEquals(lines, config.effectiveGridRows)
         }
 
-        // Baris liar dipangkas ke 1-6.
+        // Mode sendiri: baris tombol tidak lagi terikat baris tulisan.
+        val manual = PenboardConfig(
+            boardLines = 3,
+            gridRowsFollow = false,
+            gridRows = 5,
+            gridButtonCount = 15
+        ).sanitized()
+        assertEquals(5, manual.effectiveGridRows)
+        assertEquals(3, manual.boardLines)
+        assertEquals(15, manual.gridButtonCount)
+        // Mengubah baris tulisan tidak menggeser baris tombol yang diatur sendiri.
+        assertEquals(5, manual.copy(boardLines = 6).sanitized().effectiveGridRows)
+        // Baris tombol liar tetap dipangkas ke 1-6.
+        assertEquals(
+            PenboardConfig.MAX_GRID_ROWS,
+            PenboardConfig(gridRowsFollow = false, gridRows = 99).sanitized().effectiveGridRows
+        )
+        assertEquals(
+            PenboardConfig.MIN_GRID_ROWS,
+            PenboardConfig(gridRowsFollow = false, gridRows = -3).sanitized().effectiveGridRows
+        )
+
+        // Baris liar area tulis dipangkas ke 1-6.
         assertEquals(PenboardConfig.MIN_BOARD_LINES, PenboardConfig(boardLines = 0).sanitized().boardLines)
         assertEquals(PenboardConfig.MAX_BOARD_LINES, PenboardConfig(boardLines = 99).sanitized().boardLines)
     }
@@ -295,6 +324,8 @@ class PenboardConfigTest {
             gridButtonCount = 4,
             gridColumns = 2,
             gridCellDp = 56,
+            gridRowsFollow = false,
+            gridRows = 5,
             panelWidthFraction = 0.62f,
             boardWidthFraction = 0.72f,
             panelOffsetX = 0.25f,
@@ -310,6 +341,8 @@ class PenboardConfigTest {
         assertEquals(config.penWidthDp, restored.penWidthDp)
         assertEquals(config.gridButtonCount, restored.gridButtonCount)
         assertEquals(config.gridColumns, restored.gridColumns)
+        assertFalse(restored.gridRowsFollow)
+        assertEquals(config.effectiveGridRows, restored.effectiveGridRows)
         assertEquals(config.gridCellDp, restored.gridCellDp)
         assertEquals(config.panelWidthFraction, restored.panelWidthFraction, 0.0001f)
         assertEquals(config.boardWidthFraction, restored.boardWidthFraction, 0.0001f)
@@ -489,7 +522,7 @@ class PenboardConfigTest {
         )
         val config = PenboardConfig.fromJson(json)
         assertEquals(PenboardConfig.DEFAULT_BOARD_LINES, config.boardLines)
-        assertEquals(PenboardConfig.DEFAULT_BOARD_LINES, config.gridRows)
+        assertEquals(PenboardConfig.DEFAULT_BOARD_LINES, config.effectiveGridRows)
         // Tombol lama "overlay" (papan melayang) jatuh ke SPACE, bukan menggagalkan pembacaan.
         assertEquals(KeyAction.HIDE, config.gridKeys.first().action)
         assertEquals(KeyAction.SPACE, config.gridKeys[1].action)

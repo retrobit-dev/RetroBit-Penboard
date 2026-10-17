@@ -64,7 +64,7 @@ object GridMath {
 
     fun columnsOr(value: Int): Int = value.coerceIn(MIN_COLUMNS, MAX_COLUMNS)
 
-    /** Jumlah baris area tulis (1-6). Baris tombol samping selalu mengikuti angka ini. */
+    /** Jumlah baris area tulis (1-6). Baris tombol samping bisa mengikuti angka ini atau diatur sendiri. */
     fun linesOr(value: Int): Int = value.coerceIn(MIN_LINES, MAX_LINES)
 
     /**

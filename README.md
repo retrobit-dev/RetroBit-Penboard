@@ -2,7 +2,23 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.5.1** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.2** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.2
+
+- **Baris tombol samping bisa diatur sendiri** (*Area tombol → Baris tombol mengikuti area
+  tulis*, matikan lalu geser *Jumlah baris tombol samping*, 1–6). Bawaannya tetap **mengikuti
+  baris area tulis**; kalau dimatikan, 3 baris tulisan bisa punya 5 baris tombol, misalnya
+  3 kolom x 5 baris = 15 tombol.
+- **Kolom tetap 1–6**: tambah/kurangi kolom seperti sebelumnya, dan pemangkasan jumlah tombol
+  otomatis mengikuti (kolom x baris).
+- **Ukuran tombol otomatis = tinggi satu baris area tulis**, berapa pun baris tombolnya. Jadi
+  menambah baris tombol menambah tinggi kolom tombol, tidak mengecilkan tombolnya. Ukuran
+  sendiri tetap 32–160 dp dan tetap dibatasi lebar/tinggi supaya tidak terpotong.
+- Kartu pratinjau menampilkan jumlah baris yang dipakai; bila baris diatur sendiri, teksnya
+  *"✓ 5 baris tombol samping diatur sendiri, area tulis 3 baris (rata atas)"*.
+- Pratinjau `docs/preview.png` kini berisi **10 contoh**, termasuk 3 kolom x 5 baris tombol
+  dengan area tulis 3 baris.
 
 ## Yang baru di 3.5.1
 
@@ -259,10 +275,11 @@ Versi terbaru: **3.5.1** (lihat [Releases](https://github.com/retrobit-dev/Retro
 ```
 
 
-Kolom tombol kanan **rata atas** dengan area tulis, dan **jumlah barisnya sama** dengan baris
-area tulis. Tombolnya **persegi**; tingginya = sisi tombol (bisa otomatis = jarak baris, atau
-disetel 32–160 dp), jadi kalau ukurannya lebih kecil dari jarak baris, kolom tombol berhenti di
-tengah papan — memang begitu yang diminta (sejajar atas saja).
+Kolom tombol kanan **rata atas** dengan area tulis. Jumlah barisnya **mengikuti baris area
+tulis** secara bawaan, atau **diatur sendiri** 1–6 lewat sakelar di kartu *Area tombol*.
+Tombolnya **persegi**; tingginya = sisi tombol (otomatis = tinggi satu baris tulisan, atau
+disetel 32–160 dp), jadi kalau baris tombol lebih sedikit dari baris tulisan, kolomnya berhenti
+di tengah papan — memang begitu yang diminta (sejajar atas saja).
 
 Kartu *Pratinjau* menampilkan bukti terukur, mis. *"✓ Tombol persegi 108 px: 3 kolom x 3 baris"*
 dan *"✓ Baris tombol samping = baris area tulis: 3 = 3 (rata atas)"*. Tarikan pada bilah judul
@@ -289,7 +306,8 @@ terpotong.
   melebar/menyempit mengikuti **Lebar papan** atau tarikan sudut. **Lebar area tulis**
   (40–80%) menjamin area menulis tidak terdesak kolom tombol.
 - **Area tulis**: 1–6 baris (bawaan **3**), tinggi = baris x jarak baris.
-- **Area tombol**: kolom 1–6, **baris selalu = baris area tulis** (sampai 36 tombol persegi).
+- **Area tombol**: kolom 1–6 dan baris 1–6; barisnya **mengikuti area tulis** (bawaan) atau
+  **diatur sendiri** (sampai 36 tombol persegi).
 - **Ukuran tombol**: samping otomatis (sisi = jarak baris) atau 32–160 dp; tombol atas punya
   pengali lebar (1x–4x) dan tinggi (0,6x–2x) sendiri.
 - Setiap tombol bebas dipilih aksinya dan bisa diberi label sendiri.
@@ -329,7 +347,7 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 | Bagian | Isi |
 | --- | --- |
 | Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), **jumlah baris area tulis 1–6 (bawaan 3)**, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
-| Area tombol | **jumlah kolom 1–6** (barisnya otomatis = baris area tulis), jumlah tombol tampil, **ukuran sisi tombol** (otomatis atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
+| Area tombol | **jumlah kolom 1–6**, **baris 1–6** (bawaan mengikuti baris area tulis, bisa diatur sendiri), jumlah tombol tampil, **ukuran sisi tombol** (otomatis = tinggi satu baris tulisan, atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |

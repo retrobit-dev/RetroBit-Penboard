@@ -25,13 +25,13 @@ import kotlin.math.roundToInt
  * Susunan Penboard: **papan tulis di kiri, kolom tombol persegi di kanan**.
  *
  * - Tombol samping **selalu persegi** dan jumlahnya bisa diatur: kolom 1-6, baris 1-6
- *   (sampai 36 tombol). Tinggi area tulis mengikuti tombol: `baris x sisi tombol` +
- *   jarak antar baris, jadi papan dan tombol selalu sejajar atas-bawah.
+ *   (sampai 36 tombol), mengikuti baris area tulis atau diatur sendiri. Ukuran
+ *   otomatisnya = tinggi satu baris tulisan; kolom tombol selalu rata atas.
  * - Di atas papan ada **bingkai jendela**: bilah judul (bisa ditarik untuk memindah
  *   papan) dengan tombol minimize, dan **sudut kanan bawah** bisa ditarik untuk
  *   mengubah lebar papan sekaligus ukuran tombolnya.
- * - Di bawah papan ada **tombol bawah**: tingginya selalu sama dengan tombol samping,
- *   lebarnya bisa diatur sendiri per tombol.
+ * - Di atas papan ada **bilah tombol atas** (dulu "tombol bawah"): jumlahnya sampai 16,
+ *   barisnya memenuhi lebar papan, dan ukurannya mengikuti tombol samping.
  * - Ikon tombol mengikuti [PenboardConfig.iconStyle] (pixel art atau vektor).
  */
 class BoardPanel(private val context: Context) {
@@ -248,9 +248,9 @@ class BoardPanel(private val context: Context) {
         val barHeight = (config.titleBarHeightDp() * density).toInt()
         val showBar = config.showsTitleBar
         val columns = GridMath.columnsOr(config.gridColumns)
-        // Baris tombol samping selalu sama dengan baris area tulis.
         val lines = GridMath.linesOr(config.boardLines)
-        val rows = lines
+        // Baris tombol samping: mengikuti area tulis (bawaan) atau diatur sendiri.
+        val rows = GridMath.rowsOr(config.effectiveGridRows)
 
         // ---------------------------------------------------------------- ukuran papan
         val panelWidth = (screenWidth * config.panelWidthFraction.coerceIn(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, 1f))
@@ -287,7 +287,8 @@ class BoardPanel(private val context: Context) {
                 availableWidthPx = usableWidth,
                 spacingPx = spacing,
                 minCellPx = minCell,
-                rows = rows,
+                // Ukuran otomatis = tinggi satu baris tulisan, berapa pun baris tombolnya.
+                rows = lines,
                 columns = columns,
                 minBoardWidthPx = boardWidth
             )
@@ -329,7 +330,7 @@ class BoardPanel(private val context: Context) {
                     availableWidthPx = usableWidth,
                     spacingPx = spacing,
                     minCellPx = minCell,
-                    rows = rows,
+                    rows = lines,
                     columns = columns,
                     minBoardWidthPx = boardWidth
                 ).coerceAtMost(maxCell)
@@ -377,7 +378,7 @@ class BoardPanel(private val context: Context) {
                     availableWidthPx = usableWidth,
                     spacingPx = spacing,
                     minCellPx = minCell,
-                    rows = rows,
+                    rows = lines,
                     columns = columns,
                     minBoardWidthPx = boardWidth
                 ).coerceAtMost(cell).coerceAtLeast(1)

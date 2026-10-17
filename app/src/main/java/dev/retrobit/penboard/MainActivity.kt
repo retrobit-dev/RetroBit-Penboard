@@ -352,7 +352,7 @@ class MainActivity : AppCompatActivity() {
         Ui.body(
             card,
             if (store.config.lineOffsetEnabled) {
-                getString(R.string.preview_line_on, store.config.gridRows)
+                getString(R.string.preview_line_on, store.config.effectiveGridRows)
             } else {
                 getString(R.string.preview_line_off)
             }
@@ -404,17 +404,20 @@ class MainActivity : AppCompatActivity() {
     private fun updatePreviewStatus(square: TextView, align: TextView, panel: BoardPanel) {
         val cell = panel.cellPx
         val columns = store.config.gridColumns
-        val rows = store.config.gridRows
+        val rows = store.config.effectiveGridRows
         square.text = if (cell > 0) {
             getString(R.string.preview_square_ok, cell, columns, rows)
         } else {
             getString(R.string.preview_square_bad)
         }
         val (gridRows, boardRows) = panel.measuredRows()
-        align.text = if (gridRows > 0 && gridRows == boardRows) {
-            getString(R.string.preview_align_ok, gridRows, boardRows)
-        } else {
-            getString(R.string.preview_align_bad, gridRows, boardRows)
+        align.text = when {
+            // Diatur sendiri: jumlahnya memang boleh berbeda, yang penting rata atas.
+            !store.config.gridRowsFollow && gridRows > 0 ->
+                getString(R.string.preview_align_manual, gridRows, boardRows)
+            gridRows > 0 && gridRows == boardRows ->
+                getString(R.string.preview_align_ok, gridRows, boardRows)
+            else -> getString(R.string.preview_align_bad, gridRows, boardRows)
         }
     }
 
@@ -506,8 +509,8 @@ class MainActivity : AppCompatActivity() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_grid), getString(R.string.card_grid_sub))
         val columns = GridMath.columnsOr(config.gridColumns)
-        // Baris tombol samping selalu sama dengan baris area tulis.
-        val rows = GridMath.linesOr(config.boardLines)
+        // Baris tombol samping: mengikuti area tulis (bawaan) atau diatur sendiri.
+        val rows = GridMath.rowsOr(config.effectiveGridRows)
 
         Ui.sliderRow(
             card, getString(R.string.setting_grid_columns), columns,
@@ -525,8 +528,46 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-        // Baris tombol tidak punya slider sendiri: selalu mengikuti baris area tulis.
-        Ui.body(card, getString(R.string.grid_rows_follow, rows))
+        // Baris tombol: ikut area tulis (bawaan) atau diatur sendiri 1-6.
+        Ui.switchRow(
+            card,
+            getString(R.string.setting_grid_rows_follow),
+            getString(R.string.setting_grid_rows_follow_sub),
+            config.gridRowsFollow
+        ) { value ->
+            store.update {
+                val nextRows = if (value) it.boardLines else it.effectiveGridRows
+                it.copy(
+                    gridRowsFollow = value,
+                    // Simpan jumlah yang sedang tampil saat beralih ke pengaturan sendiri.
+                    gridRows = nextRows,
+                    gridButtonCount = it.gridButtonCount
+                        .coerceAtMost(GridMath.slots(it.gridColumns, nextRows))
+                )
+            }
+            render()
+        }
+        if (config.gridRowsFollow) {
+            Ui.body(card, getString(R.string.grid_rows_follow, rows))
+        } else {
+            Ui.sliderRow(
+                card,
+                getString(R.string.setting_grid_rows),
+                config.gridRows,
+                PenboardConfig.MIN_GRID_ROWS,
+                PenboardConfig.MAX_GRID_ROWS,
+                getString(R.string.unit_rows)
+            ) { value ->
+                store.update {
+                    it.copy(
+                        gridRows = value,
+                        gridButtonCount = it.gridButtonCount
+                            .coerceAtMost(GridMath.slots(it.gridColumns, value))
+                    )
+                }
+            }
+            Ui.body(card, getString(R.string.grid_rows_manual, rows))
+        }
         Ui.sliderRow(
             card, getString(R.string.setting_grid_count), config.gridButtonCount,
             PenboardConfig.MIN_GRID_KEYS, GridMath.slots(columns, rows), getString(R.string.unit_keys)
@@ -628,6 +669,7 @@ class MainActivity : AppCompatActivity() {
             availableWidthPx = usable,
             spacingPx = spacing,
             minCellPx = (GridMath.MIN_TOUCH_DP * resources.displayMetrics.density).toInt(),
+            // Ukuran otomatis = tinggi satu baris tulisan, bukan dibagi baris tombol.
             rows = GridMath.linesOr(config.boardLines),
             columns = GridMath.columnsOr(config.gridColumns),
             minBoardWidthPx = boardWidth
