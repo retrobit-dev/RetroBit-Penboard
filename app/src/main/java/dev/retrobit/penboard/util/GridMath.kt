@@ -43,6 +43,17 @@ object GridMath {
     /** Bagian lebar yang paling banyak dipakai kolom tombol saat ukurannya otomatis. */
     const val MAX_WIDTH_FRACTION = 0.34f
 
+    /**
+     * Bagian lebar panel (isi, tanpa bingkai) yang **dijamin** untuk area tulis.
+     *
+     * Naikkan angkanya bila area tulis terasa sempit: kolom tombol mengambil sisa
+     * ruang, dan ukuran tombol otomatis ikut mengecil supaya tetap muat. Nilai ini
+     * juga yang mencegah tombol samping terpotong saat ukuran tombol diatur manual.
+     */
+    const val MIN_BOARD_WIDTH_FRACTION = 0.40f
+    const val MAX_BOARD_WIDTH_FRACTION = 0.80f
+    const val DEFAULT_BOARD_WIDTH_FRACTION = 0.60f
+
     /** Lebar tombol bawah: 1x (persegi, sama dengan tombol samping) sampai 4x. */
     const val MIN_WIDTH_MULTIPLIER = 1f
     const val MAX_WIDTH_MULTIPLIER = 4f
@@ -145,6 +156,50 @@ object GridMath {
         spacingPx: Int = 0
     ): Int = (panelWidthPx - 2 * paddingPx - gridWidthPx - spacingPx).coerceAtLeast(1)
 
+    /** Pengaturan lebar area tulis dipangkas ke rentang 40%-80%. */
+    fun boardFractionOr(value: Float): Float =
+        if (value.isNaN()) DEFAULT_BOARD_WIDTH_FRACTION
+        else value.coerceIn(MIN_BOARD_WIDTH_FRACTION, MAX_BOARD_WIDTH_FRACTION)
+
+    /**
+     * Lebar area tulis yang **dijamin** (px) dari bagian panel yang bisa dipakai.
+     *
+     * Kolom tombol tidak boleh lebih sempit dari [gridMinWidthPx] (semua tombol
+     * selebar [minCell][MIN_TOUCH_DP]), jadi permintaan yang terlalu besar dipangkas
+     * dulu. Dengan begitu area tulis tidak pernah menekan kolom tombol sampai
+     * terpotong di tepi panel.
+     */
+    fun boardWidthFor(
+        usableWidthPx: Int,
+        fraction: Float,
+        minBoardWidthPx: Int,
+        gridMinWidthPx: Int,
+        spacingPx: Int = 0
+    ): Int {
+        val usable = usableWidthPx.coerceAtLeast(1)
+        val maxBoard = (usable - spacingPx - gridMinWidthPx).coerceAtLeast(1)
+        val lower = minOf(minBoardWidthPx.coerceAtLeast(1), maxBoard)
+        val wanted = (usable * boardFractionOr(fraction)).toInt().coerceAtLeast(1)
+        return wanted.coerceIn(lower, maxBoard)
+    }
+
+    /**
+     * Sisi tombol terbesar (px) yang masih menyisakan [boardWidthPx] untuk area tulis.
+     *
+     * Dipakai mengatur ukuran tombol manual: permintaan pengguna yang terlalu besar
+     * dipangkas ke angka ini supaya **seluruh kolom tombol tetap terlihat**.
+     */
+    fun maxCellByWidthPx(
+        usableWidthPx: Int,
+        boardWidthPx: Int,
+        columns: Int,
+        spacingPx: Int = 0
+    ): Int {
+        val safeColumns = columnsOr(columns)
+        val room = (usableWidthPx - boardWidthPx - spacingPx).coerceAtLeast(1)
+        return ((room - spacingPx * (safeColumns - 1)) / safeColumns).coerceAtLeast(1)
+    }
+
     /**
      * Berapa tombol yang muat dalam **satu baris** di bawah papan tulis.
      *
@@ -186,7 +241,31 @@ object GridMath {
             .coerceAtLeast(1)
 
     /**
-     * Tinggi tiap baris tombol bawah: baris setinggi tombol tertinggi di baris itu
+    /**
+     * Jarak kiri tiap tombol bawah pada **satu baris** supaya baris itu memenuhi
+     * seluruh lebar panel (tombol tetap sebesar yang dipilih; sisa ruang dibagi rata
+     * menjadi jarak antar tombol).
+     *
+     * Indeks pertama selalu 0 (menempel di tepi kiri). Baris berisi satu tombol tidak
+     * punya sisa ruang untuk dibagi, jadi tombolnya tetap di kiri.
+     */
+    fun bottomRowGaps(
+        widthsPx: List<Int>,
+        availableWidthPx: Int,
+        spacingPx: Int = 0
+    ): List<Int> {
+        if (widthsPx.isEmpty()) return emptyList()
+        val used = widthsPx.sum() + spacingPx * (widthsPx.size - 1)
+        val gaps = widthsPx.size - 1
+        val extra = if (gaps > 0) {
+            (availableWidthPx - used).coerceAtLeast(0) / gaps
+        } else {
+            0
+        }
+        return widthsPx.mapIndexed { index, _ -> if (index == 0) 0 else spacingPx + extra }
+    }
+
+    /** Tinggi tiap baris tombol bawah: baris setinggi tombol tertinggi di baris itu
      * (tombolnya sendiri dipusatkan secara vertikal saat dipasang).
      */
     fun bottomRowHeights(

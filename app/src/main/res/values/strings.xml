@@ -7,7 +7,7 @@
     <string name="card_preset">Mulai cepat: preset HiWrite</string>
     <string name="card_preset_sub">Satu ketukan untuk menyetel semuanya seperti HiWrite (Huawei).</string>
     <string name="action_preset_huawei">Terapkan preset HiWrite</string>
-    <string name="preset_note">Papan tulis 200 dp, 6 baris tombol berikon (18 tombol), tema retro cyberpunk grayscale ePaper, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan dan tombol samping pena tidak diubah.</string>
+    <string name="preset_note">Area tulis 4 baris berikon (12 tombol samping), tema retro cyberpunk grayscale ePaper, bingkai jendela dengan 5 tombol atas, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan dan tombol samping pena tidak diubah.</string>
 
     <!-- Kartu: jendela papan (bingkai + tombol minimize) -->
     <string name="card_window">Jendela papan</string>
@@ -23,23 +23,25 @@
     <string name="setting_panel_floating">Papan bisa dipindah ke mana saja</string>
     <string name="setting_panel_floating_sub">Tarik bilah judul di atas papan untuk memindahkannya (seperti jendela melayang): ke kiri/kanan bebas, dan bisa diangkat ke atas — area keyboard ikut meninggi supaya papan tetap di dalamnya. Posisinya disimpan, jadi tetap di situ saat keyboard muncul lagi. Matikan bila ingin papan selalu menempel di pojok kiri atas area keyboard.</string>
     <string name="setting_panel_width">Lebar papan</string>
+    <string name="setting_board_width">Lebar area tulis</string>
+    <string name="board_width_note">Bagian lebar papan yang dijamin untuk area menulis (40-80%); kolom tombol mengambil sisanya. Naikkan bila area tulis terasa sempit: ukuran tombol otomatis ikut mengecil supaya seluruh kolom tetap terlihat. Bila ukuran tombol diatur sendiri, angka ini menjadi batas agar tombol tidak terpotong di tepi papan.</string>
     <string name="unit_percent">%</string>
     <string name="window_note">Bilah judul tidak ikut menutupi tulisan: tingginya 22 dp dan digambar di dalam bingkai panel. Bila bingkainya dimatikan, tombol minimize tetap tersedia sebagai bilah kecil (18 dp) di kanan atas papan.</string>
     <string name="window_drag_note">Bilah judul = pegangan pindah, sudut kanan bawah papan = pegangan ubah ukuran. Menarik bilah judul menggeser papan ke kiri/kanan dan mengangkatnya ke atas (area keyboard ikut meninggi, lalu mengecil lagi saat papan diturunkan). Menarik sudut: ke kanan/kiri melebarkan papan, ke atas/bawah menambah atau mengurangi tinggi papan sekaligus tinggi area tulis.</string>
     <string name="msg_minimize_preview">Papan disembunyikan — di pratinjau ini hanya simulasi.</string>
 
-    <!-- Kartu: bilah tombol bawah (pixel art) -->
-    <string name="card_bottom">Tombol bawah (pixel art)</string>
-    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Tinggi dan lebarnya bisa diatur sendiri per tombol.</string>
-    <string name="setting_bottom_show">Tampilkan bilah tombol bawah</string>
+    <!-- Kartu: bilah tombol atas (pixel art) -->
+    <string name="card_bottom">Tombol atas (pixel art)</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Sampai 16 tombol; setiap baris otomatis memenuhi lebar papan. Tinggi dan lebarnya bisa diatur sendiri per tombol.</string>
+    <string name="setting_bottom_show">Tampilkan bilah tombol atas</string>
     <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
-    <string name="setting_bottom_count">Jumlah tombol bawah</string>
+    <string name="setting_bottom_count">Jumlah tombol atas</string>
     <string name="setting_bottom_width">Lebar tombol</string>
     <string name="setting_bottom_height">Tinggi tombol</string>
-    <string name="setting_bottom_width_sub">Ukuran dasar tombol bawah mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
-    <string name="action_bottom_default">Kembalikan bilah bawah</string>
-    <string name="bottom_slot_title">Tombol bawah %1$d</string>
-    <string name="bottom_note">Tombol bawah berada di dalam bingkai jendela, tepat di atas area menulis. Ukuran dasarnya mengikuti tombol samping, tetapi lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya. Ikonnya pixel art 12 x 12 supaya tetap tajam; bila satu baris tidak cukup, tombolnya mengalir ke baris berikutnya.</string>
+    <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
+    <string name="action_bottom_default">Kembalikan bilah tombol atas</string>
+    <string name="bottom_slot_title">Tombol atas %1$d</string>
+    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis. Jumlahnya sampai 16; setiap baris otomatis memenuhi lebar papan (sisa ruang dibagi rata), dan tombol yang tidak muat turun ke baris berikutnya. Ukuran dasarnya mengikuti tombol samping, tetapi lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya. Ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
@@ -135,7 +137,7 @@
     <string name="theme_note">Tema retro cyberpunk: papan warna kertas ePaper, panel hitam dengan garis pindaian, tombol monokrom berikon, huruf mesin tik.</string>
     <string name="setting_scanlines">Garis pindaian ePaper</string>
     <string name="setting_icon_style">Gaya ikon tombol</string>
-    <string name="setting_icon_style_sub">Pixel art: kotak-kotak 12 x 12 yang tajam (bagian dari tema retro). Vektor: ikon bergaris halus. Berlaku untuk tombol samping, tombol bawah, dan tombol minimize.</string>
+    <string name="setting_icon_style_sub">Pixel art: kotak-kotak 12 x 12 yang tajam (bagian dari tema retro). Vektor: ikon bergaris halus. Berlaku untuk tombol samping, tombol atas, dan tombol minimize.</string>
     <string name="setting_scanlines_sub">Tekstur garis halus pada panel dan garis panduan putus-putus di papan.</string>
     <string name="grid_slot_label">Tombol %1$d: %2$s</string>
     <string name="grid_slot_title">Tombol grid %1$d</string>

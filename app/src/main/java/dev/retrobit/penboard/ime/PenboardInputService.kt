@@ -31,11 +31,14 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
     /** Tinggi yang disediakan keyboard (0 = belum diketahui). */
     private var availableHeightPx = 0
 
+    /** Lebar sebenarnya area keyboard (0 = belum diketahui). */
+    private var availableWidthPx = 0
+
     /** Sisa tarikan sudut yang belum genap 1 dp (agar tarikan kecil tetap terasa). */
     private var pendingResizeDp = 0f
 
     private val configListener: (PenboardConfig) -> Unit = { config ->
-        panel?.applyConfig(config, availableHeightPx)
+        panel?.applyConfig(config, availableHeightPx, availableWidthPx)
     }
 
     override fun onCreate() {
@@ -57,14 +60,19 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         created.applyConfig(store.config)
         // Tinggi keyboard baru diketahui setelah tampilannya diukur; papan dipangkas
         // sekali lagi dengan angka itu supaya bingkai + tombol bawah tidak terpotong.
-        created.root.addOnLayoutChangeListener { view, _, top, _, bottom, _, _, _, _ ->
+        created.root.addOnLayoutChangeListener { view, left, top, right, bottom, _, _, _, _ ->
             // Tinggi yang tersedia untuk papan = tinggi area keyboard - ruang gerak
             // yang sedang dipakai, supaya papan tidak tumbuh sendiri saat diangkat.
             val height = (bottom - top) - created.panelLiftPx
-            if (height <= 0 || height == availableHeightPx) return@addOnLayoutChangeListener
+            val width = right - left
+            if (height <= 0) return@addOnLayoutChangeListener
+            if (height == availableHeightPx && width == availableWidthPx) {
+                return@addOnLayoutChangeListener
+            }
             availableHeightPx = height
+            availableWidthPx = width
             view.post {
-                panel?.applyConfig(store.config, height)
+                panel?.applyConfig(store.config, height, width)
                 restorePanelPosition()
             }
         }
@@ -95,9 +103,11 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         // kembali seperti terakhir dipindah pengguna.
         val current = panel
         val height = (current?.root?.height ?: 0) - (current?.panelLiftPx ?: 0)
+        val width = current?.root?.width ?: 0
         if (height > 0) {
             availableHeightPx = height
-            current?.applyConfig(store.config, height)
+            if (width > 0) availableWidthPx = width
+            current?.applyConfig(store.config, height, availableWidthPx)
         }
         restorePanelPosition()
     }

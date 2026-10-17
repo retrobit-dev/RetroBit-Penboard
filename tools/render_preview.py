@@ -21,6 +21,9 @@ PANEL_PADDING = int(3 * D)
 SPACING = int(3 * D)           # GridMath.SPACING_DP
 MIN_CELL = int(34 * D)         # GridMath.MIN_TOUCH_DP
 MIN_BOARD_W = int(72 * D)
+MIN_BOARD_FRACTION = 0.40
+MAX_BOARD_FRACTION = 0.80
+DEFAULT_BOARD_FRACTION = 0.60
 MAX_COLUMNS = 6
 MAX_ROWS = 6
 MIN_LINES = 1
@@ -160,6 +163,37 @@ def board_width_px(panel_width_px, padding_px, grid_width, spacing_px=0):
     return max(panel_width_px - 2 * padding_px - grid_width - spacing_px, 1)
 
 
+def board_fraction_or(value):
+    """Salinan GridMath.boardFractionOr: lebar area tulis 40-80% isi panel."""
+    return max(MIN_BOARD_FRACTION, min(MAX_BOARD_FRACTION, value))
+
+
+def board_width_for(usable_width, fraction, min_board_width, grid_min_width, spacing_px=0):
+    """Salinan GridMath.boardWidthFor: lebar area tulis yang dijamin."""
+    usable = max(1, usable_width)
+    max_board = max(1, usable - spacing_px - grid_min_width)
+    lower = min(max(1, min_board_width), max_board)
+    wanted = max(1, int(usable * board_fraction_or(fraction)))
+    return max(lower, min(max_board, wanted))
+
+
+def max_cell_by_width(usable_width, board_width, columns, spacing_px=0):
+    """Salinan GridMath.maxCellByWidthPx: tombol tidak boleh menekan area tulis."""
+    columns = columns_or(columns)
+    room = max(1, usable_width - board_width - spacing_px)
+    return max(1, (room - spacing_px * (columns - 1)) // columns)
+
+
+def bottom_row_gaps(widths, available_width, spacing_px=0):
+    """Salinan GridMath.bottomRowGaps: sisa lebar dibagi rata antar tombol."""
+    if not widths:
+        return []
+    used = sum(widths) + spacing_px * (len(widths) - 1)
+    gaps = len(widths) - 1
+    extra = max(0, available_width - used) // gaps if gaps > 0 else 0
+    return [0 if index == 0 else spacing_px + extra for index in range(len(widths))]
+
+
 def cell_size(board_height, available_width, spacing_px=0, min_cell_px=0, rows=3,
               columns=3, cell_dp=0, density=1.0, min_board_width_px=0):
     """Salinan GridMath.cellSizePx: tombol persegi, dibatasi tinggi & lebar."""
@@ -251,7 +285,8 @@ def draw_board_ink(draw, left, top, right, line_gap, line_index=0):
 
 
 def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, minimize=True,
-                   bottom_count=0, widths=None, heights=None, line_gap_dp=LINE_GAP_DP):
+                   bottom_count=0, widths=None, heights=None, line_gap_dp=LINE_GAP_DP,
+                   board_fraction=DEFAULT_BOARD_FRACTION):
     """Ukuran-ukuran panel, dihitung dengan rumus yang sama seperti BoardPanel.
 
     - area tulis: tinggi = baris x jarak baris
@@ -266,9 +301,16 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
     line_gap_px = int(line_gap_dp * D)
     board_h = board_height_for_lines(lines, line_gap_px)
     usable_w = panel_w - 2 * PANEL_PADDING
-    cell = cell_size(board_h, usable_w, SPACING, MIN_CELL, rows, columns, cell_dp, D, MIN_BOARD_W)
+    # Lebar area tulis dijamin dulu; kolom tombol mengambil sisanya dan ukurannya
+    # dipangkas supaya tidak terpotong di tepi kanan.
+    board_w = board_width_for(usable_w, board_fraction, MIN_BOARD_W,
+                              grid_width_px(columns, MIN_CELL, SPACING), SPACING)
+    max_cell_w = max_cell_by_width(usable_w, board_w, columns, SPACING)
+    cell = cell_size(board_h, usable_w, SPACING, MIN_CELL, rows, columns, 0, D, board_w)
+    if cell_dp > 0:
+        cell = int(cell_dp * D)
+    cell = max(1, min(cell, max_cell_w))
     grid_w = grid_width_px(columns, cell, SPACING)
-    board_w = board_width_px(panel_w, PANEL_PADDING, grid_w, SPACING)
     widths = widths or []
     heights = heights or []
     # Bilah bawah memakai lebar isi panel (di atas area tulis), bukan lebar papan.
@@ -291,7 +333,7 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
 def draw_panel(lines, keys, flash=None, pending=None,
                title="PENBOARD", bottom_keys=None, frame=True, minimize=True,
                columns=3, cell_dp=0, panel_width=None, widths=None, heights=None, marks=None,
-               ink_line=0, line_gap_dp=LINE_GAP_DP):
+               ink_line=0, line_gap_dp=LINE_GAP_DP, board_fraction=DEFAULT_BOARD_FRACTION):
     """Panel Penboard lengkap: bilah judul, papan tulis, kolom tombol persegi, tombol bawah.
 
     frame=False -> bingkai dimatikan; bila minimize tetap nyala, yang digambar hanya
@@ -302,7 +344,8 @@ def draw_panel(lines, keys, flash=None, pending=None,
     bottom_keys = bottom_keys or []
     bottom_count = len(bottom_keys)
     geo = panel_geometry(lines, columns, cell_dp, panel_width,
-                         frame, minimize, bottom_count, widths, heights, line_gap_dp)
+                         frame, minimize, bottom_count, widths, heights, line_gap_dp,
+                         board_fraction)
     panel_w, panel_h = geo["panel_w"], geo["panel_h"]
     cell, board_h, board_w, grid_w = geo["cell"], geo["board_h"], geo["board_w"], geo["grid_w"]
     title_h = geo["title_h"]
@@ -388,10 +431,14 @@ def draw_panel(lines, keys, flash=None, pending=None,
     y_row = bottom_top
     for row_index, indexes in enumerate(geo["bottom_indexes"]):
         row_h = geo["bottom_rows"][row_index]
+        row_widths = [button_width_px(cell, widths[index] if widths and index < len(widths) else 1.0)
+                      for index in indexes]
+        # Jarak memakai lebar isi panel (sama dengan BoardPanel), bukan lebar papan.
+        gaps = bottom_row_gaps(row_widths, panel_w - 2 * PANEL_PADDING, SPACING)
         x_cursor = bl
-        for index in indexes:
+        for position, index in enumerate(indexes):
             action = bottom_keys[index]
-            width = button_width_px(cell, widths[index] if widths and index < len(widths) else 1.0)
+            width = row_widths[position]
             height = button_height_px(cell, heights[index] if heights and index < len(heights) else 1.0)
             y0 = y_row + (row_h - height) / 2
             draw.rounded_rectangle([x_cursor, y0, x_cursor + width, y0 + height],
@@ -400,7 +447,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
                                    outline=alpha(COL_ACCENT, 130), width=1)
             draw_pixel_icon(draw, PIXEL_ART.get(action), x_cursor + width / 2, y0 + height / 2,
                             min(width, height) * 0.62, COL_TEXT)
-            x_cursor += width + SPACING
+            x_cursor += width + (gaps[position + 1] if position + 1 < len(gaps) else SPACING)
         y_row += row_h + SPACING
 
     # tombol samping: semuanya persegi (sisi = cell)
@@ -476,6 +523,7 @@ def main():
     longer = draw_panel(5, DEFAULT_KEYS)
     ime = draw_panel(3, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
     second_line = draw_panel(3, DEFAULT_KEYS, flash="\u2713 kata", ink_line=1)
+    many_bottom = draw_panel(3, DEFAULT_KEYS, bottom_keys=(BOTTOM_KEYS * 4)[:12])
 
     pad = 40
     width = PANEL_W + pad * 2
@@ -505,6 +553,9 @@ def main():
         ("8. Menulis di baris ke-2 = teks masuk satu baris di bawah kursor",
          "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
          ("field2", second_line)),
+        ("9. Tombol atas sampai 16 - setiap baris memenuhi lebar papan",
+         "sisa ruang dibagi rata; tombol yang tidak muat turun ke baris berikutnya",
+         ("plain", many_bottom)),
     ]
     canvas_heights = [header]
     for _, _, (kind, item) in panels:
@@ -518,9 +569,9 @@ def main():
             canvas_heights.append(item.height + 60)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.0 - area tulis 3 baris, tombol rata atas, tombol bawah di atas papan",
+    draw.text((pad, 18), "Penboard 3.5.1 - lebar area tulis & 16 tombol atas",
               font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "baris tombol = baris area tulis; semua tombol bisa diatur ukurannya",
+    draw.text((pad, 42), "tombol tidak terpotong; baris tombol atas memenuhi lebar papan",
               font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
 
     y = header

@@ -140,6 +140,28 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, PenboardConfig(panelWidthFraction = 0.1f).sanitized().panelWidthFraction, 0.0001f)
         assertEquals(1f, PenboardConfig(panelWidthFraction = 4f).sanitized().panelWidthFraction, 0.0001f)
         assertEquals(0.8f, PenboardConfig(panelWidthFraction = 0.8f).sanitized().panelWidthFraction, 0.0001f)
+
+        // Lebar area tulis 40-80% lebar isi panel; kolom tombol mengambil sisanya.
+        assertEquals(
+            PenboardConfig.DEFAULT_BOARD_WIDTH_FRACTION,
+            PenboardConfig().boardWidthFraction,
+            0.0001f
+        )
+        assertEquals(
+            PenboardConfig.MIN_BOARD_WIDTH_FRACTION,
+            PenboardConfig(boardWidthFraction = 0.1f).sanitized().boardWidthFraction,
+            0.0001f
+        )
+        assertEquals(
+            PenboardConfig.MAX_BOARD_WIDTH_FRACTION,
+            PenboardConfig(boardWidthFraction = 4f).sanitized().boardWidthFraction,
+            0.0001f
+        )
+        assertEquals(
+            0.72f,
+            PenboardConfig(boardWidthFraction = 0.72f).sanitized().boardWidthFraction,
+            0.0001f
+        )
         assertEquals(0f, PenboardConfig(panelOffsetX = -3f).sanitized().panelOffsetX, 0.0001f)
         assertEquals(1f, PenboardConfig(panelOffsetY = 9f).sanitized().panelOffsetY, 0.0001f)
     }
@@ -274,6 +296,7 @@ class PenboardConfigTest {
             gridColumns = 2,
             gridCellDp = 56,
             panelWidthFraction = 0.62f,
+            boardWidthFraction = 0.72f,
             panelOffsetX = 0.25f,
             panelOffsetY = 0.5f,
             floatingPanel = false,
@@ -289,6 +312,7 @@ class PenboardConfigTest {
         assertEquals(config.gridColumns, restored.gridColumns)
         assertEquals(config.gridCellDp, restored.gridCellDp)
         assertEquals(config.panelWidthFraction, restored.panelWidthFraction, 0.0001f)
+        assertEquals(config.boardWidthFraction, restored.boardWidthFraction, 0.0001f)
         assertEquals(config.panelOffsetX, restored.panelOffsetX, 0.0001f)
         assertEquals(config.panelOffsetY, restored.panelOffsetY, 0.0001f)
         assertFalse(restored.floatingPanel)
@@ -319,6 +343,7 @@ class PenboardConfigTest {
             gridButtonCount = 77,
             gridCellDp = 9999,
             panelWidthFraction = 0.1f,
+            boardWidthFraction = 0.1f,
             panelOffsetX = -4f,
             panelOffsetY = 5f,
             cornerRadiusDp = -5,
@@ -336,6 +361,7 @@ class PenboardConfigTest {
         assertEquals(PenboardConfig.MAX_GRID_COLUMNS, wild.gridColumns)
         assertEquals(PenboardConfig.MAX_CELL_DP, wild.gridCellDp)
         assertEquals(PenboardConfig.MIN_PANEL_WIDTH_FRACTION, wild.panelWidthFraction, 0.0001f)
+        assertEquals(PenboardConfig.MIN_BOARD_WIDTH_FRACTION, wild.boardWidthFraction, 0.0001f)
         assertEquals(0f, wild.panelOffsetX, 0.0001f)
         assertEquals(1f, wild.panelOffsetY, 0.0001f)
         assertEquals(PenboardConfig.MIN_RADIUS_DP, wild.cornerRadiusDp)
@@ -474,10 +500,13 @@ class PenboardConfigTest {
     }
 
     @Test
-    fun `bilah bawah punya bawaan dan batas aman`() {
+    fun `bilah atas punya bawaan dan batas aman`() {
         val config = PenboardConfig()
         assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
-        assertEquals(PenboardConfig.BOTTOM_SLOTS, config.bottomKeys.size)
+        // Daftar bawaan berisi 8 aksi; slot penyimpanan sampai 16 tombol.
+        assertEquals(PenboardConfig.defaultBottomKeys().size, config.bottomKeys.size)
+        assertEquals(16, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(16, PenboardConfig.BOTTOM_SLOTS)
         assertEquals(
             listOf(
                 KeyAction.RECOGNIZE, KeyAction.ENTER, KeyAction.DELETE_STROKE,
@@ -489,6 +518,11 @@ class PenboardConfigTest {
         val many = PenboardConfig(bottomButtonCount = 99, bottomKeys = emptyList()).sanitized()
         assertEquals(PenboardConfig.MAX_BOTTOM_KEYS, many.bottomButtonCount)
         assertEquals(PenboardConfig.BOTTOM_SLOTS, many.bottomKeys.size)
+        // Slot ke-9 dan seterusnya memakai bawaan bergiliran, bukan tombol mati.
+        assertEquals(
+            PenboardConfig.defaultBottomKeys().first().action,
+            many.bottomKeys[PenboardConfig.defaultBottomKeys().size].action
+        )
 
         // Bilah bawah bisa dimatikan seluruhnya.
         val none = PenboardConfig(bottomButtonCount = -4).sanitized()
@@ -496,9 +530,10 @@ class PenboardConfigTest {
     }
 
     @Test
-    fun `tiap tombol bawah bawaan benar-benar melakukan sesuatu`() {
+    fun `tiap tombol atas bawaan benar-benar melakukan sesuatu`() {
         val defaults = PenboardConfig.defaultBottomKeys()
-        assertEquals(PenboardConfig.BOTTOM_SLOTS, defaults.size)
+        assertTrue(defaults.isNotEmpty())
+        assertTrue(defaults.size <= PenboardConfig.BOTTOM_SLOTS)
         defaults.forEach { key ->
             // Aksi TEXT tanpa teks hanya "tombol mati"; dengan teks berarti mengirim teks.
             val deadText = key.action == KeyAction.TEXT && key.text.isBlank()

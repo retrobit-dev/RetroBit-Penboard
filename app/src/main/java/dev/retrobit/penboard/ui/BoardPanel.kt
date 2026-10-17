@@ -105,6 +105,11 @@ class BoardPanel(private val context: Context) {
     var panelLiftPx: Int = 0
         private set
 
+    /** Pengaturan terakhir, dipakai saat lebar area keyboard baru diketahui. */
+    private var lastConfig: PenboardConfig = PenboardConfig()
+    private var lastHeightPx = 0
+    private var lastWidthPx = 0
+
     /** Batas angkat papan (px) menurut tinggi area keyboard yang tersedia saat ini. */
     val maxLiftPx: Int
         get() {
@@ -120,6 +125,16 @@ class BoardPanel(private val context: Context) {
         board.onPenButtonPrimary = { listener?.onPenButton(true) }
         board.onPenButtonSecondary = { listener?.onPenButton(false) }
         board.edgeToEdge = true
+
+        // Lebar area keyboard (atau kartu pratinjau) baru diketahui setelah tata letak
+        // pertama. Kalau papan lebih lebar dari induknya, kolom tombol di tepi kanan
+        // akan terpotong — jadi ukurannya dihitung ulang dengan lebar yang sebenarnya.
+        root.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+            val width = view.width
+            if (width > 0 && width != lastWidthPx) {
+                applyConfig(lastConfig, lastHeightPx, width)
+            }
+        }
 
         // Tombol grid dibuat sekali; penyusunannya (kolom x baris) dilakukan tiap
         // pengaturan diterapkan supaya jumlah kolom bisa berubah.
@@ -208,12 +223,26 @@ class BoardPanel(private val context: Context) {
      * Terapkan seluruh pengaturan ke papan dan tombol.
      *
      * [availableHeightPx] adalah tinggi yang disediakan keyboard (0 = belum diketahui);
-     * papan dipangkas otomatis supaya bingkai + bilah judul + tombol bawah tidak
-     * pernah terpotong di layar kecil.
+     * [availableWidthPx] adalah lebar area keyboard/kartu pratinjau (0 = pakai lebar
+     * tampilan). Papan dipangkas otomatis supaya bingkai + bilah judul + bilah tombol
+     * atas tidak pernah terpotong, dan kolom tombol tidak melewati tepi kanan.
      */
-    fun applyConfig(config: PenboardConfig, availableHeightPx: Int = 0) {
+    fun applyConfig(
+        config: PenboardConfig,
+        availableHeightPx: Int = 0,
+        availableWidthPx: Int = 0
+    ) {
+        lastConfig = config
+        lastHeightPx = availableHeightPx
         val spacing = (GridMath.SPACING_DP * density).toInt()
-        val screenWidth = context.resources.displayMetrics.widthPixels
+        // Lebar sebenarnya (area keyboard atau kartu pratinjau) lebih dipercaya daripada
+        // lebar layar: di jendela terbagi / layar berponi, area keyboard bisa lebih sempit.
+        val screenWidth = when {
+            availableWidthPx > 0 -> availableWidthPx
+            root.width > 0 -> root.width
+            else -> context.resources.displayMetrics.widthPixels
+        }
+        lastWidthPx = screenWidth
         val padding = (3 * density).toInt()
         val minCell = (GridMath.MIN_TOUCH_DP * density).toInt()
         val barHeight = (config.titleBarHeightDp() * density).toInt()
@@ -230,6 +259,15 @@ class BoardPanel(private val context: Context) {
         val minBoardWidth = (72 * density).toInt()
         // Lebar yang bisa dipakai isi panel (tanpa padding bingkai).
         val usableWidth = (panelWidth - 2 * padding).coerceAtLeast(1)
+        // Lebar area tulis yang dijamin: kolom tombol mengambil sisanya, jadi seluruh
+        // tombol (termasuk kolom ketiga) selalu terlihat utuh.
+        val boardWidth = GridMath.boardWidthFor(
+            usableWidthPx = usableWidth,
+            fraction = config.boardWidthFraction,
+            minBoardWidthPx = minBoardWidth,
+            gridMinWidthPx = GridMath.gridWidthPx(columns, minCell, spacing),
+            spacingPx = spacing
+        )
         val lineGapRequested = (config.lineGapDp * density).toInt().coerceAtLeast(1)
         val titleBlock = if (showBar) barHeight + spacing else 0
         val bottomCount = bottomCount(config)
@@ -239,8 +277,10 @@ class BoardPanel(private val context: Context) {
         // Ukuran tombol samping. Tombol bawah memakai ukuran itu (dikali pengali per tombol),
         // jadi tinggi bilah bawah ikut berubah saat ukuran tombol diubah.
         var lineGap = lineGapRequested
+        val maxCellByWidth = GridMath.maxCellByWidthPx(usableWidth, boardWidth, columns, spacing)
         var cell = if (config.gridCellDp > 0) {
-            (config.gridCellDp * density).toInt().coerceAtLeast(1)
+            // Ukuran pilihan pengguna tetap dipangkas supaya kolom tombol tidak terpotong.
+            (config.gridCellDp * density).toInt().coerceIn(1, maxCellByWidth)
         } else {
             GridMath.cellSizePx(
                 boardHeightPx = GridMath.boardHeightForLines(lines, lineGapRequested),
@@ -249,17 +289,24 @@ class BoardPanel(private val context: Context) {
                 minCellPx = minCell,
                 rows = rows,
                 columns = columns,
-                minBoardWidthPx = minBoardWidth
+                minBoardWidthPx = boardWidth
             )
         }
         var bottomRows: List<List<Int>> = emptyList()
         var bottomRowHeights: List<Int> = emptyList()
+        // 1 = sesuai pilihan pengguna. Hanya mengecil bila panel benar-benar tidak muat
+        // (mis. 16 tombol bawah dengan ukuran tombol manual yang besar).
+        var bottomScale = 1f
+        fun barCell(): Int = (cell * bottomScale).roundToInt().coerceAtLeast(1)
+        fun layoutBottom() {
+            bottomRows = GridMath.bottomRowIndexes(bottomCount, barCell(), bottomWidths, usableWidth, spacing)
+            bottomRowHeights = GridMath.bottomRowHeights(bottomRows, barCell(), bottomHeightMultipliers)
+        }
 
         // Dua putaran: ukuran tombol menentukan tinggi bilah bawah, dan tinggi bilah bawah
         // menentukan sisa ruang untuk papan. Hasilnya tidak pernah saling menimpa.
         repeat(2) {
-            bottomRows = GridMath.bottomRowIndexes(bottomCount, cell, bottomWidths, usableWidth, spacing)
-            bottomRowHeights = GridMath.bottomRowHeights(bottomRows, cell, bottomHeightMultipliers)
+            layoutBottom()
             val bottomBar = GridMath.bottomBarHeightPx(bottomRowHeights, spacing)
             // Bagian yang tidak bisa mengecil: padding bingkai, bilah judul, bilah bawah.
             val bottomSpacing = if (bottomBar > 0) spacing else 0
@@ -273,8 +320,9 @@ class BoardPanel(private val context: Context) {
             } else {
                 Int.MAX_VALUE
             }
+            val maxCell = minOf(maxCellByHeight, maxCellByWidth)
             cell = if (config.gridCellDp > 0) {
-                (config.gridCellDp * density).toInt().coerceIn(1, maxCellByHeight)
+                (config.gridCellDp * density).toInt().coerceIn(1, maxCell)
             } else {
                 GridMath.cellSizePx(
                     boardHeightPx = GridMath.boardHeightForLines(lines, lineGap),
@@ -283,12 +331,18 @@ class BoardPanel(private val context: Context) {
                     minCellPx = minCell,
                     rows = rows,
                     columns = columns,
-                    minBoardWidthPx = minBoardWidth
-                ).coerceAtMost(maxCellByHeight)
+                    minBoardWidthPx = boardWidth
+                ).coerceAtMost(maxCell)
             }.coerceAtLeast(1)
         }
 
         // ---------------------------------------------------------------- koreksi akhir
+        // Susunan bilah bawah dihitung ulang dengan ukuran tombol **final**: putaran
+        // terakhir bisa mengubah cell setelah barisnya sempat dihitung, dan jumlah
+        // baris (juga tinggi bilah) ikut berubah. Tanpa ini, tinggi panel bisa
+        // kurang dari kenyataan dan bilah bawah terpotong.
+        layoutBottom()
+
         // Tinggi bilah bawah ikut berubah saat ukuran tombol berubah (putaran di atas),
         // jadi bisa tersisa sedikit kelebihan. Pangkas jarak baris (dan tombol otomatis)
         // sampai seluruh panel benar-benar muat di ruang keyboard.
@@ -298,9 +352,21 @@ class BoardPanel(private val context: Context) {
         var bottomSpacing = if (bottomBarHeight > 0) spacing else 0
         fun totalHeight(): Int = 2 * padding + titleBlock + bottomBarHeight + bottomSpacing +
             maxOf(boardHeight, gridHeight)
+        fun measureBottom() {
+            layoutBottom()
+            bottomBarHeight = GridMath.bottomBarHeightPx(bottomRowHeights, spacing)
+            bottomSpacing = if (bottomBarHeight > 0) spacing else 0
+        }
         var guard = 0
-        while (availableHeightPx > 0 && totalHeight() > availableHeightPx && guard < 6) {
+        while (availableHeightPx > 0 && totalHeight() > availableHeightPx && guard < 12) {
             guard++
+            // Area tulis lebih penting daripada bilah tombol: bila panel terlalu tinggi,
+            // kecilkan dulu bilah bawah (sampai 40%) sebelum memangkas area menulis.
+            if (bottomBarHeight > 0 && bottomScale > 0.4f) {
+                bottomScale = (bottomScale - 0.1f).coerceAtLeast(0.4f)
+                measureBottom()
+                continue
+            }
             val excess = totalHeight() - availableHeightPx
             val shrink = ((excess + lines - 1) / lines).coerceAtLeast(1)
             lineGap = (lineGap - shrink).coerceAtLeast(1)
@@ -313,14 +379,22 @@ class BoardPanel(private val context: Context) {
                     minCellPx = minCell,
                     rows = rows,
                     columns = columns,
-                    minBoardWidthPx = minBoardWidth
+                    minBoardWidthPx = boardWidth
                 ).coerceAtMost(cell).coerceAtLeast(1)
                 gridHeight = GridMath.boardHeightPx(rows, cell, spacing)
-                bottomRows = GridMath.bottomRowIndexes(bottomCount, cell, bottomWidths, usableWidth, spacing)
-                bottomRowHeights = GridMath.bottomRowHeights(bottomRows, cell, bottomHeightMultipliers)
-                bottomBarHeight = GridMath.bottomBarHeightPx(bottomRowHeights, spacing)
-                bottomSpacing = if (bottomBarHeight > 0) spacing else 0
             }
+            // Batas keras: berapa pun pilihan pengguna, kolom tombol tidak boleh
+            // melebihi ruang yang tersisa setelah bingkai, judul, dan bilah bawah.
+            if (availableHeightPx > 0) {
+                val room = (availableHeightPx - (2 * padding + titleBlock + bottomBarHeight +
+                    bottomSpacing)).coerceAtLeast(1)
+                val hardMax = ((room - spacing * (rows - 1)) / rows).coerceAtLeast(1)
+                if (cell > hardMax) {
+                    cell = hardMax
+                    gridHeight = GridMath.boardHeightPx(rows, cell, spacing)
+                }
+            }
+            measureBottom()
         }
 
         val gridWidth = GridMath.gridWidthPx(columns, cell, spacing)
@@ -415,7 +489,7 @@ class BoardPanel(private val context: Context) {
             gridHeight
         ).apply { marginStart = spacing }
 
-        applyBottomBar(config, cell, spacing, usableWidth)
+        applyBottomBar(config, cell, spacing, usableWidth, bottomScale)
         applyResizeHandle(config)
         // Ukuran berubah => posisi harus dipasang ulang supaya sudut pengubah ukuran
         // tetap menempel di pojok kanan bawah papan.
@@ -496,7 +570,8 @@ class BoardPanel(private val context: Context) {
         config: PenboardConfig,
         cell: Int,
         spacing: Int,
-        availableWidth: Int
+        availableWidth: Int,
+        scale: Float = 1f
     ) {
         // Sama seperti tombol grid: lepaskan dulu dari baris lama sebelum disusun ulang.
         for (button in bottomButtons) (button.parent as? ViewGroup)?.removeView(button)
@@ -513,26 +588,37 @@ class BoardPanel(private val context: Context) {
         ).apply { topMargin = if (config.showsTitleBar) spacing else 0 }
 
         val defaults = PenboardConfig.defaultBottomKeys()
+        // Skala sama dengan yang dipakai [applyConfig] saat menghitung tinggi bilah.
+        val side = (cell * scale).roundToInt().coerceAtLeast(1)
         // Susunan barisnya dihitung di GridMath supaya sama persis dengan hitungan
         // tinggi panel di [applyConfig]: lebar & tinggi tiap tombol ikut diperhitungkan.
         val rows = GridMath.bottomRowIndexes(
             count,
-            cell,
+            side,
             bottomMultipliers(config),
             availableWidth,
             spacing
         )
-        val heights = GridMath.bottomRowHeights(rows, cell, bottomHeights(config))
+        val heights = GridMath.bottomRowHeights(rows, side, bottomHeights(config))
         for ((rowIndex, indexes) in rows.withIndex()) {
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 // Tombol berukuran berbeda tetap sejajar di tengah barisnya.
                 gravity = Gravity.CENTER_VERTICAL
             }
+            // Baris memenuhi lebar papan: sisa ruang dibagi rata menjadi jarak antar
+            // tombol, jadi tidak ada lagi celah kosong di ujung kanan.
+            val gaps = GridMath.bottomRowGaps(
+                indexes.map { index -> GridMath.buttonWidthPx(side, bottomMultiplier(config, index)) },
+                availableWidth,
+                spacing
+            )
             for ((position, index) in indexes.withIndex()) {
                 val key = config.bottomKeys.getOrNull(index)
                     ?: defaults.getOrElse(index) { defaults.last() }
-                row.addView(buildBottomButton(config, key, cell, spacing, position == 0, index))
+                row.addView(
+                    buildBottomButton(config, key, side, gaps.getOrElse(position) { spacing }, index)
+                )
             }
             bottomContainer.addView(
                 row,
@@ -549,8 +635,7 @@ class BoardPanel(private val context: Context) {
         config: PenboardConfig,
         key: KeyDef,
         side: Int,
-        spacing: Int,
-        first: Boolean,
+        gapStart: Int,
         index: Int
     ): KeyButton = bottomButtons[index].apply {
         repeatOnHold = key.repeatOnHold
@@ -559,7 +644,7 @@ class BoardPanel(private val context: Context) {
         val width = GridMath.buttonWidthPx(side, bottomMultiplier(config, index))
         val height = GridMath.buttonHeightPx(side, bottomHeight(config, index))
         layoutParams = LinearLayout.LayoutParams(width, height).apply {
-            marginStart = if (first) 0 else spacing
+            marginStart = gapStart
         }
         style(
             radiusPx = config.cornerRadiusDp * density * 0.9f,

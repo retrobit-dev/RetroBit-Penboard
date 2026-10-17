@@ -211,6 +211,15 @@ data class PenboardConfig(
     /** Lebar papan dibanding lebar layar (0,45-1). Bisa juga diubah dengan menarik sudut bingkai. */
     val panelWidthFraction: Float = 1f,
 
+    /**
+     * Lebar area tulis dibanding lebar isi panel (0,40-0,80).
+     *
+     * Kolom tombol mengambil sisa ruangnya. Ukuran tombol otomatis mengecil bila perlu,
+     * dan ukuran tombol manual dipangkas ke batas ini supaya **tidak ada tombol yang
+     * terpotong di tepi panel**.
+     */
+    val boardWidthFraction: Float = GridMath.DEFAULT_BOARD_WIDTH_FRACTION,
+
     /** Posisi papan (0-1 dari area keyboard) saat dipindah dengan menarik bingkai atas. */
     val panelOffsetX: Float = 0f,
     val panelOffsetY: Float = 0f,
@@ -352,6 +361,7 @@ data class PenboardConfig(
         put("iconStyle", iconStyle.id)
         put("gridCellDp", gridCellDp)
         put("panelWidthFraction", panelWidthFraction)
+        put("boardWidthFraction", boardWidthFraction)
         put("panelOffsetX", panelOffsetX)
         put("panelOffsetY", panelOffsetY)
         put("floatingPanel", floatingPanel)
@@ -380,6 +390,7 @@ data class PenboardConfig(
             gridKeys = sanitizeKeys(gridKeys, defaultGridKeys(), GRID_SLOTS),
             gridCellDp = if (gridCellDp <= 0) 0 else gridCellDp.coerceIn(MIN_CELL_DP, MAX_CELL_DP),
             panelWidthFraction = panelWidthFraction.coerceIn(MIN_PANEL_WIDTH_FRACTION, 1f),
+            boardWidthFraction = GridMath.boardFractionOr(boardWidthFraction),
             panelOffsetX = panelOffsetX.coerceIn(0f, 1f),
             panelOffsetY = panelOffsetY.coerceIn(0f, 1f),
             panelOpacity = panelOpacity.coerceIn(0, 100),
@@ -398,7 +409,10 @@ data class PenboardConfig(
     private fun sanitizeKeys(keys: List<KeyDef>, defaults: List<KeyDef>, slots: Int): List<KeyDef> {
         val result = ArrayList<KeyDef>(slots)
         for (index in 0 until slots) {
-            val key = keys.getOrNull(index) ?: defaults.getOrElse(index) { defaults.last() }
+            // Slot yang belum pernah diisi memakai bawaan bergiliran, bukan tombol
+            // terakhir terus-menerus — menambah tombol ke-9 tetap memberi aksi berguna.
+            val fallback = if (defaults.isEmpty()) KeyDef() else defaults[index % defaults.size]
+            val key = keys.getOrNull(index) ?: fallback
             result.add(
                 key.copy(
                     widthMultiplier = key.widthMultiplier
@@ -433,6 +447,11 @@ data class PenboardConfig(
 
         /** Lebar papan dibanding lebar layar. */
         const val MIN_PANEL_WIDTH_FRACTION = 0.45f
+
+        /** Lebar area tulis dibanding lebar isi panel; kolom tombol mengambil sisanya. */
+        const val MIN_BOARD_WIDTH_FRACTION = GridMath.MIN_BOARD_WIDTH_FRACTION
+        const val MAX_BOARD_WIDTH_FRACTION = GridMath.MAX_BOARD_WIDTH_FRACTION
+        const val DEFAULT_BOARD_WIDTH_FRACTION = GridMath.DEFAULT_BOARD_WIDTH_FRACTION
         const val MAX_PEN_COLORS = 6
 
         const val MIN_BOARD_LINES = GridMath.MIN_LINES
@@ -445,9 +464,12 @@ data class PenboardConfig(
         const val MIN_GRID_KEYS = 1
         const val MAX_GRID_KEYS = GRID_SLOTS
 
-        /** Bilah tombol di bawah papan tulis: 0 (disembunyikan) sampai 8 tombol. */
+        /**
+         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai 16 tombol.
+         * Barisnya memenuhi lebar papan; tombol yang tidak muat turun ke baris berikutnya.
+         */
         const val MIN_BOTTOM_KEYS = 0
-        const val MAX_BOTTOM_KEYS = 8
+        const val MAX_BOTTOM_KEYS = 16
         const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
         const val DEFAULT_BOTTOM_KEYS = 5
 
@@ -605,6 +627,7 @@ data class PenboardConfig(
                 iconStyle = IconStyle.fromId(json.optString("iconStyle", base.iconStyle.id)),
                 gridCellDp = json.optInt("gridCellDp", base.gridCellDp),
                 panelWidthFraction = json.optDouble("panelWidthFraction", base.panelWidthFraction.toDouble()).toFloat(),
+                boardWidthFraction = json.optDouble("boardWidthFraction", base.boardWidthFraction.toDouble()).toFloat(),
                 panelOffsetX = json.optDouble("panelOffsetX", base.panelOffsetX.toDouble()).toFloat(),
                 panelOffsetY = json.optDouble("panelOffsetY", base.panelOffsetY.toDouble()).toFloat(),
                 floatingPanel = json.optBoolean("floatingPanel", base.floatingPanel),

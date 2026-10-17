@@ -1,5 +1,6 @@
 package dev.retrobit.penboard.util
 
+import dev.retrobit.penboard.data.PenboardConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -264,6 +265,68 @@ class GridMathTest {
         // Empat kolom: 9 tombol butuh 3 baris.
         assertEquals(3, GridMath.rowsFor(9, columns = 4))
         assertEquals(1, GridMath.rowsFor(4, columns = 6))
+    }
+
+    @Test
+    fun `lebar area tulis bisa diatur dan tidak pernah menekan tombol`() {
+        // 1080 px isi panel, 3 kolom minimum 102 px + jarak: sisanya untuk area tulis.
+        val usable = 1080
+        val spacing = 9
+        val gridMin = GridMath.gridWidthPx(3, 102, spacing)
+
+        // Permintaan 60% dipakai apa adanya.
+        assertEquals(648, GridMath.boardWidthFor(usable, 0.6f, 216, gridMin, spacing))
+        // Permintaan 80% dipangkas supaya tombol tetap selebar minimum.
+        assertEquals(747, GridMath.boardWidthFor(usable, 0.8f, 216, gridMin, spacing))
+        // Nilai di luar 40-80% ditarik dulu ke rentang itu.
+        assertEquals(432, GridMath.boardWidthFor(usable, 0.1f, 216, gridMin, spacing))
+        // Ruang sempit: area tulis boleh mengecil sampai batas yang masih muat.
+        assertEquals(27, GridMath.boardWidthFor(360, 0.6f, 216, gridMin, spacing))
+
+        assertEquals(0.4f, GridMath.boardFractionOr(0f), 0.0001f)
+        assertEquals(0.8f, GridMath.boardFractionOr(9f), 0.0001f)
+        assertEquals(GridMath.DEFAULT_BOARD_WIDTH_FRACTION, GridMath.boardFractionOr(Float.NaN), 0.0001f)
+
+        // Ukuran tombol maksimum yang menyisakan lebar area tulis.
+        assertEquals(135, GridMath.maxCellByWidthPx(usable, 648, 3, spacing))
+        assertEquals(63, GridMath.maxCellByWidthPx(usable, 648, 6, spacing))
+        assertEquals(1, GridMath.maxCellByWidthPx(100, 200, 3, spacing))
+    }
+
+    @Test
+    fun `baris tombol atas memenuhi lebar papan`() {
+        // Tiga tombol 100 px + dua jarak 6 px = 312; sisa 168 dibagi dua = 84 per jarak.
+        assertEquals(listOf(0, 90, 90), GridMath.bottomRowGaps(listOf(100, 100, 100), 480, 6))
+        // Baris yang sudah penuh tetap memakai jarak dasar.
+        assertEquals(listOf(0, 6, 6), GridMath.bottomRowGaps(listOf(100, 100, 100), 312, 6))
+        // Satu tombol tidak punya ruang untuk dibagi; baris kosong tidak menghasilkan apa-apa.
+        assertEquals(listOf(0), GridMath.bottomRowGaps(listOf(100), 480, 6))
+        assertEquals(emptyList<Int>(), GridMath.bottomRowGaps(emptyList(), 480, 6))
+        // Lebar baris setelah dibagi = lebar panel.
+        val widths = listOf(70, 130, 70)
+        val gaps = GridMath.bottomRowGaps(widths, 540, 4)
+        assertEquals(540, widths.sum() + gaps.sum())
+    }
+
+    @Test
+    fun `bilah atas memuat sampai enam belas tombol`() {
+        assertEquals(16, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(16, PenboardConfig.BOTTOM_SLOTS)
+    }
+
+    @Test
+    fun `tiga kolom selalu muat di samping area tulis`() {
+        val usable = 1080
+        val spacing = 9
+        val gridMin = GridMath.gridWidthPx(3, 102, spacing)
+        for (fraction in listOf(0.4f, 0.6f, 0.8f)) {
+            val board = GridMath.boardWidthFor(usable, fraction, 216, gridMin, spacing)
+            val cell = GridMath.maxCellByWidthPx(usable, board, 3, spacing)
+            val grid = GridMath.gridWidthPx(3, cell, spacing)
+            // Area tulis + jarak + seluruh kolom tombol = tepat selebar isi panel.
+            assertTrue(board + spacing + grid <= usable)
+            assertTrue(cell >= 1)
+        }
     }
 
     @Test

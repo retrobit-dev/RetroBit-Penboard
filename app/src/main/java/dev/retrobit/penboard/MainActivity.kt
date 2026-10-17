@@ -607,17 +607,30 @@ class MainActivity : AppCompatActivity() {
                 .coerceIn(PenboardConfig.MIN_CELL_DP, PenboardConfig.MAX_CELL_DP)
         }
         val screen = resources.displayMetrics.widthPixels
+        val spacing = (GridMath.SPACING_DP * resources.displayMetrics.density).toInt()
+        val usable = screen - 2 * dp(3f)
+        val boardWidth = GridMath.boardWidthFor(
+            usableWidthPx = usable,
+            fraction = config.boardWidthFraction,
+            minBoardWidthPx = dp(72f),
+            gridMinWidthPx = GridMath.gridWidthPx(
+                GridMath.columnsOr(config.gridColumns),
+                (GridMath.MIN_TOUCH_DP * resources.displayMetrics.density).toInt(),
+                spacing
+            ),
+            spacingPx = spacing
+        )
         val cell = GridMath.cellSizePx(
             boardHeightPx = GridMath.boardHeightForLines(
                 config.boardLines,
                 (config.lineGapDp * resources.displayMetrics.density).toInt()
             ),
-            availableWidthPx = screen - 2 * dp(3f),
-            spacingPx = (GridMath.SPACING_DP * resources.displayMetrics.density).toInt(),
+            availableWidthPx = usable,
+            spacingPx = spacing,
             minCellPx = (GridMath.MIN_TOUCH_DP * resources.displayMetrics.density).toInt(),
             rows = GridMath.linesOr(config.boardLines),
             columns = GridMath.columnsOr(config.gridColumns),
-            minBoardWidthPx = dp(72f)
+            minBoardWidthPx = boardWidth
         )
         return (cell / resources.displayMetrics.density).roundToInt()
             .coerceIn(PenboardConfig.MIN_CELL_DP, PenboardConfig.MAX_CELL_DP)
@@ -666,6 +679,17 @@ class MainActivity : AppCompatActivity() {
             100,
             getString(R.string.unit_percent)
         ) { value -> store.update { it.copy(panelWidthFraction = value / 100f) } }
+        // Lebar area tulis: kolom tombol mengambil sisa ruangnya, jadi menaikkan angka
+        // ini membuat area menulis lebih lebar dan tombol ikut mengecil (tetap utuh).
+        Ui.sliderRow(
+            card,
+            getString(R.string.setting_board_width),
+            (config.boardWidthFraction * 100).roundToInt(),
+            (PenboardConfig.MIN_BOARD_WIDTH_FRACTION * 100).roundToInt(),
+            (PenboardConfig.MAX_BOARD_WIDTH_FRACTION * 100).roundToInt(),
+            getString(R.string.unit_percent)
+        ) { value -> store.update { it.copy(boardWidthFraction = value / 100f) } }
+        Ui.body(card, getString(R.string.board_width_note))
         Ui.body(card, getString(R.string.window_drag_note))
         Ui.body(card, getString(R.string.window_note))
     }
