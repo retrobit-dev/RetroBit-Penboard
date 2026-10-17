@@ -741,7 +741,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Bilah tombol **di bawah papan tulis**: jumlah dan isi tombolnya diatur pengguna,
+     * Bilah tombol **di atas papan tulis**: jumlah dan isi tombolnya diatur pengguna,
      * ikonnya pixel art (`util/PixelArt.kt`).
      */
     private fun renderBottomCard() {
@@ -768,7 +768,13 @@ class MainActivity : AppCompatActivity() {
         ) { value -> store.update { it.copy(bottomButtonCount = value) } }
 
         Ui.divider(card)
-        for (index in 0 until PenboardConfig.BOTTOM_SLOTS) {
+        // Hanya tampilkan baris yang mungkin dipakai: tombol yang aktif, atau 8 bawaan
+        // saat bilahnya masih pendek — 30 baris kosong akan membuat kartu terlalu panjang.
+        val editorSlots = maxOf(
+            config.bottomButtonCount,
+            PenboardConfig.defaultBottomKeys().size
+        ).coerceAtMost(PenboardConfig.BOTTOM_SLOTS)
+        for (index in 0 until editorSlots) {
             val key = config.bottomKeys.getOrNull(index)
                 ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
             val enabled = index < config.bottomButtonCount

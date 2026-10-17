@@ -515,7 +515,9 @@ def main():
     longer = draw_panel(5, DEFAULT_KEYS)
     ime = draw_panel(3, DEFAULT_KEYS, flash="\u2713 halo", pending=0.55)
     second_line = draw_panel(3, DEFAULT_KEYS, flash="\u2713 kata", ink_line=1)
-    many_bottom = draw_panel(3, DEFAULT_KEYS, bottom_keys=(BOTTOM_KEYS * 3)[:5])
+    # 20 tombol atas: muat karena tombol sampingnya kecil (32 dp).
+    many_bottom = draw_panel(3, DEFAULT_KEYS, cell_dp=32,
+                             bottom_keys=(BOTTOM_KEYS * 4)[:20])
     five_rows = draw_panel(3, DEFAULT_KEYS, rows=5)
 
     pad = 40
@@ -546,8 +548,8 @@ def main():
         ("8. Baris ke-2 = teks satu baris di bawah kursor",
          "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
          ("field2", second_line)),
-        ("9. Tombol atas maksimal 5, rata kiri",
-         "jarak antar tombol sama seperti tombol samping; tidak dilebarkan",
+        ("9. Tombol atas 20 buah (tombol samping 32 dp)",
+         "makin kecil tombolnya, makin banyak yang muat; rata kiri, jarak seragam",
          ("plain", many_bottom)),
         ("10. Kolom tombol 3 x 5 - area tulis tetap 3 baris",
          "baris tombol bisa mengikuti area tulis atau diatur sendiri 1-6",
@@ -567,9 +569,9 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.3 - tombol atas maks 5, jarak seragam",
+    draw.text((pad, 18), "Penboard 3.5.4 - tombol atas sampai 30",
               font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "tombol atas rata kiri; jaraknya sama dengan tombol samping",
+    draw.text((pad, 42), "ukuran tombol samping menentukan berapa yang muat per baris",
               font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
 
     y = header

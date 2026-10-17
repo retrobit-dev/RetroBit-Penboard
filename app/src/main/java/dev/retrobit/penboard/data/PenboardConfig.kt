@@ -489,12 +489,15 @@ data class PenboardConfig(
         const val MAX_GRID_KEYS = GRID_SLOTS
 
         /**
-         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai **5 tombol**.
-         * Semuanya bersebelahan dengan jarak yang sama seperti tombol samping dan
-         * rata kiri; tombol yang tidak muat turun ke baris berikutnya.
+         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai **30 tombol**.
+         *
+         * Ukuran dasarnya mengikuti tombol samping, jadi jumlah yang **benar-benar muat**
+         * bergantung pada ukuran itu: tombol samping 32 dp memberi sekitar 10 tombol per
+         * baris, sementara tombol 96 dp hanya sekitar 3. Tombol yang tidak muat turun ke
+         * baris berikutnya (tetap rata kiri, jaraknya sama dengan tombol samping).
          */
         const val MIN_BOTTOM_KEYS = 0
-        const val MAX_BOTTOM_KEYS = 5
+        const val MAX_BOTTOM_KEYS = 30
         const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
         const val DEFAULT_BOTTOM_KEYS = 5
 
@@ -528,8 +531,9 @@ data class PenboardConfig(
          * keyboard konvensional, lalu tombol papan tulis.
          */
         /**
-         * Bilah **atas papan** bawaan (maksimal 5): aksi papan tulis yang paling sering
-         * dipakai, digambar dengan ikon pixel art ([dev.retrobit.penboard.util.PixelArt]).
+         * Bilah **atas papan** bawaan: aksi papan tulis yang paling sering dipakai,
+         * digambar dengan ikon pixel art ([dev.retrobit.penboard.util.PixelArt]).
+         * Slot di atas 8 memakai daftar ini secara bergiliran.
          */
         fun defaultBottomKeys(): List<KeyDef> = listOf(
             KeyDef(KeyAction.RECOGNIZE),
@@ -538,7 +542,10 @@ data class PenboardConfig(
             KeyDef(KeyAction.ENTER),
             KeyDef(KeyAction.DELETE_STROKE),
             KeyDef(KeyAction.CLEAR),
-            KeyDef(KeyAction.UNDO)
+            KeyDef(KeyAction.UNDO),
+            KeyDef(KeyAction.REDO),
+            KeyDef(KeyAction.CYCLE_PEN),
+            KeyDef(KeyAction.HIDE)
         )
 
         fun defaultGridKeys(): List<KeyDef> = listOf(

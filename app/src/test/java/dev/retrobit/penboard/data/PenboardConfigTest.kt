@@ -536,14 +536,15 @@ class PenboardConfigTest {
     fun `bilah atas punya bawaan dan batas aman`() {
         val config = PenboardConfig()
         assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
-        // Bilah atas maksimal 5 tombol; semua slot terisi bawaan.
+        // Bilah atas sampai 30 tombol; bawaan 8 aksi mengisi slot pertama.
         assertEquals(PenboardConfig.defaultBottomKeys().size, config.bottomKeys.size)
-        assertEquals(5, PenboardConfig.MAX_BOTTOM_KEYS)
-        assertEquals(5, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(30, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(30, PenboardConfig.BOTTOM_SLOTS)
         assertEquals(
             listOf(
                 KeyAction.RECOGNIZE, KeyAction.ENTER, KeyAction.DELETE_STROKE,
-                KeyAction.CLEAR, KeyAction.UNDO
+                KeyAction.CLEAR, KeyAction.UNDO, KeyAction.REDO, KeyAction.CYCLE_PEN,
+                KeyAction.HIDE
             ),
             config.bottomKeys.map { it.action }
         )
@@ -551,8 +552,14 @@ class PenboardConfigTest {
         val many = PenboardConfig(bottomButtonCount = 99, bottomKeys = emptyList()).sanitized()
         assertEquals(PenboardConfig.MAX_BOTTOM_KEYS, many.bottomButtonCount)
         assertEquals(PenboardConfig.BOTTOM_SLOTS, many.bottomKeys.size)
-        // Daftar bawaan tidak lebih panjang dari jumlah slot.
+        // Daftar bawaan tidak lebih panjang dari jumlah slot, dan slot tambahan
+        // memakai bawaan bergiliran (bukan tombol mati).
         assertTrue(PenboardConfig.defaultBottomKeys().size <= PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(30, many.bottomKeys.size)
+        assertEquals(
+            PenboardConfig.defaultBottomKeys().first().action,
+            many.bottomKeys[PenboardConfig.defaultBottomKeys().size].action
+        )
 
         // Bilah bawah bisa dimatikan seluruhnya.
         val none = PenboardConfig(bottomButtonCount = -4).sanitized()
