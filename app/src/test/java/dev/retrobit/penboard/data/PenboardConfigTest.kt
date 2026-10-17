@@ -219,7 +219,6 @@ class PenboardConfigTest {
         val custom = PenboardConfig(
             boardLines = 2,
             penColorIndex = 2,
-            boardLines = 1,
             gridButtonCount = 1,
             scanlines = false,
             panelOpacity = 40,
