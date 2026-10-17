@@ -1,0 +1,13 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+keystore.properties
+*.keystore
+*.jks
+
+# Berkas sementara Python (render pratinjau)
+__pycache__/
+*.pyc
