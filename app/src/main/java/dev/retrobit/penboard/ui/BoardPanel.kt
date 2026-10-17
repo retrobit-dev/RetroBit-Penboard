@@ -91,6 +91,12 @@ class BoardPanel(private val context: Context) {
     var cellPx: Int = 0
         private set
 
+    /** Jumlah tombol atas yang diminta pengaturan, dan yang benar-benar tampil. */
+    var bottomRequestedCount: Int = 0
+        private set
+    var bottomShownCount: Int = 0
+        private set
+
     /** Ukuran papan yang sedang dipakai (px). */
     var panelWidthPx: Int = 0
         private set
@@ -302,6 +308,9 @@ class BoardPanel(private val context: Context) {
         fun layoutBottom() {
             bottomRows = GridMath.bottomRowIndexes(bottomCount, barCell(), bottomWidths, usableWidth, spacing)
             bottomRowHeights = GridMath.bottomRowHeights(bottomRows, barCell(), bottomHeightMultipliers)
+            // Bilah atas hanya satu baris: tombol yang tidak muat tidak ditampilkan.
+            bottomRequestedCount = bottomCount
+            bottomShownCount = bottomRows.firstOrNull()?.size ?: 0
         }
 
         // Dua putaran: ukuran tombol menentukan tinggi bilah bawah, dan tinggi bilah bawah

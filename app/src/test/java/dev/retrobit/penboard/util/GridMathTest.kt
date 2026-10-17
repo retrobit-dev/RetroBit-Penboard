@@ -174,25 +174,27 @@ class GridMathTest {
     }
 
     @Test
-    fun `tombol bawah dibungkus sesuai lebar masing-masing`() {
-        // Lima tombol persegi 100 px + jarak 10 px: muat satu baris di papan 600 px.
+    fun `tombol atas selalu satu baris, sisanya tidak ditampilkan`() {
+        // Lima tombol persegi 100 px + jarak 10 px muat di papan 600 px.
         assertEquals(
             listOf(listOf(0, 1, 2, 3, 4)),
             GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 600, 10)
         )
-        // Papan sempit 250 px: hanya dua tombol per baris.
+        // Papan sempit 250 px: tiga tombol pertama tampil, dua sisanya tidak
+        // (tidak ada baris kedua — sisa ruang dibiarkan kosong).
         assertEquals(
-            listOf(listOf(0, 1), listOf(2, 3), listOf(4)),
+            listOf(listOf(0, 1, 2)),
             GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 250, 10)
         )
-        // Tombol berlebar 2x tidak lagi muat di baris pertama, jadi pindah baris.
+        // Tombol berlebar 2x: hanya dua yang muat, tombol ketiga tidak ditampilkan.
         assertEquals(
-            listOf(listOf(0, 1), listOf(2)),
+            listOf(listOf(0, 1)),
             GridMath.bottomRowIndexes(3, 100, listOf(1f, 1f, 2f), 250, 10)
         )
-        // Tanpa tombol: tidak ada baris sama sekali.
+        // Tanpa tombol: tidak ada baris sama sekali; selain itu selalu tepat 1 baris.
         assertEquals(0, GridMath.bottomRows(0, 100, emptyList(), 600, 10))
-        assertEquals(2, GridMath.bottomRows(4, 100, List(4) { 1f }, 250, 10))
+        assertEquals(1, GridMath.bottomRows(4, 100, List(4) { 1f }, 250, 10))
+        assertEquals(1, GridMath.bottomRows(20, 60, List(20) { 1f }, 400, 10))
     }
 
     @Test
@@ -301,17 +303,20 @@ class GridMathTest {
         assertEquals(30, PenboardConfig.BOTTOM_SLOTS)
         assertTrue(PenboardConfig.MAX_BOTTOM_KEYS > 20)
 
-        // Tombol samping 32 dp (33 px pada gambar pratinjau) di isi panel 532 px:
-        // lebih dari 10 tombol per baris, jadi 20 tombol cukup dua baris.
+        // Tombol samping 32 dp di isi panel 532 px: satu baris memuat 11 tombol,
+        // jadi dari 20 tombol yang diminta hanya 11 yang tampil (tanpa baris kedua).
         val usable = 532
         val cell = 44
         val spacing = 4
         val perRow = (usable + spacing) / (cell + spacing)
         assertTrue("hanya $perRow per baris", perRow >= 10)
         val rows = GridMath.bottomRowIndexes(20, cell, List(20) { 1f }, usable, spacing)
-        assertEquals(2, rows.size)
-        assertEquals(20, rows.sumOf { it.size })
+        assertEquals(1, rows.size)
+        assertEquals(perRow, rows.first().size)
         assertEquals(0, rows.first().first())
+
+        // Semua tombol yang tampil ada di baris yang sama dan berurutan dari kiri.
+        assertEquals((0 until perRow).toList(), rows.first())
 
         // Semua tombol bawaan benar-benar bekerja (bukan TEXT kosong).
         PenboardConfig.defaultBottomKeys().forEach { key ->

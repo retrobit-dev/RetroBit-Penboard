@@ -2,15 +2,32 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.5.4** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.5** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.5
+
+- **Bilah tombol atas selalu satu baris.** Tombol dipasang berurutan dari kiri dengan jarak
+  yang sama seperti tombol samping; begitu tombol berikutnya tidak muat, tombol itu dan
+  sisanya **tidak ditampilkan**. Sisa ruang di kanan dibiarkan kosong — tidak ada lagi
+  pembungkusan ke baris kedua.
+- **Tidak perlu khawatir tombol kosong**: panel hanya setinggi satu baris tombol, jadi tidak
+  ada ruang terbuang. Jumlah yang muat mengikuti ukuran tombol samping dan lebar papan
+  (`GridMath.bottomRowIndexes`, diuji unit).
+- **Kartu pratinjau memberi tahu bila ada yang tidak muat**: *"⚠ Tombol atas satu baris: 11
+  dari 20 tombol tampil; sisanya tidak muat."* Kalau semuanya muat: *"✓ Tombol atas: 5 tombol
+  dalam satu baris."*
+- Solusi bila tombol terpotong: kurangi jumlah tombol atas, kecilkan ukuran tombol samping,
+  atau lebarkan papan (*Lebar papan*).
+- Pratinjau `docs/preview.png` contoh ke-9 menampilkan **11 dari 20 tombol** dalam satu baris.
 
 ## Yang baru di 3.5.4
 
 - **Batas tombol atas 5 → 30.** Batas 5 terlalu ketat: ukuran tombol atas mengikuti tombol
   samping, jadi dengan tombol samping **32 dp** satu baris papan bisa memuat **sekitar 10
   tombol** — 20 tombol cukup dua baris. Dengan tombol 96 dp hanya sekitar 3 per baris.
-- **Jumlah yang muat dihitung dari geometri**, bukan angka tetap: baris dibungkus dengan
-  jarak yang sama seperti tombol samping (`GridMath.bottomRowIndexes`), tetap **rata kiri**.
+- **Jumlah yang muat dihitung dari geometri**, bukan angka tetap: satu baris diisi dari kiri
+  dengan jarak yang sama seperti tombol samping (`GridMath.bottomRowIndexes`); di 3.5.5 sisa
+  tombol yang tidak muat tidak ditampilkan (tidak lagi dibungkus ke baris kedua).
 - **Bawaan bilah atas kembali 8 aksi** (A+, enter, hapus goresan, bersihkan papan, batal,
   ulangi, ganti warna, sembunyikan) supaya slot ke-6–30 tidak kosong; slot di atasnya memakai
   daftar itu secara bergiliran.
@@ -317,11 +334,12 @@ dilewati. Bisa dimatikan di pengaturan papan.
 
 Bilah judul berisi judul jendela + tombol minimize, dan dipakai sebagai **pegangan untuk
 memindahkan papan**. **Tombol atas** berada di dalam bingkai yang sama, **di atas area
-menulis** (tepat di bawah bilah judul), sampai **30 tombol**; tombolnya **rata kiri** dengan
-jarak yang sama seperti tombol samping (tidak dilebarkan memenuhi papan) dan ukuran dasarnya
-mengikuti tombol samping — jadi makin kecil tombol samping, makin banyak yang muat per baris —
-tetapi **lebar dan tinggi tiap tombol bisa diatur sendiri**; isinya bebas diatur (lihat
-**Pengaturan yang tersedia**).
+menulis** (tepat di bawah bilah judul), dalam **satu baris** (sampai **30 tombol** diminta);
+tombolnya **rata kiri** dengan jarak yang sama seperti tombol samping (tidak dilebarkan
+memenuhi papan) dan ukuran dasarnya mengikuti tombol samping — jadi makin kecil tombol
+samping, makin banyak yang muat. Tombol yang tidak muat **tidak ditampilkan**, dan sisa ruang
+di kanan dibiarkan kosong. **Lebar dan tinggi tiap tombol bisa diatur sendiri**; isinya bebas
+diatur (lihat **Pengaturan yang tersedia**).
 
 Tinggi papan menyesuaikan ruang yang disediakan keyboard: kalau layar tidak cukup untuk
 bingkai + bilah judul + tombol bawah + semua baris tulisan, **jarak baris dan ukuran tombol
@@ -378,7 +396,7 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off (tetap ada sebagai bilah kecil bila bingkainya dimatikan), judul jendela (bawaan `PENBOARD`), **papan bisa dipindah / diangkat** (tarik bilah judul), **lebar papan 45–100 %** (atau tarik sudut kanan bawah), **lebar area tulis 40–80 %** |
-| Tombol atas | tampil/tidak, **jumlah 0–30**, **rata kiri dengan jarak sama seperti tombol samping** (jumlah yang muat mengikuti ukuran tombol samping), aksi + label + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan |
+| Tombol atas | tampil/tidak, **jumlah 0–30**, **satu baris**, **rata kiri dengan jarak sama seperti tombol samping** (yang tidak muat tidak ditampilkan), aksi + label + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

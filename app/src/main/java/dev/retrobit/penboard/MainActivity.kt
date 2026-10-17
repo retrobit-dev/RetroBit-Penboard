@@ -348,6 +348,7 @@ class MainActivity : AppCompatActivity() {
         // tinggi area tulis supaya keduanya sejajar di atas maupun di bawah.
         val square = Ui.statusText(card, getString(R.string.preview_square_wait))
         val align = Ui.statusText(card, getString(R.string.preview_align_wait))
+        val bottom = Ui.statusText(card, getString(R.string.preview_bottom_wait))
         Ui.body(card, getString(R.string.preview_cell_style, store.config.iconStyle.label))
         Ui.body(
             card,
@@ -357,7 +358,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.preview_line_off)
             }
         )
-        panel.root.post { updatePreviewStatus(square, align, panel) }
+        panel.root.post { updatePreviewStatus(square, align, bottom, panel) }
     }
 
     /** Ubah ukuran papan dari tarikan sudut di pratinjau (lebar dan tinggi). */
@@ -401,7 +402,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Tampilkan hasil pengukuran pratinjau: tombol persegi & kolom tombol sejajar. */
-    private fun updatePreviewStatus(square: TextView, align: TextView, panel: BoardPanel) {
+    private fun updatePreviewStatus(
+        square: TextView,
+        align: TextView,
+        bottom: TextView,
+        panel: BoardPanel
+    ) {
         val cell = panel.cellPx
         val columns = store.config.gridColumns
         val rows = store.config.effectiveGridRows
@@ -418,6 +424,14 @@ class MainActivity : AppCompatActivity() {
             gridRows > 0 && gridRows == boardRows ->
                 getString(R.string.preview_align_ok, gridRows, boardRows)
             else -> getString(R.string.preview_align_bad, gridRows, boardRows)
+        }
+        // Bilah atas selalu satu baris: beri tahu bila ada tombol yang tidak muat.
+        val shown = panel.bottomShownCount
+        val requested = panel.bottomRequestedCount
+        bottom.text = when {
+            requested <= 0 -> getString(R.string.preview_bottom_none)
+            shown >= requested -> getString(R.string.preview_bottom_ok, shown)
+            else -> getString(R.string.preview_bottom_partial, shown, requested)
         }
     }
 
@@ -766,6 +780,7 @@ class MainActivity : AppCompatActivity() {
             PenboardConfig.MAX_BOTTOM_KEYS,
             getString(R.string.unit_keys)
         ) { value -> store.update { it.copy(bottomButtonCount = value) } }
+        Ui.body(card, getString(R.string.bottom_single_row_note))
 
         Ui.divider(card)
         // Hanya tampilkan baris yang mungkin dipakai: tombol yang aktif, atau 8 bawaan

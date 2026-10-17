@@ -32,16 +32,17 @@
 
     <!-- Kartu: bilah tombol atas (pixel art) -->
     <string name="card_bottom">Tombol atas (pixel art)</string>
-    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Sampai <b>30 tombol</b>; rata kiri dan bersebelahan dengan jarak yang sama seperti tombol samping. Ukuran dasar mengikuti tombol samping, jadi makin kecil tombol samping, makin banyak yang muat per baris.</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Sampai <b>30 tombol</b>, selalu <b>satu baris</b>: rata kiri, berjarak sama seperti tombol samping, sisanya kosong. Ukuran dasar mengikuti tombol samping.</string>
     <string name="setting_bottom_show">Tampilkan bilah tombol atas</string>
     <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
     <string name="setting_bottom_count">Jumlah tombol atas</string>
+    <string name="bottom_single_row_note">Bilah atas selalu satu baris. Bila tombolnya tidak muat, tombol terakhir tidak ditampilkan — sisa ruang di kanan dibiarkan kosong.</string>
     <string name="setting_bottom_width">Lebar tombol</string>
     <string name="setting_bottom_height">Tinggi tombol</string>
     <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
     <string name="action_bottom_default">Kembalikan bilah tombol atas</string>
     <string name="bottom_slot_title">Tombol atas %1$d</string>
-    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis. Jumlahnya sampai 30, rata kiri dan bersebelahan dengan jarak yang sama seperti tombol samping (tidak dilebarkan); bila tidak muat, tombolnya turun ke baris berikutnya. Ukuran dasar mengikuti tombol samping, jadi dengan tombol samping 32 dp satu baris bisa memuat sekitar 10 tombol. Lebar dan tinggi tiap tombol bisa diatur sendiri di editor tombolnya; ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
+    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis dan selalu dalam <b>satu baris</b>: rata kiri, jarak antar tombol sama seperti tombol samping, sisa ruang di kanan dibiarkan kosong. Jumlah yang muat mengikuti ukuran tombol samping (32 dp = sekitar 10 tombol). Tombol yang tidak muat tidak ditampilkan — kurangi jumlahnya, kecilkan ukuran tombol samping, atau lebarkan papan. Lebar dan tinggi tiap tombol tetap bisa diatur di editor tombolnya; ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
@@ -83,6 +84,10 @@
     <string name="preview_align_ok">✓ Baris tombol samping = baris area tulis: %1$d = %2$d (rata atas).</string>
     <string name="preview_align_bad">⚠ Baris tombol belum sama dengan baris area tulis: tombol %1$d, tulisan %2$d.</string>
     <string name="preview_align_manual">✓ %1$d baris tombol samping diatur sendiri, area tulis %2$d baris (rata atas).</string>
+    <string name="preview_bottom_wait">Menghitung tombol atas…</string>
+    <string name="preview_bottom_ok">✓ Tombol atas: %1$d tombol dalam satu baris.</string>
+    <string name="preview_bottom_partial">⚠ Tombol atas satu baris: %1$d dari %2$d tombol tampil; sisanya tidak muat.</string>
+    <string name="preview_bottom_none">Tombol atas tidak ditampilkan.</string>
     <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter. Baris tombol samping = %1$d, sama dengan baris tulisan.</string>
     <string name="preview_line_off">Baris tulisan tidak menggeser teks: hasil tulisan selalu masuk di posisi kursor.</string>
     <string name="preview_cell_style">Ikon tombol: %1$s (pixel art = kotak 12 x 12).</string>

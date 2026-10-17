@@ -262,10 +262,11 @@ object GridMath {
     /**
      * Susunan tombol bawah: indeks tombol untuk setiap baris.
      *
-     * Lebar tiap tombol bisa berbeda ([widthMultiplier]), jadi pembungkusannya dihitung
-     * berurutan: tombol berikutnya pindah ke baris baru begitu lebar papan tulis tidak
-     * cukup lagi. Hasilnya dipakai bersama oleh penghitungan tinggi panel dan pemasangan
-     * tombol, sehingga keduanya tidak pernah berbeda (tidak ada tombol yang terpotong).
+     * Tombol atas selalu **satu baris**: tombol dipasang berurutan dari kiri, dan begitu
+     * tombol berikutnya tidak muat lagi di lebar papan, tombol itu (dan sisanya) **tidak
+     * ditampilkan**. Sisa ruang di kanan dibiarkan kosong — tidak ada pembungkusan ke
+     * baris kedua. Hasilnya dipakai bersama oleh penghitungan tinggi panel dan pemasangan
+     * tombol, jadi keduanya tidak pernah berbeda.
      */
     fun bottomRowIndexes(
         count: Int,
@@ -275,26 +276,24 @@ object GridMath {
         spacingPx: Int = 0
     ): List<List<Int>> {
         if (count <= 0) return emptyList()
-        val rows = mutableListOf<MutableList<Int>>()
-        var current = mutableListOf<Int>()
+        val visible = mutableListOf<Int>()
         var used = 0
         for (index in 0 until count) {
             val width = buttonWidthPx(cellPx, widthMultipliers.getOrElse(index) { 1f })
-            val needed = if (current.isEmpty()) width else used + spacingPx + width
-            if (current.isNotEmpty() && needed > availableWidthPx) {
-                rows.add(current)
-                current = mutableListOf()
-                used = width
-            } else {
-                used = needed
-            }
-            current.add(index)
+            val needed = if (visible.isEmpty()) width else used + spacingPx + width
+            // Tombol pertama selalu tampil (walau lebih lebar dari panel) supaya tidak
+            // ada baris yang kosong sama sekali.
+            if (visible.isNotEmpty() && needed > availableWidthPx) break
+            used = needed
+            visible.add(index)
         }
-        if (current.isNotEmpty()) rows.add(current)
-        return rows
+        return listOf(visible)
     }
 
-    /** Jumlah baris tombol bawah untuk [count] tombol dengan lebar masing-masing. */
+    /**
+     * Jumlah baris tombol atas untuk [count] tombol: 1 bila ada tombol, 0 bila tidak.
+     * (Bilah atas tidak pernah dibungkus ke baris kedua.)
+     */
     fun bottomRows(
         count: Int,
         cellPx: Int,
