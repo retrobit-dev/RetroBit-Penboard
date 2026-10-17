@@ -567,10 +567,10 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.5 - tombol atas selalu satu baris",
-              font=ImageFont.truetype(FONT_BOLD, 17), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "rata kiri, jarak seragam; sisa ruang di kanan dibiarkan kosong",
-              font=SMALL_FONT, fill=alpha(COL_ACCENT, 150))
+    draw.text((pad, 18), "Penboard 3.5.6 - semua slot tombol atas bisa diatur",
+              font=ImageFont.truetype(FONT_BOLD, 16), fill=alpha(COL_ACCENT, 255))
+    draw.text((pad, 42), "satu baris rata kiri; slot yang belum tampil tetap bisa diedit",
+              font=ImageFont.truetype(FONT_PATH, 13), fill=alpha(COL_ACCENT, 150))
 
     y = header
     for caption, sub, (kind, img) in panels:

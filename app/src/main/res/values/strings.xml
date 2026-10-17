@@ -37,6 +37,8 @@
     <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
     <string name="setting_bottom_count">Jumlah tombol atas</string>
     <string name="bottom_single_row_note">Bilah atas selalu satu baris. Bila tombolnya tidak muat, tombol terakhir tidak ditampilkan — sisa ruang di kanan dibiarkan kosong.</string>
+    <string name="bottom_slot_hidden">%1$d. %2$s - belum tampil</string>
+    <string name="bottom_edit_all_note">Semua slot di atas bisa diatur kapan saja, termasuk yang bertanda "belum tampil". Menyimpan slot yang belum tampil otomatis menaikkan Jumlah tombol atas supaya hasilnya langsung terlihat.</string>
     <string name="setting_bottom_width">Lebar tombol</string>
     <string name="setting_bottom_height">Tinggi tombol</string>
     <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>

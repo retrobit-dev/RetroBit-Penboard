@@ -622,9 +622,13 @@ class MainActivity : AppCompatActivity() {
             }
             row.addView(
                 AppCompatTextView(this).apply {
-                    text = getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    text = if (enabled) {
+                        getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    } else {
+                        getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
+                    }
                     textSize = 14f
-                    alpha = if (enabled) 1f else 0.4f
+                    alpha = if (enabled) 1f else 0.55f
                 },
                 LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             )
@@ -633,7 +637,7 @@ class MainActivity : AppCompatActivity() {
                     text = getString(R.string.action_change)
                     isAllCaps = false
                     textSize = 12.5f
-                    isEnabled = enabled
+                    // Semua sel bisa diatur; menyimpan sel baru menaikkan jumlah tombol.
                     setOnClickListener { showKeyEditor(index) }
                 }
             )
@@ -783,26 +787,27 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.bottom_single_row_note))
 
         Ui.divider(card)
-        // Hanya tampilkan baris yang mungkin dipakai: tombol yang aktif, atau 8 bawaan
-        // saat bilahnya masih pendek — 30 baris kosong akan membuat kartu terlalu panjang.
-        val editorSlots = maxOf(
-            config.bottomButtonCount,
-            PenboardConfig.defaultBottomKeys().size
-        ).coerceAtMost(PenboardConfig.BOTTOM_SLOTS)
-        for (index in 0 until editorSlots) {
+        // SEMUA slot bisa diatur kapan saja, termasuk yang belum tampil di papan:
+        // pengguna sering ingin menyiapkan tombol ke-6 dst. sebelum menaikkan jumlahnya.
+        // Slot yang belum tampil hanya diredupkan, bukan dimatikan.
+        for (index in 0 until PenboardConfig.BOTTOM_SLOTS) {
             val key = config.bottomKeys.getOrNull(index)
                 ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
-            val enabled = index < config.bottomButtonCount
+            val shown = index < config.bottomButtonCount
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(5f), 0, dp(5f))
+                setPadding(0, dp(4f), 0, dp(4f))
             }
             row.addView(
                 AppCompatTextView(this).apply {
-                    text = getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    text = if (shown) {
+                        getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+                    } else {
+                        getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
+                    }
                     textSize = 14f
-                    alpha = if (enabled) 1f else 0.4f
+                    alpha = if (shown) 1f else 0.55f
                 },
                 LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             )
@@ -811,12 +816,12 @@ class MainActivity : AppCompatActivity() {
                     text = getString(R.string.action_change)
                     isAllCaps = false
                     textSize = 12.5f
-                    isEnabled = enabled
                     setOnClickListener { showBottomKeyEditor(index) }
                 }
             )
             card.addView(row)
         }
+        Ui.body(card, getString(R.string.bottom_edit_all_note))
         Ui.divider(card)
         Ui.outlinedButton(card, getString(R.string.action_bottom_default)) {
             store.update {
@@ -1057,7 +1062,15 @@ class MainActivity : AppCompatActivity() {
                     heightMultiplier = heightMultiplier
                 )
                 store.update { cfg ->
-                    cfg.copy(bottomKeys = cfg.bottomKeys.toMutableList().also { it[index] = updated })
+                    val keys = cfg.bottomKeys.toMutableList()
+                    // Jaga-jaga bila daftar lebih pendek dari jumlah slot.
+                    while (keys.size <= index) keys.add(KeyDef())
+                    keys[index] = updated
+                    cfg.copy(
+                        bottomKeys = keys,
+                        // Slot yang baru diatur langsung ditampilkan supaya hasilnya terlihat.
+                        bottomButtonCount = maxOf(cfg.bottomButtonCount, index + 1)
+                    )
                 }
                 render()
             }
@@ -1114,7 +1127,15 @@ class MainActivity : AppCompatActivity() {
                     repeatOnHold = repeat
                 )
                 store.update { cfg ->
-                    cfg.copy(gridKeys = cfg.gridKeys.toMutableList().also { it[index] = updated })
+                    val keys = cfg.gridKeys.toMutableList()
+                    // Jaga-jaga bila daftar lebih pendek dari jumlah sel.
+                    while (keys.size <= index) keys.add(KeyDef())
+                    keys[index] = updated
+                    cfg.copy(
+                        gridKeys = keys,
+                        // Sel yang baru diatur langsung ditampilkan.
+                        gridButtonCount = maxOf(cfg.gridButtonCount, index + 1)
+                    )
                 }
                 render()
             }
