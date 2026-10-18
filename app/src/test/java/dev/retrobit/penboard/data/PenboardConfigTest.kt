@@ -1,5 +1,6 @@
 package dev.retrobit.penboard.data
 
+import dev.retrobit.penboard.util.KeyboardChars
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -503,7 +504,7 @@ class PenboardConfigTest {
     fun `aksi papan melayang sudah tidak ada`() {
         assertEquals(
             listOf(
-                "text", "recognize", "clear", "deleteStroke", "undo", "redo", "cyclePen",
+                "text", "charPad", "recognize", "clear", "deleteStroke", "undo", "redo", "cyclePen",
                 "space", "enter", "backspace", "deleteWord", "deleteForward", "tab",
                 "cursorLeft", "cursorRight", "cursorUp", "cursorDown", "cursorHome", "cursorEnd",
                 "selectAll", "cut", "copy", "paste",
@@ -528,6 +529,12 @@ class PenboardConfigTest {
         assertEquals(KeyAction.SPACE, config.gridKeys[1].action)
         assertEquals(PenboardConfig.GRID_SLOTS, config.gridKeys.size)
         assertEquals(KeyAction.SPACE, KeyAction.fromId("overlay"))
+        assertEquals(KeyAction.CHAR_PAD, KeyAction.fromId("charPad"))
+        val character = KeyDef.fromJson(JSONObject().put("action", "text").put("text", "@"))
+        assertEquals("@", character.text)
+        assertEquals(KeyboardChars.MAX_LENGTH, KeyDef.fromJson(
+            JSONObject().put("action", "text").put("text", "x".repeat(200))
+        ).text.length)
         // Id tombol Penboard sekarang tidak ada yang menyebut papan melayang.
         assertFalse(KeyAction.entries.map { it.id }.contains("overlay"))
     }

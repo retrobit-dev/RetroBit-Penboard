@@ -2,7 +2,22 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.5.6** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.7** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.7
+
+- **Fungsi Karakter**: tombol bisa memasukkan angka, huruf, tanda baca, atau teks pendek
+  (misalnya `1`, `@`, `.`, `Rp`). Di editor tombol, ketuk karakter pada pemilih, atau ketik
+  sendiri. Muka tombol menampilkan karakter itu, bukan ikon generik.
+- Berlaku untuk **tombol atas maupun tombol samping**. Tombol atas yang sebelumnya tidak
+  punya kotak teks sekarang bisa menyimpan karakternya.
+- **Fungsi Papan karakter**: satu tombol membuka papan angka, huruf kecil/besar, tanda baca,
+  dan simbol di atas panel — bukan keyboard QWERTY. Ketuk untuk memasukkan (bisa berurutan,
+  misalnya `2026`), lalu **Tutup** untuk kembali menulis. Ada juga spasi, hapus, enter, dan
+  panah kursor. Tombol *Tambahkan tombol papan karakter* di kartu Tombol atas memasangnya
+  di kiri bilah supaya langsung terlihat.
+- Pratinjau di layar pengaturan memasukkan karakter itu ke kolom uji, jadi bisa dicoba tanpa
+  berpindah aplikasi.
 
 ## Yang baru di 3.5.6
 
@@ -396,6 +411,8 @@ terpotong.
 | papan tombol kecil | buka pemilih keyboard (mis. pindah ke tulisan tangan Huawei) |
 | panah bawah | sembunyikan keyboard |
 | garis mendatar (pixel art) | minimize: sembunyikan papan (di bilah judul jendela) |
+| karakter itu sendiri (`1`, `A`, `.`) | fungsi **Karakter**: memasukkan angka, huruf, tanda baca, atau teks pendek |
+| kisi tombol kecil | fungsi **Papan karakter**: angka, huruf, dan tanda baca di atas panel |
 
 Semua tombol memakai ikon **pixel art** 12 x 12 dari `util/PixelArt.kt` (setiap aksi
 punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus seperti versi
@@ -406,12 +423,12 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 | Bagian | Isi |
 | --- | --- |
 | Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), **jumlah baris area tulis 1–6 (bawaan 3)**, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
-| Area tombol | **jumlah kolom 1–6**, **baris 1–6** (bawaan mengikuti baris area tulis, bisa diatur sendiri), jumlah tombol tampil, **ukuran sisi tombol** (otomatis = tinggi satu baris tulisan, atau 32–160 dp), fungsi + label + teks tiap tombol, ulangi saat ditahan, kembali ke bawaan |
+| Area tombol | **jumlah kolom 1–6**, **baris 1–6** (bawaan mengikuti baris area tulis, bisa diatur sendiri), jumlah tombol tampil, **ukuran sisi tombol** (otomatis = tinggi satu baris tulisan, atau 32–160 dp), fungsi + label + teks tiap tombol, **fungsi Karakter** (angka/huruf/tanda baca) dan **Papan karakter**, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off (tetap ada sebagai bilah kecil bila bingkainya dimatikan), judul jendela (bawaan `PENBOARD`), **papan bisa dipindah / diangkat** (tarik bilah judul), **lebar papan 45–100 %** (atau tarik sudut kanan bawah), **lebar area tulis 40–80 %** |
-| Tombol atas | tampil/tidak, **jumlah 0–30**, **satu baris**, **rata kiri dengan jarak sama seperti tombol samping** (yang tidak muat tidak ditampilkan), **semua 30 slot bisa diatur kapan saja** (slot yang belum tampil otomatis diaktifkan saat disimpan), aksi + label + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan |
+| Tombol atas | tampil/tidak, **jumlah 0–30**, **satu baris**, **rata kiri dengan jarak sama seperti tombol samping** (yang tidak muat tidak ditampilkan), **semua 30 slot bisa diatur kapan saja** (slot yang belum tampil otomatis diaktifkan saat disimpan), aksi + label + **karakter/teks** + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

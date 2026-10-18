@@ -14,6 +14,7 @@ import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.util.GridMath
+import dev.retrobit.penboard.util.KeyboardChars
 import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
@@ -99,6 +100,9 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        // Kolom baru mulai dari area tulis. restarting=true sering terjadi setelah
+        // commitText, jadi papan karakter yang sedang dipakai tidak boleh tertutup.
+        if (!restarting) panel?.closeCharPad()
         // Setiap kali keyboard muncul, pastikan ukuran papan masih pas dan posisinya
         // kembali seperti terakhir dipindah pengguna.
         val current = panel
@@ -114,6 +118,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         handwriting?.cancelAuto()
+        panel?.closeCharPad()
         super.onFinishInputView(finishingInput)
     }
 
@@ -222,7 +227,12 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
 
     private fun handleAction(action: KeyAction, text: String) {
         when (action) {
-            KeyAction.TEXT -> commitText(text.ifBlank { " " })
+            // Kosong = tidak mengirim apa-apa (bukan spasi; spasi punya aksi sendiri).
+            KeyAction.TEXT -> {
+                val insert = KeyboardChars.clamp(text)
+                if (insert.isNotEmpty()) commitText(insert)
+            }
+            KeyAction.CHAR_PAD -> panel?.toggleCharPad()
             KeyAction.SPACE -> commitText(" ")
             KeyAction.ENTER -> sendEnter()
             KeyAction.BACKSPACE -> deleteBackward()
@@ -265,6 +275,7 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
      */
     override fun onMinimize() {
         handwriting?.cancelAuto()
+        panel?.closeCharPad()
         requestHideSelf(0)
     }
 

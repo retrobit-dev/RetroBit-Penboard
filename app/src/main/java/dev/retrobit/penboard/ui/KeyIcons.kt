@@ -106,6 +106,16 @@ object KeyIcons {
 
         // ---------------------------------------------------------- papan tulis
         KeyAction.TEXT -> null
+        KeyAction.CHAR_PAD -> strokePath {
+            addRect(RectF(3f, 3f, 8f, 8f), Path.Direction.CW)
+            addRect(RectF(10f, 3f, 15f, 8f), Path.Direction.CW)
+            addRect(RectF(17f, 3f, 22f, 8f), Path.Direction.CW)
+            addRect(RectF(3f, 10f, 8f, 15f), Path.Direction.CW)
+            addRect(RectF(10f, 10f, 15f, 15f), Path.Direction.CW)
+            addRect(RectF(17f, 10f, 22f, 15f), Path.Direction.CW)
+            moveTo(4f, 20f)
+            lineTo(20f, 20f)
+        }
         KeyAction.RECOGNIZE -> strokePath {
             // "huruf A + percikan" = ubah tulisan menjadi teks
             moveTo(4f, 19f); lineTo(10f, 5f); lineTo(16f, 19f)

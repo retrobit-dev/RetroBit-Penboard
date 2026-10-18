@@ -86,6 +86,30 @@ def load_bottom_keys(path="app/src/main/java/dev/retrobit/penboard/data/Penboard
     return re.findall(r"KeyAction\.(\w+)", body.group(1))
 
 
+def split_key(key):
+    """'TEXT:1' = aksi + muka karakter; selain itu hanya nama aksi."""
+    if isinstance(key, str) and ":" in key:
+        action, face = key.split(":", 1)
+        return action, face
+    return key, None
+
+
+def draw_key_face(draw, key, cx, cy, size, color):
+    """Ikon pixel art, atau karakter itu sendiri bila tombolnya fungsi Karakter."""
+    action, face = split_key(key)
+    if face:
+        length = len(face)
+        fraction = 0.46 if length <= 1 else 0.34 if length == 2 else 0.22
+        font = ImageFont.truetype(FONT_BOLD, max(10, int(size * fraction)))
+        box = draw.textbbox((0, 0), face, font=font)
+        draw.text(
+            (cx - (box[2] - box[0]) / 2 - box[0], cy - (box[3] - box[1]) / 2 - box[1]),
+            face, font=font, fill=alpha(color, 255),
+        )
+        return
+    draw_pixel_icon(draw, PIXEL_ART.get(action), cx, cy, size, color)
+
+
 def draw_pixel_icon(draw, pattern, cx, cy, size, color):
     """Ikon pixel art: satu kotak per piksel, ukurannya bilangan bulat seperti di aplikasi."""
     if not pattern:
@@ -435,8 +459,8 @@ def draw_panel(lines, keys, flash=None, pending=None,
                                    max(2, int(RADIUS_DP * D * 0.9)),
                                    fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                    outline=alpha(COL_ACCENT, 130), width=1)
-            draw_pixel_icon(draw, PIXEL_ART.get(action), x_cursor + width / 2, y0 + height / 2,
-                            min(width, height) * 0.62, COL_TEXT)
+            draw_key_face(draw, action, x_cursor + width / 2, y0 + height / 2,
+                          min(width, height) * 0.72, COL_TEXT)
             x_cursor += width + SPACING
         y_row += row_h + SPACING
 
@@ -451,8 +475,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
         draw.rounded_rectangle([x0, y0, x1, y1], max(2, int(RADIUS_DP * D * 0.9)),
                                fill=alpha(COL_BUTTON, 255 * BUTTON_OPACITY),
                                outline=alpha(COL_ACCENT, 130), width=1)
-        draw_pixel_icon(draw, PIXEL_ART.get(action), (x0 + x1) / 2, (y0 + y1) / 2,
-                        cell * 0.62, COL_TEXT)
+        draw_key_face(draw, action, (x0 + x1) / 2, (y0 + y1) / 2, cell * 0.72, COL_TEXT)
 
     # penanda pegangan: bilah judul (pindah) dan sudut kanan bawah (ubah ukuran)
     if marks and "drag" in marks and title_h:
@@ -517,6 +540,10 @@ def main():
     many_bottom = draw_panel(3, DEFAULT_KEYS, cell_dp=32,
                              bottom_keys=(BOTTOM_KEYS * 4)[:20])
     five_rows = draw_panel(3, DEFAULT_KEYS, rows=5)
+    characters = draw_panel(
+        3, DEFAULT_KEYS, cell_dp=36,
+        bottom_keys=["TEXT:1", "TEXT:2", "TEXT:3", "TEXT:.", "TEXT:,", "TEXT:?", "TEXT:@", "CHAR_PAD"],
+    )
 
     pad = 40
     width = PANEL_W + pad * 2
@@ -552,6 +579,9 @@ def main():
         ("10. Kolom tombol 3 x 5 - area tulis tetap 3 baris",
          "baris tombol bisa mengikuti area tulis atau diatur sendiri 1-6",
          ("plain", five_rows)),
+        ("11. Tombol karakter: angka, tanda baca, papan karakter",
+         "fungsi Karakter menampilkan hurufnya; kisi = buka papan karakter",
+         ("plain", characters)),
     ]
     canvas_heights = [header]
     for _, _, (kind, item) in panels:
@@ -567,9 +597,9 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.6 - semua slot tombol atas bisa diatur",
+    draw.text((pad, 18), "Penboard 3.5.7 - tombol memasukkan karakter",
               font=ImageFont.truetype(FONT_BOLD, 16), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "satu baris rata kiri; slot yang belum tampil tetap bisa diedit",
+    draw.text((pad, 42), "angka, huruf, tanda baca; atau satu tombol papan karakter",
               font=ImageFont.truetype(FONT_PATH, 13), fill=alpha(COL_ACCENT, 150))
 
     y = header

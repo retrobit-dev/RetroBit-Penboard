@@ -2,6 +2,7 @@ package dev.retrobit.penboard.data
 
 import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.util.GridMath
+import dev.retrobit.penboard.util.KeyboardChars
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -13,7 +14,10 @@ import org.json.JSONObject
  */
 enum class KeyAction(val id: String, val label: String) {
     // Papan tulis & pengenalan
-    TEXT("text", "abc"),
+    /** Memasukkan angka, huruf, tanda baca, atau teks pendek yang dipasang pada tombol. */
+    TEXT("text", "Karakter"),
+    /** Membuka papan karakter (angka, huruf, tanda baca) di atas panel. Bukan QWERTY. */
+    CHAR_PAD("charPad", "Papan karakter"),
     RECOGNIZE("recognize", "Teks"),
     CLEAR("clear", "Bersih"),
     DELETE_STROKE("deleteStroke", "Hapus gores"),
@@ -120,7 +124,7 @@ data class KeyDef(
         fun fromJson(json: JSONObject): KeyDef = KeyDef(
             action = KeyAction.fromId(json.optString("action")),
             label = json.optString("label"),
-            text = json.optString("text"),
+            text = KeyboardChars.clamp(json.optString("text")),
             widthMultiplier = json.optDouble("widthMultiplier", 1.0).toFloat()
                 .coerceIn(MIN_WIDTH_MULTIPLIER, MAX_WIDTH_MULTIPLIER),
             heightMultiplier = json.optDouble("heightMultiplier", 1.0).toFloat()
@@ -439,6 +443,7 @@ data class PenboardConfig(
             val key = keys.getOrNull(index) ?: fallback
             result.add(
                 key.copy(
+                    text = KeyboardChars.clamp(key.text),
                     widthMultiplier = key.widthMultiplier
                         .coerceIn(KeyDef.MIN_WIDTH_MULTIPLIER, KeyDef.MAX_WIDTH_MULTIPLIER),
                     heightMultiplier = key.heightMultiplier

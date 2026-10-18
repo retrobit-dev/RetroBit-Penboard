@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.InputFilter
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
@@ -16,10 +17,12 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import dev.retrobit.penboard.data.ConfigStore
 import dev.retrobit.penboard.data.IconStyle
@@ -33,12 +36,15 @@ import dev.retrobit.penboard.ink.ModelStatus
 import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.overlay.PenboardTypingService
 import dev.retrobit.penboard.ui.BoardPanel
+import dev.retrobit.penboard.ui.CharPicker
 import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
 import dev.retrobit.penboard.util.GmsStatus
 import dev.retrobit.penboard.util.GridMath
+import dev.retrobit.penboard.util.KeyboardChars
 import dev.retrobit.penboard.util.StylusCompat
 import dev.retrobit.penboard.util.SystemHandwriting
+import dev.retrobit.penboard.util.TextInsert
 import kotlin.math.roundToInt
 
 /** Layar pengaturan: mengaktifkan keyboard Penboard dan seluruh pilihan tampilan. */
@@ -307,6 +313,7 @@ class MainActivity : AppCompatActivity() {
         detach(panel.root)
         panel.listener = object : BoardPanel.Listener {
             override fun onKey(key: KeyDef, action: KeyAction) {
+                if (applyPreviewEdit(action, key.text)) return
                 toast(getString(R.string.preview_key_tap, store.config.labelFor(key)))
             }
 
@@ -609,6 +616,7 @@ class MainActivity : AppCompatActivity() {
             ) { value -> store.update { it.copy(gridCellDp = value) } }
         }
         Ui.body(card, getString(R.string.grid_note))
+        Ui.body(card, getString(R.string.char_function_note))
 
         Ui.divider(card)
         for (index in 0 until GridMath.slots(columns, rows)) {
@@ -833,6 +841,8 @@ class MainActivity : AppCompatActivity() {
             render()
         }
         Ui.body(card, getString(R.string.bottom_note))
+        Ui.body(card, getString(R.string.char_function_note))
+        Ui.outlinedButton(card, getString(R.string.action_add_char_pad)) { addCharPadButton() }
     }
 
     private fun renderRecognitionCard() {
@@ -1011,12 +1021,13 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(20f), dp(8f), dp(20f), dp(4f))
         }
         val actions = KeyAction.entries.toList()
-        Ui.spinnerRow(
+        val spinner = Ui.spinnerRow(
             body,
             getString(R.string.setting_action),
             actions.map { "${it.label} — ${actionHint(it)}" },
             actions.indexOf(action).coerceAtLeast(0)
         ) { position -> action = actions[position] }
+        val textField = addCharacterEditor(body, current, actions, spinner) { action = it }
 
         val labelField = EditText(this).apply {
             hint = getString(R.string.setting_custom_label)
@@ -1052,11 +1063,12 @@ class MainActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.bottom_slot_title, index + 1))
-            .setView(body)
+            .setView(dialogScroll(body))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val updated = current.copy(
                     action = action,
                     label = labelField.text.toString().trim(),
+                    text = KeyboardChars.clamp(textField.text.toString()),
                     repeatOnHold = repeat,
                     widthMultiplier = widthMultiplier,
                     heightMultiplier = heightMultiplier
@@ -1091,12 +1103,13 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(20f), dp(8f), dp(20f), dp(4f))
         }
         val actions = KeyAction.entries.toList()
-        Ui.spinnerRow(
+        val spinner = Ui.spinnerRow(
             body,
             getString(R.string.setting_action),
             actions.map { "${it.label} — ${actionHint(it)}" },
             actions.indexOf(action).coerceAtLeast(0)
         ) { position -> action = actions[position] }
+        val textField = addCharacterEditor(body, current, actions, spinner) { action = it }
 
         val labelField = EditText(this).apply {
             hint = getString(R.string.setting_custom_label)
@@ -1105,25 +1118,18 @@ class MainActivity : AppCompatActivity() {
             inputType = InputType.TYPE_CLASS_TEXT
         }
         body.addView(labelField)
-        val textField = EditText(this).apply {
-            hint = getString(R.string.setting_custom_text)
-            setText(current.text)
-            setSingleLine(true)
-            inputType = InputType.TYPE_CLASS_TEXT
-        }
-        body.addView(textField)
         Ui.switchRow(
             body, getString(R.string.setting_repeat), getString(R.string.setting_repeat_sub), current.repeatOnHold
         ) { value -> repeat = value }
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.grid_slot_title, index + 1))
-            .setView(body)
+            .setView(dialogScroll(body))
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val updated = current.copy(
                     action = action,
                     label = labelField.text.toString().trim(),
-                    text = textField.text.toString(),
+                    text = KeyboardChars.clamp(textField.text.toString()),
                     repeatOnHold = repeat
                 )
                 store.update { cfg ->
@@ -1143,9 +1149,138 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /**
+     * Pasang satu tombol Papan karakter pada slot atas berikutnya yang belum tampil,
+     * tanpa menimpa tombol yang sudah ada. Kalau sudah ada, cukup pastikan slotnya tampil.
+     */
+    private fun addCharPadButton() {
+        val shown = previewPanel?.bottomShownCount ?: store.config.bottomButtonCount
+        val existing = store.config.bottomKeys.indexOfFirst { it.action == KeyAction.CHAR_PAD }
+        // Sudah tampil di bilah: tidak perlu dipasang lagi.
+        if (existing in 0 until shown) {
+            toast(getString(R.string.msg_char_pad_exists))
+            return
+        }
+        store.update { cfg ->
+            val keys = cfg.bottomKeys.toMutableList()
+            while (keys.size < PenboardConfig.BOTTOM_SLOTS) keys.add(KeyDef())
+            val alreadyCounted = existing in 0 until cfg.bottomButtonCount
+            if (existing >= 0) {
+                keys.removeAt(existing)
+                keys.add(KeyDef())
+            }
+            // Di kiri: tombol pertama selalu terlihat, walau bilahnya sudah penuh.
+            keys.add(0, KeyDef(action = KeyAction.CHAR_PAD))
+            val nextCount = if (alreadyCounted) cfg.bottomButtonCount else cfg.bottomButtonCount + 1
+            cfg.copy(
+                bottomKeys = keys.take(PenboardConfig.BOTTOM_SLOTS),
+                bottomButtonCount = nextCount.coerceIn(1, PenboardConfig.BOTTOM_SLOTS)
+            )
+        }
+        toast(getString(R.string.msg_char_pad_added))
+        render()
+    }
+
+    /**
+     * Kotak karakter + pemilih angka/huruf/tanda baca.
+     * Memilih atau mengetik karakter mengalihkan fungsi tombol ke Karakter.
+     */
+    private fun addCharacterEditor(
+        body: LinearLayout,
+        current: KeyDef,
+        actions: List<KeyAction>,
+        spinner: Spinner,
+        setAction: (KeyAction) -> Unit
+    ): EditText {
+        Ui.body(body, getString(R.string.char_picker_note))
+        val textField = EditText(this).apply {
+            hint = getString(R.string.setting_custom_text)
+            setText(KeyboardChars.clamp(current.text))
+            setSingleLine(true)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            filters = arrayOf(InputFilter.LengthFilter(KeyboardChars.MAX_LENGTH))
+        }
+        body.addView(textField)
+        fun useTextAction() {
+            setAction(KeyAction.TEXT)
+            val index = actions.indexOf(KeyAction.TEXT)
+            if (index >= 0 && spinner.selectedItemPosition != index) spinner.setSelection(index)
+        }
+        textField.doAfterTextChanged { value ->
+            if (!value.isNullOrEmpty()) useTextAction()
+        }
+        CharPicker.addRows(body) { character ->
+            textField.setText(character)
+            textField.setSelection(character.length)
+            useTextAction()
+        }
+        return textField
+    }
+
+    /** Dialog editor tombol cukup tinggi; isinya digulir supaya tombol OK tetap terlihat. */
+    private fun dialogScroll(body: LinearLayout): ScrollView =
+        ScrollView(this).apply {
+            isFillViewport = false
+            addView(
+                body,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (resources.displayMetrics.heightPixels * 0.62f).toInt()
+            )
+        }
+
+    /**
+     * Pratinjau: tombol karakter (dan hapus/spasi/panah) benar-benar mengubah kolom uji,
+     * supaya papan karakter bisa dicoba tanpa berpindah aplikasi.
+     */
+    private fun applyPreviewEdit(action: KeyAction, text: String): Boolean {
+        val editable = testField.text ?: return false
+        val existing = editable.toString()
+        var start = testField.selectionStart
+        var end = testField.selectionEnd
+        if (start < 0) start = existing.length
+        if (end < 0) end = existing.length
+        if (end < start) {
+            val swap = start
+            start = end
+            end = swap
+        }
+        val result = when (action) {
+            KeyAction.TEXT -> {
+                val insert = KeyboardChars.clamp(text)
+                if (insert.isEmpty()) return false
+                TextInsert.into(existing, start, end, insert)
+            }
+            KeyAction.SPACE -> TextInsert.into(existing, start, end, " ")
+            KeyAction.ENTER -> TextInsert.into(existing, start, end, "\n")
+            KeyAction.TAB -> TextInsert.into(existing, start, end, "\t")
+            KeyAction.BACKSPACE -> TextInsert.deleteBackward(existing, start, end)
+            KeyAction.DELETE_FORWARD -> TextInsert.deleteForward(existing, start, end)
+            KeyAction.DELETE_WORD -> TextInsert.deleteWord(existing, start, end)
+            KeyAction.CURSOR_LEFT -> {
+                testField.setSelection(TextInsert.moveCaret(existing, start, -1))
+                return true
+            }
+            KeyAction.CURSOR_RIGHT -> {
+                testField.setSelection(TextInsert.moveCaret(existing, start, 1))
+                return true
+            }
+            else -> return false
+        }
+        testField.setText(result.text)
+        testField.setSelection(result.caret.coerceIn(0, result.text.length))
+        return true
+    }
+
     private fun actionHint(action: KeyAction): String = getString(
         when (action) {
             KeyAction.TEXT -> R.string.hint_text
+            KeyAction.CHAR_PAD -> R.string.hint_char_pad
             KeyAction.SPACE -> R.string.hint_space
             KeyAction.ENTER -> R.string.hint_enter
             KeyAction.BACKSPACE -> R.string.hint_backspace

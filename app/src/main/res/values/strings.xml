@@ -158,7 +158,14 @@
     <string name="grid_note">Tombol persegi dan rata atas dengan area tulis. Baris tombol bisa mengikuti area tulis atau diatur sendiri (1-6). Bila ukurannya otomatis, sisi tombol = tinggi satu baris area tulis, berapa pun baris tombolnya; ukuran sendiri memakai angka 32-160 dp. Menambah kolom membuat area tulis lebih sempit, menambah baris tombol membuat kolomnya lebih tinggi. Papan memangkas sendiri supaya tetap muat di layar.</string>
     <string name="setting_action">Fungsi</string>
     <string name="setting_custom_label">Label sendiri (opsional)</string>
-    <string name="setting_custom_text">Teks yang diinput (untuk fungsi abc)</string>
+    <string name="setting_custom_text">Karakter atau teks yang dimasukkan</string>
+    <string name="char_picker_note">Ketuk karakter di bawah untuk memakai fungsi Karakter. Untuk teks lebih panjang (misalnya @gmail.com), ketik di kotak ini. Fungsi Papan karakter membuka angka, huruf, dan tanda baca dari satu tombol.</string>
+    <string name="char_function_note">Fungsi Karakter memasukkan angka, huruf, tanda baca, atau teks pendek yang Anda pilih — mukanya menampilkan karakter itu. Fungsi Papan karakter membuka papan karakter di atas panel (bukan keyboard QWERTY): ketuk untuk memasukkan, Tutup untuk kembali menulis.</string>
+    <string name="char_pad_hint">Ketuk karakter untuk memasukkannya. Tutup untuk kembali menulis.</string>
+    <string name="char_pad_close">Tutup</string>
+    <string name="action_add_char_pad">Tambahkan tombol papan karakter</string>
+    <string name="msg_char_pad_added">Tombol papan karakter dipasang di kiri bilah atas supaya selalu terlihat. Ketuk ikon kisinya untuk membuka angka, huruf, dan tanda baca.</string>
+    <string name="msg_char_pad_exists">Tombol papan karakter sudah ada di bilah atas.</string>
     <string name="setting_repeat">Ulangi saat ditahan</string>
     <string name="setting_repeat_sub">Cocok untuk tombol hapus.</string>
 
@@ -175,7 +182,8 @@
     <string name="hint_cut">potong teks terpilih</string>
     <string name="hint_copy">salin teks terpilih</string>
     <string name="hint_paste">tempel dari papan klip</string>
-    <string name="hint_text">menulis teks tertentu</string>
+    <string name="hint_text">memasukkan angka, huruf, tanda baca, atau teks pendek</string>
+    <string name="hint_char_pad">membuka papan angka, huruf, dan tanda baca</string>
     <string name="hint_space">menambah spasi</string>
     <string name="hint_enter">baris baru</string>
     <string name="hint_backspace">hapus satu huruf</string>

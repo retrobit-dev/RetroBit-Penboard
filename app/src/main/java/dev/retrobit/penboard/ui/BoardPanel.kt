@@ -3,6 +3,7 @@ package dev.retrobit.penboard.ui
 import android.content.Context
 import android.graphics.Typeface
 import android.text.TextUtils
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -17,6 +18,7 @@ import dev.retrobit.penboard.data.KeyAction
 import dev.retrobit.penboard.data.KeyDef
 import dev.retrobit.penboard.data.PenboardConfig
 import dev.retrobit.penboard.util.GridMath
+import dev.retrobit.penboard.util.KeyboardChars
 import dev.retrobit.penboard.util.PixelArt
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -86,6 +88,9 @@ class BoardPanel(private val context: Context) {
 
     val root = PenboardRootView(context)
     val board = BoardView(context)
+
+    /** Papan angka/huruf/tanda baca. Menutupi panel saat fungsi Papan karakter dipakai. */
+    private val charPad = CharPad(context)
 
     /** Sisi tombol yang sedang dipakai (px) — dipakai layar pengaturan untuk mengubah ukuran. */
     var cellPx: Int = 0
@@ -217,12 +222,59 @@ class BoardPanel(private val context: Context) {
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
 
+        charPad.visibility = View.GONE
+        charPad.onInsert = { text ->
+            listener?.onKey(KeyDef(action = KeyAction.TEXT, text = text), KeyAction.TEXT)
+        }
+        charPad.onAction = { action ->
+            listener?.onKey(KeyDef(action = action), action)
+        }
+        charPad.onClose = { closeCharPad() }
+
         root.addView(
             panel,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
         root.addView(liftSpacer, FrameLayout.LayoutParams(1, 0))
         root.addView(resizeHandle, FrameLayout.LayoutParams(0, 0))
+        root.addView(charPad, FrameLayout.LayoutParams(0, 0))
+    }
+
+    /** Buka atau tutup papan karakter. Tombol yang sama menukar keadaannya. */
+    fun toggleCharPad() {
+        if (charPad.visibility == View.VISIBLE) {
+            closeCharPad()
+        } else {
+            openCharPad()
+        }
+    }
+
+    /** Tutup papan karakter dan kembalikan area tulis. Aman dipanggil bila sudah tertutup. */
+    fun closeCharPad() {
+        if (charPad.visibility != View.VISIBLE) return
+        charPad.visibility = View.GONE
+        applyResizeHandle(lastConfig)
+    }
+
+    private fun openCharPad() {
+        val width = panelWidthPx.takeIf { it > 0 } ?: context.resources.displayMetrics.widthPixels
+        charPad.visibility = View.VISIBLE
+        charPad.elevation = 12f * density
+        charPad.applyStyle(lastConfig, width)
+        resizeHandle.visibility = View.GONE
+        placeCharPad()
+        charPad.bringToFront()
+    }
+
+    /** Samakan posisi papan karakter dengan panel, termasuk saat panel digeser. */
+    private fun placeCharPad() {
+        val width = panelWidthPx.coerceAtLeast(1)
+        val height = panelHeightPx.coerceAtLeast(1)
+        charPad.layoutParams = FrameLayout.LayoutParams(width, height).apply {
+            gravity = Gravity.TOP or Gravity.START
+            leftMargin = panelLeftPx
+            topMargin = 0
+        }
     }
 
     /**
@@ -504,6 +556,11 @@ class BoardPanel(private val context: Context) {
         // Ukuran berubah => posisi harus dipasang ulang supaya sudut pengubah ukuran
         // tetap menempel di pojok kanan bawah papan.
         placePanel(panelLeftPx, panelLiftPx)
+        if (charPad.visibility == View.VISIBLE) {
+            resizeHandle.visibility = View.GONE
+            charPad.applyStyle(lastConfig, panelWidthPx.coerceAtLeast(1))
+            charPad.bringToFront()
+        }
     }
 
     /**
@@ -544,8 +601,8 @@ class BoardPanel(private val context: Context) {
                 val enabled = index < config.gridButtonCount
                 button.visibility = if (enabled) View.VISIBLE else View.INVISIBLE
                 button.repeatOnHold = key.repeatOnHold
-                button.onTap = { listener?.onKey(key, key.action) }
-                button.contentDescription = config.labelFor(key)
+                bindTap(button, key)
+                button.contentDescription = describeKey(config, key)
                 button.layoutParams = LinearLayout.LayoutParams(cell, cell).apply {
                     marginStart = if (column == 0) 0 else spacing
                 }
@@ -644,8 +701,8 @@ class BoardPanel(private val context: Context) {
         index: Int
     ): KeyButton = bottomButtons[index].apply {
         repeatOnHold = key.repeatOnHold
-        onTap = { listener?.onKey(key, key.action) }
-        contentDescription = config.labelFor(key)
+        bindTap(this, key)
+        contentDescription = describeKey(config, key)
         val width = GridMath.buttonWidthPx(side, bottomMultiplier(config, index))
         val height = GridMath.buttonHeightPx(side, bottomHeight(config, index))
         layoutParams = LinearLayout.LayoutParams(width, height).apply {
@@ -702,6 +759,7 @@ class BoardPanel(private val context: Context) {
             params.topMargin = panelHeightPx - side - inset
             resizeHandle.layoutParams = params
         }
+        placeCharPad()
     }
 
     /** Jumlah tombol bawah yang ditampilkan (0 = bilah bawah disembunyikan). */
@@ -748,12 +806,43 @@ class BoardPanel(private val context: Context) {
         }
     }
 
+    /** Fungsi Papan karakter membuka papan; aksi lain dilaporkan ke [Listener]. */
+    private fun bindTap(button: KeyButton, key: KeyDef) {
+        button.onTap = {
+            if (key.action == KeyAction.CHAR_PAD) toggleCharPad() else listener?.onKey(key, key.action)
+        }
+    }
+
+    /** Keterangan aksesibilitas: tombol karakter menyebut teks yang dimasukkan. */
+    private fun describeKey(config: PenboardConfig, key: KeyDef): String =
+        if (key.action == KeyAction.TEXT && key.text.isNotEmpty()) {
+            key.action.label + " " + key.text
+        } else {
+            config.labelFor(key)
+        }
+
     /**
      * Pasang ikon pada [button] mengikuti gaya pilihan pengguna ([PenboardConfig.iconStyle]):
-     * **pixel art** 12 x 12 ([PixelArt]) atau **ikon vektor** ([KeyIcons]). Label teks
-     * hanya dipakai bila aksinya tidak punya ikon sama sekali.
+     * **pixel art** 12 x 12 ([PixelArt]) atau **ikon vektor** ([KeyIcons]).
+     * Tombol karakter yang sudah diisi menampilkan karakternya, bukan ikon generik.
      */
     private fun applyIcon(button: KeyButton, config: PenboardConfig, key: KeyDef, fraction: Float) {
+        val face = if (key.action == KeyAction.TEXT) KeyboardChars.faceOf(key.label, key.text) else null
+        if (face != null) {
+            button.showPixels(null, config.buttonTextColor)
+            button.showGlyph(null, config.buttonTextColor)
+            button.text = face
+            button.maxLines = if (face.length <= 3) 1 else 2
+            val params = button.layoutParams
+            val side = minOf(
+                params?.width?.takeIf { it > 0 } ?: button.width,
+                params?.height?.takeIf { it > 0 } ?: button.height
+            )
+            if (side > 0) {
+                button.setTextSize(TypedValue.COMPLEX_UNIT_PX, KeyboardChars.faceTextPx(side, face))
+            }
+            return
+        }
         val action = key.action
         if (config.iconStyle == IconStyle.PIXEL && PixelArt.hasPattern(action)) {
             button.text = ""
