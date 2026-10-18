@@ -722,7 +722,7 @@ class PenboardConfigTest {
             bottomKeys = listOf(
                 KeyDef(KeyAction.SPACE),
                 KeyDef(KeyAction.ENTER),
-                KeyDef(KeyAction.DELETE),
+                KeyDef(KeyAction.BACKSPACE),
                 KeyDef(KeyAction.CLEAR)
             )
         ).sanitized()
