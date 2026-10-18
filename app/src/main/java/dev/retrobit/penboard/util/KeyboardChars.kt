@@ -43,8 +43,10 @@ object KeyboardChars {
     fun faceOf(label: String, text: String): String? {
         if (label.isNotBlank()) return label.take(12)
         if (text.isEmpty()) return null
-        if (text.isBlank()) return "\u2423".repeat(text.length.coerceAtMost(3))
-        return text.replace("\n", "\u21B5").replace("\t", "\u21E5").take(12)
+        // Baris baru dan tab punya tanda sendiri; hanya spasi murni yang digambar ␣.
+        val shown = text.replace("\n", "\u21B5").replace("\t", "\u21E5")
+        if (shown.isBlank()) return "\u2423".repeat(text.length.coerceAtMost(3))
+        return shown.take(12)
     }
 
     /** Ukuran huruf muka tombol, dibanding sisi tombol. Satu karakter digambar besar. */
