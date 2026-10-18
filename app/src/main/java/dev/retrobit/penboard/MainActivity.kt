@@ -67,15 +67,15 @@ class MainActivity : AppCompatActivity() {
         if (config.appTheme != createdTheme) {
             createdTheme = config.appTheme
             recreate()
-            return@configListener
-        }
-        // Kartu pratinjau selalu memakai ukuran terbaru, jadi tingginya ikut disesuaikan
-        // tanpa perlu menyusun ulang seluruh layar (yang akan menggeser posisi pengguna).
-        previewPanel?.let { panel ->
-            panel.applyConfig(config)
-            (panel.root.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
-                params.height = panel.panelHeightPx.coerceAtLeast(dp(120f))
-                panel.root.layoutParams = params
+        } else {
+            // Kartu pratinjau selalu memakai ukuran terbaru, jadi tingginya ikut disesuaikan
+            // tanpa perlu menyusun ulang seluruh layar (yang akan menggeser posisi pengguna).
+            previewPanel?.let { panel ->
+                panel.applyConfig(config)
+                (panel.root.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                    params.height = panel.panelHeightPx.coerceAtLeast(dp(120f))
+                    panel.root.layoutParams = params
+                }
             }
         }
     }
