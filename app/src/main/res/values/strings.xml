@@ -111,8 +111,10 @@
 
     <!-- Kartu: papan tulis -->
     <string name="card_board">Papan tulis</string>
-    <string name="card_board_sub">Ukuran, pena, dan tombol samping pena.</string>
+    <string name="card_board_sub">Tinggi papan tulis, jumlah baris, pena, dan tombol samping pena.</string>
     <string name="setting_board_lines">Jumlah baris area tulis</string>
+    <string name="setting_board_height">Tinggi papan tulis</string>
+    <string name="board_height_note">Tinggi papan tulis sekarang %1$d dp (baris × jarak garis). Menggeser tinggi mengubah jarak garis. Batas jarak garis 28–160 dp, jadi papan 3 baris bisa sampai 480 dp.</string>
     <string name="setting_line_gap">Jarak garis panduan</string>
     <string name="setting_pen_width">Tebal pena</string>
     <string name="setting_pen_colors">Warna pena (ketuk untuk mengubah)</string>
@@ -153,8 +155,14 @@
     <string name="unit_rows">baris</string>
     <string name="setting_grid_count">Jumlah tombol yang tampil</string>
     <string name="unit_keys">tombol</string>
-    <string name="action_theme_retro">Pakai tema retro cyberpunk grayscale ePaper</string>
-    <string name="theme_note">Tema retro cyberpunk: papan warna kertas ePaper, panel hitam dengan garis pindaian, tombol monokrom berikon, huruf mesin tik.</string>
+    <string name="setting_app_theme">Tema</string>
+    <string name="setting_app_theme_sub">Gelap atau terang. Memilih tema juga memasang warna papan yang cocok; warna pena, papan, panel, garis, dan tombol tetap bisa diubah satu per satu setelahnya.</string>
+    <string name="action_theme_retro">Pakai warna papan gelap (retro)</string>
+    <string name="action_theme_light">Pakai warna papan terang</string>
+    <string name="theme_note">Ketuk contoh warna untuk menggantinya. Bisa pilih dari contoh, geser merah/hijau/biru, atau ketik kode #RRGGBB.</string>
+    <string name="color_channel_red">Merah</string>
+    <string name="color_channel_green">Hijau</string>
+    <string name="color_channel_blue">Biru</string>
     <string name="setting_scanlines">Garis pindaian ePaper</string>
     <string name="setting_icon_style">Gaya ikon tombol</string>
     <string name="setting_icon_style_sub">Pixel art: kotak-kotak 12 x 12 yang tajam (bagian dari tema retro). Vektor: ikon bergaris halus. Berlaku untuk tombol samping, tombol atas, dan tombol minimize.</string>
@@ -162,6 +170,11 @@
     <string name="grid_slot_label">Tombol %1$d: %2$s</string>
     <string name="grid_slot_title">Tombol grid %1$d</string>
     <string name="action_change">Ubah</string>
+    <string name="action_move_up">Naik</string>
+    <string name="action_move_down">Turun</string>
+    <string name="setting_button_row">Baris tombol atas</string>
+    <string name="button_row_note">Tombol atas ini tampil di baris yang dipilih. Panah di kanan area tulis pindah baris. Naik/Turun hanya menggeser urutan; fungsinya ikut pindah, tidak berubah.</string>
+    <string name="button_order_note">Naik menggeser tombol ke atas (tombol 2 menjadi tombol 1). Turun sebaliknya. Fungsi tombol tidak berubah, hanya urutannya.</string>
     <string name="action_grid_default">Kembalikan tombol bawaan</string>
     <string name="grid_note">Tombol persegi dan rata atas dengan area tulis. Baris tombol bisa mengikuti area tulis atau diatur sendiri (1-6). Bila ukurannya otomatis, sisi tombol = tinggi satu baris area tulis, berapa pun baris tombolnya; ukuran sendiri memakai angka 32-160 dp. Menambah kolom membuat area tulis lebih sempit, menambah baris tombol membuat kolomnya lebih tinggi. Papan memangkas sendiri supaya tetap muat di layar.</string>
     <string name="setting_action">Fungsi</string>
@@ -277,7 +290,7 @@
 
     <!-- Kartu: tampilan -->
     <string name="card_look">Tampilan dan transparansi</string>
-    <string name="card_look_sub">Atur warna dan tingkat tembus pandang papan.</string>
+    <string name="card_look_sub">Tema gelap/terang, warna pena, papan, panel, garis, dan tombol.</string>
     <string name="setting_panel_opacity">Transparansi panel</string>
     <string name="setting_panel_color">Warna panel</string>
     <string name="setting_board_opacity">Transparansi papan</string>

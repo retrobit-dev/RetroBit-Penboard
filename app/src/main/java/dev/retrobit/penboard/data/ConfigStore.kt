@@ -61,6 +61,18 @@ class ConfigStore private constructor(context: Context) {
         @Volatile
         private var instance: ConfigStore? = null
 
+        /** Id tema tersimpan, dibaca sebelum Activity.onCreate supaya setTheme sempat diterapkan. */
+        fun storedThemeId(context: Context): String {
+            val raw = context.getSharedPreferences("penboard", Context.MODE_PRIVATE)
+                .getString(KEY_CONFIG, null)
+                ?: return AppTheme.DARK.id
+            return try {
+                AppTheme.fromId(JSONObject(raw).optString("appTheme", AppTheme.DARK.id)).id
+            } catch (error: Throwable) {
+                AppTheme.DARK.id
+            }
+        }
+
         fun get(context: Context): ConfigStore {
             val existing = instance
             if (existing != null) return existing

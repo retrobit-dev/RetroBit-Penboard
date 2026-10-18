@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
+import dev.retrobit.penboard.data.AppTheme
 import dev.retrobit.penboard.data.ConfigStore
 import dev.retrobit.penboard.data.IconStyle
 import dev.retrobit.penboard.data.KeyAction
@@ -37,7 +38,6 @@ import dev.retrobit.penboard.ink.RecognitionLanguages
 import dev.retrobit.penboard.overlay.PenboardTypingService
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.ui.CharPicker
-import dev.retrobit.penboard.ui.ColorPicker
 import dev.retrobit.penboard.ui.Ui
 import dev.retrobit.penboard.util.GmsStatus
 import dev.retrobit.penboard.util.GridMath
@@ -61,8 +61,14 @@ class MainActivity : AppCompatActivity() {
 
     /** Sisa tarikan sudut yang belum genap 1 dp (lebar papan memakai pecahan, tinggi memakai dp). */
     private var pendingResizeDp = 0f
+    private var createdTheme: AppTheme = AppTheme.DARK
 
     private val configListener: (PenboardConfig) -> Unit = { config ->
+        if (config.appTheme != createdTheme) {
+            createdTheme = config.appTheme
+            recreate()
+            return@configListener
+        }
         // Kartu pratinjau selalu memakai ukuran terbaru, jadi tingginya ikut disesuaikan
         // tanpa perlu menyusun ulang seluruh layar (yang akan menggeser posisi pengguna).
         previewPanel?.let { panel ->
@@ -75,8 +81,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val themeId = ConfigStore.storedThemeId(this)
+        setTheme(
+            if (themeId == AppTheme.LIGHT.id) R.style.Theme_Penboard_Light else R.style.Theme_Penboard
+        )
         super.onCreate(savedInstanceState)
         store = ConfigStore.get(this)
+        createdTheme = store.config.appTheme
         testField = EditText(this).apply {
             hint = getString(R.string.test_hint)
             minLines = 2
@@ -89,7 +100,19 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16f), dp(16f), dp(16f), dp(28f))
         }
-        setContentView(ScrollView(this).apply { addView(content) })
+        setContentView(
+            ScrollView(this).apply {
+                isFillViewport = true
+                isHorizontalScrollBarEnabled = false
+                addView(
+                    content,
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            }
+        )
         store.addListener(configListener)
         render()
     }
@@ -486,6 +509,21 @@ class MainActivity : AppCompatActivity() {
             card, getString(R.string.setting_board_lines), config.boardLines,
             PenboardConfig.MIN_BOARD_LINES, PenboardConfig.MAX_BOARD_LINES, getString(R.string.unit_rows)
         ) { value -> store.update { it.copy(boardLines = value) } }
+        val writingHeight = config.boardLines * config.lineGapDp
+        Ui.body(card, getString(R.string.board_height_note, writingHeight))
+        Ui.sliderRow(
+            card, getString(R.string.setting_board_height), writingHeight,
+            PenboardConfig.MIN_LINE_GAP_DP,
+            PenboardConfig.MAX_BOARD_LINES * PenboardConfig.MAX_LINE_GAP_DP,
+            "dp"
+        ) { value ->
+            val lines = store.config.boardLines.coerceAtLeast(1)
+            val gap = (value / lines).coerceIn(
+                PenboardConfig.MIN_LINE_GAP_DP,
+                PenboardConfig.MAX_LINE_GAP_DP
+            )
+            store.update { it.copy(lineGapDp = gap) }
+        }
         Ui.sliderRow(
             card, getString(R.string.setting_line_gap), config.lineGapDp,
             PenboardConfig.MIN_LINE_GAP_DP, PenboardConfig.MAX_LINE_GAP_DP, "dp"
@@ -643,34 +681,19 @@ class MainActivity : AppCompatActivity() {
             val key = config.gridKeys.getOrNull(index)
                 ?: PenboardConfig.defaultGridKeys().getOrElse(index) { KeyDef() }
             val enabled = index < config.gridButtonCount
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(5f), 0, dp(5f))
+            val label = if (enabled) {
+                getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
+            } else {
+                getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
             }
-            row.addView(
-                AppCompatTextView(this).apply {
-                    text = if (enabled) {
-                        getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
-                    } else {
-                        getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
-                    }
-                    textSize = 14f
-                    alpha = if (enabled) 1f else 0.55f
-                },
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            )
-            row.addView(
-                MaterialButton(this).apply {
-                    text = getString(R.string.action_change)
-                    isAllCaps = false
-                    textSize = 12.5f
-                    // Semua sel bisa diatur; menyimpan sel baru menaikkan jumlah tombol.
-                    setOnClickListener { showKeyEditor(index) }
-                }
-            )
-            card.addView(row)
+            addSlotRow(
+                card, label, enabled, index, GridMath.slots(columns, rows) - 1,
+                onEdit = { showKeyEditor(index) }
+            ) { delta ->
+                swapKeys(grid = true, index, delta)
+            }
         }
+        Ui.body(card, getString(R.string.button_order_note))
         Ui.divider(card)
         Ui.outlinedButton(card, getString(R.string.action_grid_default)) {
             store.update {
@@ -834,43 +857,32 @@ class MainActivity : AppCompatActivity() {
             val key = config.bottomKeys.getOrNull(index)
                 ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
             val shown = index < config.bottomButtonCount
-            val page = previewPanel?.topPageFor(index) ?: 0
+            val page = if (config.bottomRowsAssigned && key.row > 0) {
+                (key.row - 1).coerceIn(0, config.bottomRowCount - 1)
+            } else {
+                previewPanel?.topPageFor(index) ?: 0
+            }
             if (config.bottomRowCount > 1 && shown && page != lastPageHeader) {
                 Ui.body(card, getString(R.string.bottom_page_header, page + 1))
                 lastPageHeader = page
             }
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(4f), 0, dp(4f))
+            val label = when {
+                !shown -> getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
+                config.bottomRowCount > 1 || config.bottomRowsAssigned -> getString(
+                    R.string.bottom_slot_page,
+                    index + 1,
+                    config.labelFor(key),
+                    page + 1
+                )
+                else -> getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
             }
-            row.addView(
-                AppCompatTextView(this).apply {
-                    text = when {
-                        !shown -> getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
-                        config.bottomRowCount > 1 -> getString(
-                            R.string.bottom_slot_page,
-                            index + 1,
-                            config.labelFor(key),
-                            page + 1
-                        )
-                        else -> getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
-                    }
-                    textSize = 14f
-                    alpha = if (shown) 1f else 0.55f
-                },
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            )
-            row.addView(
-                MaterialButton(this).apply {
-                    text = getString(R.string.action_change)
-                    isAllCaps = false
-                    textSize = 12.5f
-                    setOnClickListener { showBottomKeyEditor(index) }
-                }
-            )
-            card.addView(row)
+            addSlotRow(card, label, shown, index, PenboardConfig.BOTTOM_SLOTS - 1, onEdit = {
+                showBottomKeyEditor(index)
+            }) { delta ->
+                swapKeys(grid = false, index, delta)
+            }
         }
+        Ui.body(card, getString(R.string.button_order_note))
         Ui.body(card, getString(R.string.bottom_edit_all_note))
         Ui.divider(card)
         Ui.outlinedButton(card, getString(R.string.action_bottom_default)) {
@@ -878,7 +890,8 @@ class MainActivity : AppCompatActivity() {
                 it.copy(
                     bottomKeys = PenboardConfig.defaultBottomKeys(),
                     bottomButtonCount = PenboardConfig.DEFAULT_BOTTOM_KEYS,
-                    bottomRowCount = PenboardConfig.DEFAULT_BOTTOM_ROWS
+                    bottomRowCount = PenboardConfig.DEFAULT_BOTTOM_ROWS,
+                    bottomRowsAssigned = false
                 )
             }
             render()
@@ -938,13 +951,34 @@ class MainActivity : AppCompatActivity() {
         Ui.body(card, getString(R.string.preset_note))
     }
 
+    private fun applyTheme(theme: AppTheme) {
+        if (theme == store.config.appTheme) return
+        store.update { current ->
+            if (theme == AppTheme.LIGHT) current.withLightTheme() else current.withRetroTheme()
+        }
+    }
+
     private fun renderLookCard() {
         val config = store.config
         val card = Ui.card(content, getString(R.string.card_look), getString(R.string.card_look_sub))
+        val themes = AppTheme.entries
+        Ui.spinnerRow(
+            card,
+            getString(R.string.setting_app_theme),
+            themes.map { it.label },
+            themes.indexOf(config.appTheme).coerceAtLeast(0)
+        ) { index ->
+            applyTheme(themes[index])
+        }
+        Ui.body(card, getString(R.string.setting_app_theme_sub))
         Ui.body(card, getString(R.string.theme_note))
         Ui.outlinedButton(card, getString(R.string.action_theme_retro)) {
             store.update { it.withRetroTheme() }
-            render()
+            if (store.config.appTheme == createdTheme) render()
+        }
+        Ui.outlinedButton(card, getString(R.string.action_theme_light)) {
+            store.update { it.withLightTheme() }
+            if (store.config.appTheme == createdTheme) render()
         }
         Ui.switchRow(
             card,
@@ -1051,6 +1085,88 @@ class MainActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ tombol bawah
 
+    /**
+     * Judul slot di baris sendiri, tombol Naik/Turun/Ubah di bawahnya.
+     * Satu baris horizontal memotong nama tombol di layar sempit.
+     */
+    private fun addSlotRow(
+        card: LinearLayout,
+        label: String,
+        shown: Boolean,
+        index: Int,
+        lastIndex: Int,
+        onEdit: () -> Unit,
+        onMove: (Int) -> Unit
+    ) {
+        val block = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(6f), 0, dp(2f))
+            alpha = if (shown) 1f else 0.55f
+        }
+        block.addView(
+            AppCompatTextView(this).apply {
+                text = label
+                textSize = 14f
+                maxLines = 4
+                ellipsize = null
+            }
+        )
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        fun addOrder(label: String, enabled: Boolean, click: () -> Unit) {
+            actions.addView(
+                orderButton(label, enabled, click),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = dp(6f)
+                }
+            )
+        }
+        addOrder(getString(R.string.action_move_up), index > 0) { onMove(-1) }
+        addOrder(getString(R.string.action_move_down), index < lastIndex) { onMove(1) }
+        addOrder(getString(R.string.action_change), true, onEdit)
+        block.addView(actions)
+        card.addView(block)
+    }
+
+    private fun orderButton(label: String, enabled: Boolean, onClick: () -> Unit): MaterialButton {
+        return Ui.readableButton(this, label) {
+            if (enabled) onClick()
+        }.apply {
+            isEnabled = enabled
+            alpha = if (enabled) 1f else 0.35f
+            minWidth = 0
+            minimumWidth = 0
+        }
+    }
+
+    /** Geser dua slot bersebelahan. Fungsi ikut pindah; yang berubah hanya urutannya. */
+    private fun swapKeys(grid: Boolean, index: Int, delta: Int) {
+        store.update { cfg ->
+            val limit = if (grid) {
+                GridMath.slots(cfg.gridColumns, cfg.effectiveGridRows)
+            } else {
+                PenboardConfig.BOTTOM_SLOTS
+            }
+            val target = index + delta
+            if (index !in 0 until limit || target !in 0 until limit) return@update cfg
+            val source = if (grid) cfg.gridKeys else cfg.bottomKeys
+            val defaults = if (grid) PenboardConfig.defaultGridKeys() else PenboardConfig.defaultBottomKeys()
+            val keys = source.toMutableList()
+            while (keys.size <= maxOf(index, target)) {
+                keys.add(defaults.getOrElse(keys.size) { KeyDef() })
+            }
+            val moved = keys[index]
+            val other = keys[target]
+            // Baris tetap di slot. Yang pindah adalah fungsi, label, teks, dan ukurannya.
+            keys[index] = other.copy(row = moved.row)
+            keys[target] = moved.copy(row = other.row)
+            if (grid) cfg.copy(gridKeys = keys) else cfg.copy(bottomKeys = keys)
+        }
+        render()
+    }
+
     private fun showBottomKeyEditor(index: Int) {
         val config = store.config
         val current = config.bottomKeys.getOrNull(index)
@@ -1103,6 +1219,27 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.unit_percent)
         ) { value -> heightMultiplier = value / 100f }
 
+        val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
+        val autoRow = if (config.bottomRowsAssigned && current.row > 0) {
+            current.row
+        } else {
+            ((index / per) + 1).coerceAtMost(PenboardConfig.MAX_BOTTOM_ROWS)
+        }
+        var chosenRow = autoRow
+        var rowTouched = false
+        Ui.body(body, getString(R.string.button_row_note))
+        Ui.sliderRow(
+            body,
+            getString(R.string.setting_button_row),
+            autoRow,
+            PenboardConfig.MIN_BOTTOM_ROWS,
+            PenboardConfig.MAX_BOTTOM_ROWS,
+            getString(R.string.unit_rows)
+        ) { value ->
+            chosenRow = value
+            rowTouched = value != autoRow
+        }
+
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.bottom_slot_title, index + 1))
             .setView(dialogScroll(body))
@@ -1120,18 +1257,32 @@ class MainActivity : AppCompatActivity() {
                     // Jaga-jaga bila daftar lebih pendek dari jumlah slot.
                     while (keys.size <= index) keys.add(KeyDef())
                     keys[index] = updated
-                    val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
-                    val neededRows = (index / per) + 1
-                    cfg.copy(
+                    val saved = cfg.copy(
                         bottomKeys = keys,
                         // Slot yang baru diatur langsung bisa digeser, bukan hanya dihitung.
-                        bottomButtonCount = maxOf(cfg.bottomButtonCount, index + 1),
-                        bottomRowCount = maxOf(cfg.bottomRowCount, neededRows)
-                            .coerceAtMost(PenboardConfig.MAX_BOTTOM_ROWS)
+                        bottomButtonCount = maxOf(cfg.bottomButtonCount, index + 1)
                     )
+                    if (rowTouched) {
+                        saved.assignTopRow(index, chosenRow, per)
+                    } else if (!cfg.bottomRowsAssigned) {
+                        val neededRows = (index / per) + 1
+                        saved.copy(
+                            bottomRowCount = maxOf(cfg.bottomRowCount, neededRows)
+                                .coerceAtMost(PenboardConfig.MAX_BOTTOM_ROWS)
+                        )
+                    } else {
+                        saved
+                    }
                 }
                 render()
-                previewPanel?.let { panel -> panel.showTopPage(panel.topPageFor(index)) }
+                previewPanel?.let { panel ->
+                    val page = if (store.config.bottomRowsAssigned) {
+                        (store.config.bottomKeys.getOrNull(index)?.row ?: chosenRow) - 1
+                    } else {
+                        panel.topPageFor(index)
+                    }
+                    panel.showTopPage(page.coerceAtLeast(0))
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -1217,7 +1368,8 @@ class MainActivity : AppCompatActivity() {
                 keys.add(KeyDef())
             }
             // Di kiri: tombol pertama selalu terlihat, walau bilahnya sudah penuh.
-            keys.add(0, KeyDef(action = KeyAction.CHAR_PAD))
+            val padRow = if (cfg.bottomRowsAssigned) 1 else 0
+            keys.add(0, KeyDef(action = KeyAction.CHAR_PAD, row = padRow))
             val nextCount = if (alreadyCounted) cfg.bottomButtonCount else cfg.bottomButtonCount + 1
             cfg.copy(
                 bottomKeys = keys.take(PenboardConfig.BOTTOM_SLOTS),
@@ -1249,25 +1401,43 @@ class MainActivity : AppCompatActivity() {
             KeyDef(KeyAction.EDITOR_ACTION)
         )
         store.update { cfg ->
+            val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
             val keys = cfg.bottomKeys.toMutableList()
             while (keys.size < PenboardConfig.BOTTOM_SLOTS) keys.add(KeyDef())
-            val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
-            var index = cfg.bottomButtonCount.coerceAtLeast(0)
+            if (!cfg.bottomRowsAssigned) {
+                for (i in keys.indices) {
+                    val auto = if (i < cfg.bottomButtonCount) (i / per) + 1 else 1
+                    keys[i] = keys[i].copy(row = auto.coerceIn(1, PenboardConfig.MAX_BOTTOM_ROWS))
+                }
+            }
+            val used = cfg.bottomButtonCount.coerceAtLeast(0)
+            val nextRow = if (used <= 0) {
+                1
+            } else {
+                keys.take(used).maxOf { it.row.coerceAtLeast(1) } + 1
+            }.coerceIn(1, PenboardConfig.MAX_BOTTOM_ROWS)
+            var index = used
             var written = 0
+            var row = nextRow
+            var onRow = 0
             for (key in shortcuts) {
                 if (index >= PenboardConfig.MAX_BOTTOM_KEYS) break
-                keys[index] = key
+                if (onRow >= per && row < PenboardConfig.MAX_BOTTOM_ROWS) {
+                    row++
+                    onRow = 0
+                }
+                keys[index] = key.copy(row = row)
                 index++
+                onRow++
                 written++
             }
             if (written == 0) return@update cfg
-            val count = index.coerceAtMost(PenboardConfig.MAX_BOTTOM_KEYS)
-            val rows = maxOf(cfg.bottomRowCount, (count + per - 1) / per)
-                .coerceIn(PenboardConfig.MIN_BOTTOM_ROWS, PenboardConfig.MAX_BOTTOM_ROWS)
             cfg.copy(
                 bottomKeys = keys.take(PenboardConfig.BOTTOM_SLOTS),
-                bottomButtonCount = count,
-                bottomRowCount = rows
+                bottomButtonCount = index.coerceAtMost(PenboardConfig.MAX_BOTTOM_KEYS),
+                bottomRowCount = maxOf(cfg.bottomRowCount, row)
+                    .coerceIn(PenboardConfig.MIN_BOTTOM_ROWS, PenboardConfig.MAX_BOTTOM_ROWS),
+                bottomRowsAssigned = true
             )
         }
         toast(getString(R.string.msg_shortcuts_added))

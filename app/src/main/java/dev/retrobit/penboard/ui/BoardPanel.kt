@@ -891,14 +891,27 @@ class BoardPanel(private val context: Context) {
         } else {
             usableWidth.coerceAtLeast(1)
         }
-        val pages = GridMath.packTopPages(
-            count,
-            rowCount,
-            side,
-            bottomMultipliers(config),
-            buttonWidth,
-            spacing
-        )
+        val multipliers = bottomMultipliers(config)
+        val pages = if (config.bottomRowsAssigned) {
+            GridMath.packAssignedRows(
+                count,
+                rowCount,
+                config.bottomKeys.map { it.row },
+                side,
+                multipliers,
+                buttonWidth,
+                spacing
+            )
+        } else {
+            GridMath.packTopPages(
+                count,
+                rowCount,
+                side,
+                multipliers,
+                buttonWidth,
+                spacing
+            )
+        }
         lastPages = pages
         topReachableCount = pages.sumOf { it.size }
         val shown = pages.getOrElse(topPage) { emptyList() }

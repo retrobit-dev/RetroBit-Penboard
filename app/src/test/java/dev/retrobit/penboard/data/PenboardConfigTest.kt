@@ -693,5 +693,57 @@ class PenboardConfigTest {
         assertTrue(config.minimizeButton)
         assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
         assertEquals(PenboardConfig.BOTTOM_SLOTS, config.bottomKeys.size)
+        assertFalse(config.bottomRowsAssigned)
+        assertEquals(AppTheme.DARK, config.appTheme)
+        assertEquals(0, config.bottomKeys.first().row)
+    }
+
+    @Test
+    fun `baris tombol dan tema tersimpan`() {
+        val config = PenboardConfig(
+            appTheme = AppTheme.LIGHT,
+            bottomRowsAssigned = true,
+            bottomRowCount = 3,
+            bottomKeys = listOf(KeyDef(KeyAction.SPACE, row = 2), KeyDef(KeyAction.ENTER, row = 3))
+        ).sanitized()
+        val restored = PenboardConfig.fromJson(JSONObject(config.toJson().toString()))
+        assertEquals(AppTheme.LIGHT, restored.appTheme)
+        assertTrue(restored.bottomRowsAssigned)
+        assertEquals(2, restored.bottomKeys[0].row)
+        assertEquals(3, restored.bottomKeys[1].row)
+        assertEquals(0, KeyDef.fromJson(JSONObject("{\"action\":\"space\"}")).row)
+    }
+
+    @Test
+    fun `memilih baris mengunci urutan lama lalu memindahkan satu tombol`() {
+        val config = PenboardConfig(
+            bottomButtonCount = 4,
+            bottomRowCount = 1,
+            bottomKeys = listOf(
+                KeyDef(KeyAction.SPACE),
+                KeyDef(KeyAction.ENTER),
+                KeyDef(KeyAction.DELETE),
+                KeyDef(KeyAction.CLEAR)
+            )
+        ).sanitized()
+        val moved = config.assignTopRow(1, 2, perRow = 2)
+        assertTrue(moved.bottomRowsAssigned)
+        assertEquals(2, moved.bottomRowCount)
+        assertEquals(1, moved.bottomKeys[0].row)
+        assertEquals(2, moved.bottomKeys[1].row)
+        assertEquals(KeyAction.ENTER, moved.bottomKeys[1].action)
+        assertEquals(2, moved.bottomKeys[2].row)
+    }
+
+    @Test
+    fun `tema terang memasang warna kertas dan tetap bisa diganti`() {
+        val light = PenboardConfig().withLightTheme()
+        assertEquals(AppTheme.LIGHT, light.appTheme)
+        assertFalse(light.scanlines)
+        assertEquals(0xFF1C1C1C.toInt(), light.buttonTextColor)
+        val custom = light.copy(boardColor = 0xFF00FF00.toInt()).sanitized()
+        assertEquals(0xFF00FF00.toInt(), custom.boardColor)
+        assertEquals(AppTheme.LIGHT, custom.appTheme)
+        assertEquals(160, PenboardConfig.MAX_LINE_GAP_DP)
     }
 }

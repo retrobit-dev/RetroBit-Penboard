@@ -10,10 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.SeekBar
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.widget.doAfterTextChanged
+import dev.retrobit.penboard.R
 
-/** Pemilih warna sederhana: contoh warna, pengatur transparansi, dan kode heksadesimal. */
+/** Pemilih warna: contoh, merah/hijau/biru, transparansi, dan kode heksadesimal. */
 object ColorPicker {
 
     /**
@@ -49,6 +52,7 @@ object ColorPicker {
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(context, 42f))
         )
 
+        var writingHex = false
         val hexField = EditText(context).apply {
             setText(hex(chosen))
             inputType = InputType.TYPE_CLASS_TEXT
@@ -58,6 +62,36 @@ object ColorPicker {
             setPadding(0, Ui.dp(context, 10f), 0, 0)
         }
         content.addView(hexField)
+
+        val redBar = channelBar(context, content, context.getString(R.string.color_channel_red), Color.red(chosen))
+        val greenBar = channelBar(context, content, context.getString(R.string.color_channel_green), Color.green(chosen))
+        val blueBar = channelBar(context, content, context.getString(R.string.color_channel_blue), Color.blue(chosen))
+        fun paintFromChannels() {
+            chosen = Color.argb(Color.alpha(chosen), redBar.progress, greenBar.progress, blueBar.progress)
+            previewDrawable.setColor(chosen)
+            writingHex = true
+            hexField.setText(hex(chosen))
+            writingHex = false
+        }
+        val channelListener = object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) paintFromChannels()
+            }
+            override fun onStartTrackingTouch(bar: SeekBar) = Unit
+            override fun onStopTrackingTouch(bar: SeekBar) = Unit
+        }
+        redBar.setOnSeekBarChangeListener(channelListener)
+        greenBar.setOnSeekBarChangeListener(channelListener)
+        blueBar.setOnSeekBarChangeListener(channelListener)
+        hexField.doAfterTextChanged {
+            if (writingHex) return@doAfterTextChanged
+            val parsed = parseHex(it?.toString().orEmpty()) ?: return@doAfterTextChanged
+            chosen = Color.argb(Color.alpha(chosen), Color.red(parsed), Color.green(parsed), Color.blue(parsed))
+            previewDrawable.setColor(chosen)
+            redBar.progress = Color.red(chosen)
+            greenBar.progress = Color.green(chosen)
+            blueBar.progress = Color.blue(chosen)
+        }
 
         val alphaLabel = AppCompatTextView(context).apply {
             textSize = 13f
@@ -100,7 +134,12 @@ object ColorPicker {
                 setOnClickListener {
                     chosen = Color.argb(Color.alpha(chosen), Color.red(color), Color.green(color), Color.blue(color))
                     previewDrawable.setColor(chosen)
+                    redBar.progress = Color.red(chosen)
+                    greenBar.progress = Color.green(chosen)
+                    blueBar.progress = Color.blue(chosen)
+                    writingHex = true
                     hexField.setText(hex(chosen))
+                    writingHex = false
                 }
             }
             row?.addView(
@@ -113,9 +152,15 @@ object ColorPicker {
         }
         content.addView(grid)
 
+        val scroll = ScrollView(context).apply {
+            isFillViewport = false
+            val height = (context.resources.displayMetrics.heightPixels * 0.55f).toInt()
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height)
+            addView(content)
+        }
         AlertDialog.Builder(context)
             .setTitle(title)
-            .setView(content)
+            .setView(scroll)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 parseHex(hexField.text.toString())?.let { parsed ->
                     chosen = Color.argb(Color.alpha(chosen), Color.red(parsed), Color.green(parsed), Color.blue(parsed))
@@ -124,6 +169,20 @@ object ColorPicker {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun channelBar(context: Context, parent: LinearLayout, label: String, value: Int): SeekBar {
+        parent.addView(AppCompatTextView(context).apply {
+            text = label
+            textSize = 13f
+            setPadding(0, Ui.dp(context, 8f), 0, 0)
+        })
+        val bar = SeekBar(context).apply {
+            max = 255
+            progress = value
+        }
+        parent.addView(bar)
+        return bar
     }
 
     private fun alphaText(color: Int): String = "Transparansi warna: ${Color.alpha(color) * 100 / 255}%"

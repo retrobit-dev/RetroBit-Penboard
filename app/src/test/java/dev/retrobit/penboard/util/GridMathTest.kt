@@ -368,4 +368,35 @@ class GridMathTest {
         assertTrue(GridMath.MAX_WIDTH_FRACTION in 0.2f..0.5f)
         assertTrue(GridMath.MIN_CELL_DP < GridMath.MAX_CELL_DP)
     }
+
+    @Test
+    fun `baris yang dipilih menampilkan tombol di halaman itu`() {
+        val pages = GridMath.packAssignedRows(
+            count = 4,
+            rowCount = 3,
+            rows = listOf(1, 3, 1, 2),
+            cellPx = 40,
+            widthMultipliers = List(4) { 1f },
+            availableWidthPx = 200,
+            spacingPx = 8
+        )
+        assertEquals(listOf(0, 2), pages[0])
+        assertEquals(listOf(3), pages[1])
+        assertEquals(listOf(1), pages[2])
+    }
+
+    @Test
+    fun `tombol tanpa nomor baris tetap di baris pertama`() {
+        val pages = GridMath.packAssignedRows(
+            count = 2,
+            rowCount = 2,
+            rows = listOf(0, 0),
+            cellPx = 40,
+            widthMultipliers = List(2) { 1f },
+            availableWidthPx = 200,
+            spacingPx = 0
+        )
+        assertEquals(listOf(0, 1), pages[0])
+        assertEquals(emptyList<Int>(), pages[1])
+    }
 }

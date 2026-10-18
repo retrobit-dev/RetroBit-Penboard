@@ -81,6 +81,16 @@ enum class KeyAction(val id: String, val label: String) {
 
 /** Aksi tombol samping pena stylus. */
 /** Gaya ikon tombol papan: pixel art 12 x 12, atau ikon vektor bergaris. */
+/** Tema layar pengaturan. Keyboard IME tetap memakai warna papan dari konfigurasi. */
+enum class AppTheme(val id: String, val label: String) {
+    DARK("dark", "Gelap"),
+    LIGHT("light", "Terang");
+
+    companion object {
+        fun fromId(id: String?): AppTheme = entries.firstOrNull { it.id == id } ?: DARK
+    }
+}
+
 enum class IconStyle(val id: String, val label: String) {
     PIXEL("pixel", "Pixel art"),
     VECTOR("vector", "Vektor");
@@ -124,7 +134,12 @@ data class KeyDef(
      * Tinggi tombol **bawah** dibanding tombol samping (1 = setinggi tombol samping).
      * Lebar dan tingginya bisa diatur sendiri-sendiri.
      */
-    val heightMultiplier: Float = 1f
+    val heightMultiplier: Float = 1f,
+    /**
+     * Baris tombol atas (1 = baris pertama). 0 = belum diatur, mengikuti urutan
+     * otomatis sampai pengguna memilih baris.
+     */
+    val row: Int = 0
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("action", action.id)
@@ -133,6 +148,7 @@ data class KeyDef(
         put("repeat", repeatOnHold)
         put("widthMultiplier", widthMultiplier)
         put("heightMultiplier", heightMultiplier)
+        if (row > 0) put("row", row)
     }
 
     companion object {
@@ -150,7 +166,8 @@ data class KeyDef(
                 .coerceIn(MIN_WIDTH_MULTIPLIER, MAX_WIDTH_MULTIPLIER),
             heightMultiplier = json.optDouble("heightMultiplier", 1.0).toFloat()
                 .coerceIn(MIN_HEIGHT_MULTIPLIER, MAX_HEIGHT_MULTIPLIER),
-            repeatOnHold = json.optBoolean("repeat", false)
+            repeatOnHold = json.optBoolean("repeat", false),
+            row = json.optInt("row", 0).coerceIn(0, PenboardConfig.MAX_BOTTOM_ROWS)
         )
     }
 }
@@ -234,6 +251,11 @@ data class PenboardConfig(
      * panah di kanan area tulis (atau geser) pindah ke baris lain.
      */
     val bottomRowCount: Int = DEFAULT_BOTTOM_ROWS,
+    /**
+     * Salah satu tombol atas sudah diberi nomor baris. Sebelum ini, baris diisi
+     * berurutan (tombol ke-7 ke baris berikutnya). Sesudah ini, tiap tombol memakai [KeyDef.row].
+     */
+    val bottomRowsAssigned: Boolean = false,
 
     /** Gaya ikon semua tombol papan: pixel art ([IconStyle.PIXEL]) atau vektor. */
     val iconStyle: IconStyle = IconStyle.PIXEL,
@@ -270,7 +292,9 @@ data class PenboardConfig(
     /** Tampilkan tombol minimize di bilah judul. */
     val minimizeButton: Boolean = true,
     /** Judul di bilah jendela; kosong berarti memakai [DEFAULT_WINDOW_TITLE]. */
-    val windowTitle: String = ""
+    val windowTitle: String = "",
+    /** Gelap atau terang untuk layar pengaturan. Warna papan sendiri tetap di field warna. */
+    val appTheme: AppTheme = AppTheme.DARK
 ) {
 
     /** Warna pena yang sedang dipakai. */
@@ -282,6 +306,7 @@ data class PenboardConfig(
      * bentuk saja) tanpa mengubah susunan tombol maupun pengaturan pengenalan.
      */
     fun withRetroTheme(): PenboardConfig = copy(
+        appTheme = AppTheme.DARK,
         panelColor = PANEL_COLOR,
         panelOpacity = THEME_PANEL_OPACITY,
         boardColor = PAPER_COLOR,
@@ -295,6 +320,27 @@ data class PenboardConfig(
         penColorIndex = 0,
         cornerRadiusDp = THEME_RADIUS_DP,
         scanlines = true
+    )
+
+    /**
+     * Tema terang: kertas hangat, tinta gelap, tanpa garis pindaian.
+     * Warna tetap bisa diubah satu per satu setelahnya.
+     */
+    fun withLightTheme(): PenboardConfig = copy(
+        appTheme = AppTheme.LIGHT,
+        panelColor = 0xFFF4F1EA.toInt(),
+        panelOpacity = 96,
+        boardColor = 0xFFFFFCF7.toInt(),
+        boardOpacity = 100,
+        lineColor = 0xFFD4CBBA.toInt(),
+        buttonColor = 0xFFFFFFFF.toInt(),
+        buttonOpacity = 96,
+        buttonTextColor = 0xFF1C1C1C.toInt(),
+        accentColor = 0xFF6B6458.toInt(),
+        penColors = listOf(0xFF101010.toInt(), 0xFF1D4ED8.toInt(), 0xFFB91C1C.toInt()),
+        penColorIndex = 0,
+        cornerRadiusDp = THEME_RADIUS_DP,
+        scanlines = false
     )
 
     /**
@@ -327,6 +373,7 @@ data class PenboardConfig(
         bottomKeys = defaultBottomKeys(),
         bottomButtonCount = DEFAULT_BOTTOM_KEYS,
         bottomRowCount = DEFAULT_BOTTOM_ROWS,
+        bottomRowsAssigned = false,
         // Pengenalan: kata jadi teks otomatis setelah 2 detik, lalu papan bersih.
         autoRecognize = true,
         autoRecognizeDelayMs = 2000,
@@ -334,6 +381,31 @@ data class PenboardConfig(
         clearAfterRecognize = true,
         haptics = true
     ).sanitized()
+
+    /**
+     * Pindahkan satu tombol atas ke baris [row]. Sekali ini dipanggil, semua tombol
+     * yang masih otomatis dikunci ke baris hitungannya supaya tidak loncat.
+     */
+    fun assignTopRow(index: Int, row: Int, perRow: Int): PenboardConfig {
+        if (index !in 0 until BOTTOM_SLOTS) return this
+        val target = row.coerceIn(1, MAX_BOTTOM_ROWS)
+        val per = perRow.coerceAtLeast(1)
+        val keys = bottomKeys.toMutableList()
+        while (keys.size < BOTTOM_SLOTS) keys.add(KeyDef())
+        if (!bottomRowsAssigned) {
+            for (i in keys.indices) {
+                val auto = if (i < bottomButtonCount) (i / per) + 1 else 1
+                keys[i] = keys[i].copy(row = auto.coerceIn(1, MAX_BOTTOM_ROWS))
+            }
+        }
+        keys[index] = keys[index].copy(row = target)
+        return copy(
+            bottomKeys = keys,
+            bottomRowsAssigned = true,
+            bottomRowCount = maxOf(bottomRowCount, target).coerceAtMost(MAX_BOTTOM_ROWS),
+            bottomButtonCount = maxOf(bottomButtonCount, index + 1)
+        ).sanitized()
+    }
 
     /** Label tombol: label khusus, teks aksi TEXT, atau label bawaan aksi. */
     fun labelFor(key: KeyDef): String = when {
@@ -412,6 +484,7 @@ data class PenboardConfig(
         put("bottomKeys", JSONArray().apply { bottomKeys.forEach { put(it.toJson()) } })
         put("bottomButtonCount", bottomButtonCount)
         put("bottomRowCount", bottomRowCount)
+        put("bottomRowsAssigned", bottomRowsAssigned)
         put("iconStyle", iconStyle.id)
         put("gridCellDp", gridCellDp)
         put("panelWidthFraction", panelWidthFraction)
@@ -422,6 +495,7 @@ data class PenboardConfig(
         put("windowFrame", windowFrame)
         put("minimizeButton", minimizeButton)
         put("windowTitle", windowTitle)
+        put("appTheme", appTheme.id)
     }
 
     /** Semua angka dipangkas ke rentang yang masuk akal. */
@@ -455,7 +529,9 @@ data class PenboardConfig(
             cornerRadiusDp = cornerRadiusDp.coerceIn(MIN_RADIUS_DP, MAX_RADIUS_DP),
             autoRecognizeDelayMs = autoRecognizeDelayMs.coerceIn(MIN_AUTO_DELAY_MS, MAX_AUTO_DELAY_MS),
             recognitionLanguage = RecognitionLanguages.normalize(recognitionLanguage),
-            bottomKeys = sanitizeKeys(bottomKeys, defaultBottomKeys(), BOTTOM_SLOTS),
+            bottomKeys = sanitizeKeys(bottomKeys, defaultBottomKeys(), BOTTOM_SLOTS).map { key ->
+                key.copy(row = key.row.coerceIn(0, MAX_BOTTOM_ROWS))
+            },
             bottomButtonCount = bottomButtonCount.coerceIn(MIN_BOTTOM_KEYS, MAX_BOTTOM_KEYS),
             bottomRowCount = bottomRowCount.coerceIn(MIN_BOTTOM_ROWS, MAX_BOTTOM_ROWS),
             windowTitle = windowTitle.trim().take(MAX_WINDOW_TITLE)
@@ -516,7 +592,7 @@ data class PenboardConfig(
         const val MAX_BOARD_LINES = GridMath.MAX_LINES
         const val DEFAULT_BOARD_LINES = GridMath.DEFAULT_LINES
         const val MIN_LINE_GAP_DP = 28
-        const val MAX_LINE_GAP_DP = 76
+        const val MAX_LINE_GAP_DP = 160
         const val MIN_PEN_WIDTH_DP = 1
         const val MAX_PEN_WIDTH_DP = 12
         const val MIN_GRID_KEYS = 1
@@ -692,6 +768,7 @@ data class PenboardConfig(
                 bottomKeys = bottomKeys,
                 bottomButtonCount = json.optInt("bottomButtonCount", base.bottomButtonCount),
                 bottomRowCount = json.optInt("bottomRowCount", base.bottomRowCount),
+                bottomRowsAssigned = json.optBoolean("bottomRowsAssigned", base.bottomRowsAssigned),
                 iconStyle = IconStyle.fromId(json.optString("iconStyle", base.iconStyle.id)),
                 gridCellDp = json.optInt("gridCellDp", base.gridCellDp),
                 panelWidthFraction = json.optDouble("panelWidthFraction", base.panelWidthFraction.toDouble()).toFloat(),
@@ -701,7 +778,8 @@ data class PenboardConfig(
                 floatingPanel = json.optBoolean("floatingPanel", base.floatingPanel),
                 windowFrame = json.optBoolean("windowFrame", base.windowFrame),
                 minimizeButton = json.optBoolean("minimizeButton", base.minimizeButton),
-                windowTitle = json.optString("windowTitle", base.windowTitle)
+                windowTitle = json.optString("windowTitle", base.windowTitle),
+                appTheme = AppTheme.fromId(json.optString("appTheme", base.appTheme.id))
             ).sanitized()
         }
 

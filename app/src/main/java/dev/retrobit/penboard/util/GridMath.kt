@@ -298,6 +298,54 @@ object GridMath {
      *
      * [rowCount] 1 menghasilkan daftar yang sama dengan [bottomRowIndexes].
      */
+    /**
+     * Tombol yang muat dari daftar indeks yang sudah diurutkan, dari kiri.
+     * Indeks pertama selalu disimpan walau lebih lebar dari sisa area.
+     */
+    fun packIndexes(
+        indexes: List<Int>,
+        cellPx: Int,
+        widthMultipliers: List<Float>,
+        availableWidthPx: Int,
+        spacingPx: Int = 0
+    ): List<Int> {
+        if (indexes.isEmpty()) return emptyList()
+        val visible = mutableListOf<Int>()
+        var used = 0
+        for (index in indexes) {
+            val width = buttonWidthPx(cellPx, widthMultipliers.getOrElse(index) { 1f })
+            val needed = if (visible.isEmpty()) width else used + spacingPx + width
+            if (visible.isNotEmpty() && needed > availableWidthPx) break
+            used = needed
+            visible.add(index)
+        }
+        return visible
+    }
+
+    /**
+     * Satu halaman per baris. [rows] berisi nomor baris tiap tombol (1 = baris pertama).
+     * Nomor 0 atau di luar jangkauan dianggap baris 1, supaya tombol tidak hilang.
+     */
+    fun packAssignedRows(
+        count: Int,
+        rowCount: Int,
+        rows: List<Int>,
+        cellPx: Int,
+        widthMultipliers: List<Float>,
+        availableWidthPx: Int,
+        spacingPx: Int = 0
+    ): List<List<Int>> {
+        if (count <= 0 || rowCount <= 0) return emptyList()
+        return (0 until rowCount).map { page ->
+            val want = page + 1
+            val matching = (0 until count).filter { index ->
+                val row = rows.getOrElse(index) { 1 }
+                (if (row <= 0) 1 else row) == want
+            }
+            packIndexes(matching, cellPx, widthMultipliers, availableWidthPx, spacingPx)
+        }
+    }
+
     fun packTopPages(
         count: Int,
         rowCount: Int,

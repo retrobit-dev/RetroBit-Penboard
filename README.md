@@ -2,7 +2,30 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.5.8** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.9** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.9
+
+- **Tinggi papan tulis** bisa diatur langsung (*Papan tulis → Tinggi papan tulis*).
+  Menggesernya mengubah jarak garis supaya area tulis setinggi angka itu. Jarak garis
+  kini sampai 160 dp, jadi papan 3 baris bisa sampai 480 dp. Jumlah baris dan jarak
+  garis tetap ada dan ikut menyesuaikan.
+- **Tulisan pengaturan tidak terpotong.** Daftar pilihan ada di bawah judulnya (bukan
+  di samping, yang mendorong halaman melewati tepi layar). Tombol yang tulisannya
+  panjang ditumpuk selebar kartu dan boleh turun baris.
+- **Warna bisa diganti.** Ketuk contoh warna pena, papan, panel, garis, tombol, teks
+  tombol, atau aksen. Pemilih punya contoh warna, geser merah/hijau/biru, transparansi,
+  dan kode `#RRGGBB`.
+- **Urutan tombol** digeser dengan **Naik** / **Turun** di pengaturan. Tombol 2 yang
+  dinaikkan menjadi tombol 1. Fungsinya ikut pindah, tidak berubah. Berlaku untuk
+  tombol atas dan tombol samping.
+- **Setiap tombol atas bisa diatur barisnya** di editor tombol. Sebelum baris dipilih,
+  susunan tetap berurutan seperti 3.5.8. Begitu satu tombol diberi baris, tombol lain
+  tetap di baris hitungannya, lalu tombol itu pindah. Satu baris tetap yang tampil;
+  panah di kanan area tulis pindah baris.
+- **Tema gelap dan terang** di kartu Tampilan. Memilih tema juga memasang warna papan
+  yang cocok; warna tetap bisa diubah satu per satu setelahnya. Keyboard tetap papan
+  tulis, bukan QWERTY.
 
 ## Yang baru di 3.5.8
 
@@ -438,13 +461,13 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 
 | Bagian | Isi |
 | --- | --- |
-| Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), **jumlah baris area tulis 1–6 (bawaan 3)**, jarak garis panduan, tebal pena, 1–6 warna pena, garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
-| Area tombol | **jumlah kolom 1–6**, **baris 1–6** (bawaan mengikuti baris area tulis, bisa diatur sendiri), jumlah tombol tampil, **ukuran sisi tombol** (otomatis = tinggi satu baris tulisan, atau 32–160 dp), fungsi + label + teks tiap tombol, **fungsi Karakter** (angka/huruf/tanda baca) dan **Papan karakter**, ulangi saat ditahan, kembali ke bawaan |
+| Papan tulis | **posisi teks mengikuti baris tulisan** (baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter), **jumlah baris area tulis 1–6 (bawaan 3)**, **tinggi papan tulis**, jarak garis panduan (28–160 dp), tebal pena, 1–6 warna pena (ketuk untuk mengubah), garis panduan (+ nomor baris), ketebalan ikut tekanan stylus, izinkan jari, getaran |
+| Area tombol | **jumlah kolom 1–6**, **baris 1–6** (bawaan mengikuti baris area tulis, bisa diatur sendiri), jumlah tombol tampil, **ukuran sisi tombol** (otomatis = tinggi satu baris tulisan, atau 32–160 dp), fungsi + label + teks tiap tombol, **Naik/Turun menggeser urutan tanpa mengubah fungsi**, **fungsi Karakter** (angka/huruf/tanda baca) dan **Papan karakter**, ulangi saat ditahan, kembali ke bawaan |
 | Pengenalan | input otomatis on/off, jeda 0,5–5 detik (bawaan 2 detik), spasi otomatis, kosongkan papan setelah jadi teks, bahasa tulisan, unduh model bahasa |
-| Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
+| Tampilan | **tema gelap / terang**, warna papan gelap (retro) atau terang, garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen (ketuk contoh, geser RGB, atau `#RRGGBB`), lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off (tetap ada sebagai bilah kecil bila bingkainya dimatikan), judul jendela (bawaan `PENBOARD`), **papan bisa dipindah / diangkat** (tarik bilah judul), **lebar papan 45–100 %** (atau tarik sudut kanan bawah), **lebar area tulis 40–80 %** |
-| Tombol atas | tampil/tidak, **jumlah 0–80**, **baris 1–8** (hanya satu yang tampil; panah di kanan area tulis atau geser mengganti baris), **rata kiri**, **semua 80 slot bisa diatur** (slot tersembunyi diaktifkan saat disimpan), aksi + label + karakter/teks + shortcut keyboard + tahan-untuk-mengulang + lebar/tinggi tiap tombol, kembali ke bawaan |
+| Tombol atas | tampil/tidak, **jumlah 0–80**, **baris 1–8** (hanya satu yang tampil; panah di kanan area tulis atau geser mengganti baris), **tiap tombol bisa diisi ke baris tertentu**, **Naik/Turun menggeser urutan tanpa mengubah fungsi**, **rata kiri**, **semua 80 slot bisa diatur** (slot tersembunyi diaktifkan saat disimpan), aksi + label + karakter/teks + shortcut keyboard + tahan-untuk-mengulang + lebar/tinggi tiap tombol, kembali ke bawaan |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

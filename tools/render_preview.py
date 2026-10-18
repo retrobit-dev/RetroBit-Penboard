@@ -688,7 +688,7 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.8 - beberapa baris tombol atas",
+    draw.text((pad, 18), "Penboard 3.5.9 - tinggi, warna, urutan, tema",
               font=ImageFont.truetype(FONT_BOLD, 16), fill=alpha(COL_ACCENT, 255))
     draw.text((pad, 42), "satu baris tampil; panah di kanan area tulis, plus shortcut keyboard",
               font=ImageFont.truetype(FONT_PATH, 13), fill=alpha(COL_ACCENT, 150))

@@ -18,8 +18,10 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.text.HtmlCompat
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
+import dev.retrobit.penboard.R
 import com.google.android.material.card.MaterialCardView
 import kotlin.math.roundToInt
 
@@ -52,7 +54,9 @@ object Ui {
             AppCompatTextView(context).apply {
                 text = title.uppercase()
                 textSize = 14.5f
-                letterSpacing = 0.08f
+                letterSpacing = 0.04f
+                maxLines = 3
+                ellipsize = null
                 typeface = Typeface.MONOSPACE
                 setPadding(0, 0, 0, dp(context, 2f))
             }
@@ -60,9 +64,11 @@ object Ui {
         if (subtitle != null) {
             inner.addView(
                 AppCompatTextView(context).apply {
-                    text = subtitle
+                    text = html(subtitle)
                     textSize = 12.5f
                     alpha = 0.7f
+                    maxLines = 8
+                    ellipsize = null
                     typeface = Typeface.MONOSPACE
                     setPadding(0, 0, 0, dp(context, 8f))
                 }
@@ -74,10 +80,12 @@ object Ui {
 
     fun body(parent: LinearLayout, text: String): AppCompatTextView =
         AppCompatTextView(parent.context).apply {
-            this.text = text
+            this.text = html(text)
             textSize = 12.5f
             typeface = Typeface.MONOSPACE
             alpha = 0.85f
+            maxLines = 12
+            ellipsize = null
             setPadding(0, dp(parent.context, 2f), 0, dp(parent.context, 6f))
             parent.addView(this)
         }
@@ -144,15 +152,19 @@ object Ui {
                 text = title
                 textSize = 13.5f
                 typeface = Typeface.MONOSPACE
+                maxLines = 4
+                ellipsize = null
             }
         )
         if (summary != null) {
             labels.addView(
                 AppCompatTextView(context).apply {
-                    text = summary
+                    text = html(summary)
                     textSize = 11.5f
                     alpha = 0.65f
                     typeface = Typeface.MONOSPACE
+                    maxLines = 8
+                    ellipsize = null
                 }
             )
         }
@@ -184,6 +196,8 @@ object Ui {
             text = title
             textSize = 13.5f
             typeface = Typeface.MONOSPACE
+            maxLines = 3
+            ellipsize = null
         }
         val valueView = AppCompatTextView(context).apply {
             text = format(value, unit)
@@ -231,23 +245,19 @@ object Ui {
 
     fun buttonRow(parent: LinearLayout, vararg buttons: Pair<String, () -> Unit>): LinearLayout {
         val context = parent.context
+        // Tumpuk penuh lebar: dua tombol berdampingan memotong tulisan panjang.
         val row = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
+            orientation = LinearLayout.VERTICAL
             setPadding(0, dp(context, 4f), 0, 0)
         }
         buttons.forEach { (label, onClick) ->
-            val button = MaterialButton(context).apply {
-                text = label
-                isAllCaps = false
-                textSize = 12.5f
-                typeface = Typeface.MONOSPACE
-                setOnClickListener { onClick() }
-            }
+            val button = readableButton(context, label, onClick)
             row.addView(
                 button,
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginEnd = dp(context, 8f)
-                }
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(context, 6f) }
             )
         }
         parent.addView(row)
@@ -256,15 +266,10 @@ object Ui {
 
     fun outlinedButton(parent: LinearLayout, label: String, onClick: () -> Unit): MaterialButton {
         val context = parent.context
-        val button = MaterialButton(context).apply {
-            text = label
-            isAllCaps = false
-            textSize = 12.5f
-            typeface = Typeface.MONOSPACE
+        val button = readableButton(context, label, onClick).apply {
             strokeWidth = dp(context, 1f)
             strokeColor = ColorStateList.valueOf(RETRO_BORDER)
             backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-            setOnClickListener { onClick() }
         }
         parent.addView(
             button,
@@ -284,9 +289,10 @@ object Ui {
         onSelect: (Int) -> Unit
     ): Spinner {
         val context = parent.context
+        // Judul di atas, pilihan di bawah selebar kartu. Spinner di samping
+        // mengukur lebar item terpanjang dan mendorong tulisan keluar layar.
         val row = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.VERTICAL
             setPadding(0, dp(context, 6f), 0, dp(context, 6f))
         }
         row.addView(
@@ -294,11 +300,14 @@ object Ui {
                 text = title
                 textSize = 13.5f
                 typeface = Typeface.MONOSPACE
-            },
-            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                maxLines = 3
+                ellipsize = null
+            }
         )
         val spinner = Spinner(context).apply {
-            adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, items)
+            val choices = ArrayAdapter(context, R.layout.spinner_item, items)
+            choices.setDropDownViewResource(R.layout.spinner_dropdown_item)
+            adapter = choices
             setSelection(selectedIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)))
         }
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -310,7 +319,10 @@ object Ui {
         }
         row.addView(
             spinner,
-            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.1f)
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         )
         parent.addView(row)
         return spinner
@@ -329,13 +341,17 @@ object Ui {
             gravity = Gravity.CENTER_VERTICAL
             isClickable = true
             setPadding(0, dp(context, 8f), 0, dp(context, 8f))
-            setOnClickListener { onPick(color) }
+            setOnClickListener {
+                ColorPicker.show(context, title, color, onPick)
+            }
         }
         row.addView(
             AppCompatTextView(context).apply {
                 text = title
                 textSize = 13.5f
                 typeface = Typeface.MONOSPACE
+                maxLines = 3
+                ellipsize = null
             },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         )
@@ -360,6 +376,24 @@ object Ui {
             typeface = Typeface.MONOSPACE
             alpha = 0.9f
             setPadding(0, dp(parent.context, 2f), 0, dp(parent.context, 4f))
+            maxLines = 8
+            ellipsize = null
             parent.addView(this)
         }
+
+    /** Tombol yang tulisannya boleh turun baris, bukan dipotong. */
+    fun readableButton(context: Context, label: String, onClick: () -> Unit): MaterialButton =
+        MaterialButton(context).apply {
+            text = label
+            isAllCaps = false
+            isSingleLine = false
+            maxLines = 4
+            ellipsize = null
+            textSize = 12.5f
+            typeface = Typeface.MONOSPACE
+            setOnClickListener { onClick() }
+        }
+
+    private fun html(text: String): CharSequence =
+        HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY)
 }
