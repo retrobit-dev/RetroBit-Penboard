@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Penboard</string>
+    <string name="app_tagline">Papan tulis stylus: tulis dengan M-Pen, teks langsung masuk ke kolom isian.</string>
+
+    <!-- Kartu: pintasan preset HiWrite -->
+    <string name="card_preset">Mulai cepat: preset HiWrite</string>
+    <string name="card_preset_sub">Satu ketukan untuk menyetel semuanya seperti HiWrite (Huawei).</string>
+    <string name="action_preset_huawei">Terapkan preset HiWrite</string>
+    <string name="preset_note">Area tulis 4 baris berikon (12 tombol samping), tema retro cyberpunk grayscale ePaper, bingkai jendela dengan 5 tombol atas, dan tulisan otomatis jadi teks setelah 2 detik. Bahasa tulisan dan tombol samping pena tidak diubah.</string>
+
+    <!-- Kartu: jendela papan (bingkai + tombol minimize) -->
+    <string name="card_window">Jendela papan</string>
+    <string name="card_window_sub">Bingkai seperti jendela, lengkap dengan tombol minimize.</string>
+    <string name="setting_window_frame">Bingkai jendela</string>
+    <string name="setting_window_frame_sub">Garis tepi lebih tegas, bilah judul di atas papan, dan tombol minimize di kanannya.</string>
+    <string name="setting_minimize">Tombol minimize</string>
+    <string name="setting_minimize_sub">Sekali ketuk menyembunyikan papan (keyboard ditutup). Sentuh kolom isian kalau ingin memunculkannya lagi.</string>
+    <string name="setting_window_title">Judul jendela</string>
+    <string name="setting_window_title_hint">PENBOARD</string>
+    <string name="action_minimize">Sembunyikan papan</string>
+    <string name="action_resize">Ubah ukuran papan</string>
+    <string name="setting_panel_floating">Papan bisa dipindah ke mana saja</string>
+    <string name="setting_panel_floating_sub">Tarik bilah judul di atas papan untuk memindahkannya (seperti jendela melayang): ke kiri/kanan bebas, dan bisa diangkat ke atas — area keyboard ikut meninggi supaya papan tetap di dalamnya. Posisinya disimpan, jadi tetap di situ saat keyboard muncul lagi. Matikan bila ingin papan selalu menempel di pojok kiri atas area keyboard.</string>
+    <string name="setting_panel_width">Lebar papan</string>
+    <string name="setting_board_width">Lebar area tulis</string>
+    <string name="board_width_note">Bagian lebar papan yang dijamin untuk area menulis (40-80%); kolom tombol mengambil sisanya. Naikkan bila area tulis terasa sempit: ukuran tombol otomatis ikut mengecil supaya seluruh kolom tetap terlihat. Bila ukuran tombol diatur sendiri, angka ini menjadi batas agar tombol tidak terpotong di tepi papan.</string>
+    <string name="unit_percent">%</string>
+    <string name="window_note">Bilah judul tidak ikut menutupi tulisan: tingginya 22 dp dan digambar di dalam bingkai panel. Bila bingkainya dimatikan, tombol minimize tetap tersedia sebagai bilah kecil (18 dp) di kanan atas papan.</string>
+    <string name="window_drag_note">Bilah judul = pegangan pindah, sudut kanan bawah papan = pegangan ubah ukuran. Menarik bilah judul menggeser papan ke kiri/kanan dan mengangkatnya ke atas (area keyboard ikut meninggi, lalu mengecil lagi saat papan diturunkan). Menarik sudut: ke kanan/kiri melebarkan papan, ke atas/bawah menambah atau mengurangi tinggi papan sekaligus tinggi area tulis.</string>
+    <string name="msg_minimize_preview">Papan disembunyikan — di pratinjau ini hanya simulasi.</string>
+
+    <!-- Kartu: bilah tombol atas (pixel art) -->
+    <string name="card_bottom">Tombol atas (pixel art)</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai, tepat di atas area menulis. Sampai 80 tombol dan 8 baris. Hanya satu baris yang tampil; panah di kanan area tulis mengganti baris. Ukuran dasar mengikuti tombol samping.</string>
+    <string name="setting_bottom_show">Tampilkan bilah tombol atas</string>
+    <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
+    <string name="setting_bottom_count">Jumlah tombol atas</string>
+    <string name="setting_bottom_rows">Jumlah baris tombol atas</string>
+    <string name="bottom_single_row_note">Hanya satu baris yang tampil. Tambah baris supaya tombol yang tidak muat pindah ke baris berikutnya, diganti dengan panah atas/bawah tepat di atas sisi kanan area tulis — atau geser bilahnya ke atas/bawah. Sisa ruang di kanan dibiarkan kosong. Bila barisnya 1, panah disembunyikan dan tombol yang tidak muat tidak ditampilkan.</string>
+    <string name="bottom_page_header">Baris %1$d</string>
+    <string name="bottom_slot_page">%1$d. %2$s - baris %3$d</string>
+    <string name="bottom_slot_hidden">%1$d. %2$s - belum tampil</string>
+    <string name="bottom_edit_all_note">Semua slot di atas bisa diatur kapan saja, termasuk yang bertanda "belum tampil". Menyimpan slot yang belum tampil menaikkan jumlah tombol dan, bila perlu, jumlah baris supaya hasilnya bisa digeser.</string>
+    <string name="setting_bottom_width">Lebar tombol</string>
+    <string name="setting_bottom_height">Tinggi tombol</string>
+    <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
+    <string name="action_bottom_default">Kembalikan bilah tombol atas</string>
+    <string name="bottom_slot_title">Tombol atas %1$d</string>
+    <string name="bottom_note">Tombol atas berada di dalam bingkai, tepat di atas area menulis. Jumlah baris 1-8; yang tampil selalu satu baris, rata kiri, jaraknya sama seperti tombol samping. Panah ganti baris menempel di tepi kanan area tulis, bukan di atas kolom tombol samping. Lebar dan tinggi tiap tombol tetap bisa diatur; ikonnya pixel art 12 x 12.</string>
+
+    <!-- Kartu: keyboard -->
+    <string name="card_keyboard">Keyboard Penboard</string>
+    <string name="card_keyboard_sub">Papan tulis di kiri, tombol 3x3 di kanan.</string>
+    <string name="status_keyboard_active">Keyboard Penboard sedang aktif.</string>
+    <string name="status_keyboard_inactive">Keyboard Penboard belum aktif.</string>
+    <string name="action_pick_keyboard">Pilih keyboard</string>
+    <string name="action_keyboard_settings">Pengaturan keyboard</string>
+    <string name="status_typing_on">Penboard Tulis Otomatis: aktif (cadangan).</string>
+    <string name="status_typing_off">Penboard Tulis Otomatis: tidak aktif (tidak wajib; keyboard Penboard sudah cukup).</string>
+    <string name="action_typing_enable">Aktifkan Tulis Otomatis</string>
+    <string name="typing_note">Layanan aksesibilitas "Penboard Tulis Otomatis" adalah cadangan: Penboard sendiri menulis lewat keyboard yang sedang aktif, jadi tidak wajib dinyalakan.</string>
+    <string name="msg_typing_settings">Pilih "Penboard Tulis Otomatis" di daftar, lalu nyalakan.</string>
+    <string name="msg_typing_settings_failed">Tidak bisa membuka pengaturan aksesibilitas. Buka Pengaturan &gt; Aksesibilitas secara manual.</string>
+    <string name="typing_service_label">Penboard Tulis Otomatis</string>
+    <string name="typing_service_summary">Cadangan untuk menulis ke kolom isian</string>
+    <string name="typing_service_description">Menuliskan hasil tulisan Penboard ke kolom isian aplikasi lain sebagai cadangan, mis. bila keyboard yang aktif bukan keyboard Penboard.</string>
+
+    <!-- Kartu: panduan pemasangan + pemeriksaan perangkat -->
+    <string name="card_check">Panduan pemasangan</string>
+    <string name="card_check_sub">Tiga langkah supaya papan tulis bisa langsung dipakai.</string>
+    <string name="step_done">✓</string>
+    <string name="step_todo">○</string>
+    <string name="step_keyboard_enable">Pasang Penboard sebagai keyboard</string>
+    <string name="step_keyboard_pick">Pilih Penboard dari daftar keyboard</string>
+    <string name="step_test">Coba tulis di kolom Uji tulis dengan M-Pen</string>
+    <string name="check_engine_ok">Mesin pengenalan Penboard: siap.</string>
+    <string name="check_engine_no">Mesin pengenalan Penboard: tidak tersedia (perangkat ini tanpa Google Play services). Pakai tombol tulisan tangan perangkat.</string>
+    <string name="check_device_ink_ok">Tulisan tangan perangkat: %1$s tersedia.</string>
+    <string name="check_device_ink_no">Tulisan tangan perangkat: tidak ditemukan. Penboard memakai mesin pengenalan bawaannya.</string>
+
+    <!-- Kartu: pratinjau -->
+    <string name="card_preview">Pratinjau</string>
+    <string name="card_preview_sub">Tampilannya sama persis dengan yang muncul saat menulis (versi %1$s).</string>
+    <string name="preview_key_tap">Tombol %1$s (pratinjau saja).</string>
+
+    <!-- Kartu: uji tulis -->
+    <string name="preview_align_wait">Mengukur tata letak…</string>
+    <string name="preview_align_ok">✓ Baris tombol samping = baris area tulis: %1$d = %2$d (rata atas).</string>
+    <string name="preview_align_bad">⚠ Baris tombol belum sama dengan baris area tulis: tombol %1$d, tulisan %2$d.</string>
+    <string name="preview_align_manual">✓ %1$d baris tombol samping diatur sendiri, area tulis %2$d baris (rata atas).</string>
+    <string name="preview_bottom_wait">Menghitung tombol atas…</string>
+    <string name="preview_bottom_ok">✓ Tombol atas: %1$d tombol dalam satu baris.</string>
+    <string name="preview_bottom_partial">⚠ Baris 1: %1$d dari %2$d tombol tampil. Tambah jumlah baris supaya sisanya bisa digeser.</string>
+    <string name="preview_bottom_paged">✓ Baris %1$d/%2$d: %3$d tombol tampil. Panah di kanan area tulis pindah baris.</string>
+    <string name="preview_bottom_paged_more">⚠ Baris %1$d/%2$d menampilkan %3$d tombol. %4$d tombol belum kebagian baris — tambah baris.</string>
+    <string name="desc_top_page">Baris %1$d dari %2$d</string>
+    <string name="desc_row_up">Baris sebelumnya</string>
+    <string name="desc_row_down">Baris berikutnya</string>
+    <string name="preview_bottom_none">Tombol atas tidak ditampilkan.</string>
+    <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter. Baris tombol samping = %1$d, sama dengan baris tulisan.</string>
+    <string name="preview_line_off">Baris tulisan tidak menggeser teks: hasil tulisan selalu masuk di posisi kursor.</string>
+    <string name="preview_cell_style">Ikon tombol: %1$s (pixel art = kotak 12 x 12).</string>
+    <string name="preview_square_wait">Menghitung ukuran tombol…</string>
+    <string name="preview_square_ok">✓ Tombol persegi %1$d px: %2$d kolom x %3$d baris.</string>
+    <string name="preview_square_bad">⚠ Ukuran tombol belum terbaca.</string>
+    <string name="card_test">Uji tulis</string>
+    <string name="card_test_sub">Ketuk kolom ini, lalu pilih keyboard Penboard dan tulis dengan M-Pen.</string>
+    <string name="test_hint">Tulis di sini memakai keyboard Penboard...</string>
+    <string name="action_clear_text">Kosongkan teks</string>
+
+    <!-- Kartu: papan tulis -->
+    <string name="card_board">Papan tulis</string>
+    <string name="card_board_sub">Tinggi papan tulis, jumlah baris, pena, dan tombol samping pena.</string>
+    <string name="setting_board_lines">Jumlah baris area tulis</string>
+    <string name="setting_board_height">Tinggi papan tulis</string>
+    <string name="board_height_note">Tinggi papan tulis sekarang %1$d dp (baris × jarak garis). Menggeser tinggi mengubah jarak garis. Batas jarak garis 28–160 dp, jadi papan 3 baris bisa sampai 480 dp.</string>
+    <string name="setting_line_gap">Jarak garis panduan</string>
+    <string name="setting_pen_width">Tebal pena</string>
+    <string name="setting_pen_colors">Warna pena (ketuk untuk mengubah)</string>
+    <string name="setting_pen_color_n">Warna pena %1$d</string>
+    <string name="action_add_pen_color">Tambah warna</string>
+    <string name="action_remove_pen_color">Hapus warna terakhir</string>
+    <string name="msg_pen_color_full">Maksimal %1$d warna pena.</string>
+    <string name="setting_show_lines">Garis panduan</string>
+    <string name="setting_show_lines_sub">Tampilkan garis samar seperti buku tulis.</string>
+    <string name="setting_pressure">Ketebalan ikut tekanan</string>
+    <string name="setting_pressure_sub">Tekanan M-Pen membuat goresan lebih tebal atau tipis.</string>
+    <string name="setting_allow_finger">Izinkan jari</string>
+    <string name="setting_allow_finger_sub">Matikan bila hanya ingin menulis dengan stylus.</string>
+    <string name="setting_haptics">Getaran</string>
+    <string name="setting_haptics_sub">Getar saat papan atau tombol ditekan.</string>
+    <string name="setting_line_offset">Posisi teks mengikuti baris tulisan</string>
+    <string name="setting_line_offset_sub">Menulis di baris pertama → teks masuk di posisi kursor. Baris kedua → satu baris di bawah kursor (seperti menekan enter). Baris ketiga → dua baris di bawah kursor, dan seterusnya.</string>
+    <string name="line_offset_note">Nomor baris tercetak tipis di tepi kiri papan supaya mudah dilihat: 1, 2, 3, … Di kolom isian yang hanya satu baris, enter dilewati (kolomnya tidak bisa menerimanya) dan teksnya tetap dikirim.</string>
+
+    <string name="setting_pen_buttons">Tombol samping pena</string>
+    <string name="setting_pen_button_primary">Tombol samping (klik)</string>
+    <string name="setting_pen_button_secondary">Tombol samping (tahan/kedua)</string>
+
+    <!-- Kartu: tombol 3x3 -->
+    <string name="card_grid">Tombol papan</string>
+    <string name="card_grid_sub">Semua tombol samping persegi (panjang = lebar). Kolom 1-6 dan baris 1-6: barisnya bisa mengikuti area tulis atau diatur sendiri. Ukuran otomatis = tinggi satu baris area tulis, atau disetel sendiri 32-160 dp; tombol rata atas.</string>
+    <string name="setting_grid_columns">Jumlah kolom tombol</string>
+    <string name="grid_rows_follow">Baris tombol mengikuti area tulis: %1$d baris. Tambah atau kurangi barisnya di kartu Papan tulis.</string>
+    <string name="grid_rows_manual">%1$d baris tombol samping, diatur sendiri (1-6). Ukuran otomatis tetap sama dengan tinggi satu baris area tulis.</string>
+    <string name="setting_grid_rows_follow">Baris tombol mengikuti area tulis</string>
+    <string name="setting_grid_rows_follow_sub">Bawaan: jumlah baris tombol sama dengan jumlah baris area tulis. Matikan untuk menambah atau mengurangi baris tombol sendiri, mis. 3 kolom x 5 baris tombol walau area tulis 3 baris.</string>
+    <string name="setting_grid_rows">Jumlah baris tombol samping</string>
+    <string name="unit_columns">kolom</string>
+    <string name="setting_cell_auto">Ukuran tombol otomatis</string>
+    <string name="setting_cell_auto_sub">Bila aktif, sisi tombol dihitung dari tinggi papan dan lebar yang tersedia. Matikan untuk menyetelnya sendiri: area tulis ikut membesar atau mengecil mengikuti tombol.</string>
+    <string name="setting_cell_size">Sisi tombol (panjang = lebar)</string>
+    <string name="unit_dp">dp</string>
+    <string name="unit_rows">baris</string>
+    <string name="setting_grid_count">Jumlah tombol yang tampil</string>
+    <string name="unit_keys">tombol</string>
+    <string name="setting_app_theme">Tema</string>
+    <string name="setting_app_theme_sub">Gelap atau terang. Memilih tema juga memasang warna papan yang cocok; warna pena, papan, panel, garis, dan tombol tetap bisa diubah satu per satu setelahnya.</string>
+    <string name="action_theme_retro">Pakai warna papan gelap (retro)</string>
+    <string name="action_theme_light">Pakai warna papan terang</string>
+    <string name="theme_note">Ketuk contoh warna untuk menggantinya. Bisa pilih dari contoh, geser merah/hijau/biru, atau ketik kode #RRGGBB.</string>
+    <string name="color_channel_red">Merah</string>
+    <string name="color_channel_green">Hijau</string>
+    <string name="color_channel_blue">Biru</string>
+    <string name="setting_scanlines">Garis pindaian ePaper</string>
+    <string name="setting_icon_style">Gaya ikon tombol</string>
+    <string name="setting_icon_style_sub">Pixel art: kotak-kotak 12 x 12 yang tajam (bagian dari tema retro). Vektor: ikon bergaris halus. Berlaku untuk tombol samping, tombol atas, dan tombol minimize.</string>
+    <string name="setting_scanlines_sub">Tekstur garis halus pada panel dan garis panduan putus-putus di papan.</string>
+    <string name="grid_slot_label">Tombol %1$d: %2$s</string>
+    <string name="grid_slot_title">Tombol grid %1$d</string>
+    <string name="action_change">Ubah</string>
+    <string name="action_move_up">Naik</string>
+    <string name="action_move_down">Turun</string>
+    <string name="setting_button_row">Baris tombol atas</string>
+    <string name="button_row_note">Tombol atas ini tampil di baris yang dipilih. Panah di kanan area tulis pindah baris. Naik/Turun hanya menggeser urutan; fungsinya ikut pindah, tidak berubah.</string>
+    <string name="button_order_note">Naik menggeser tombol ke atas (tombol 2 menjadi tombol 1). Turun sebaliknya. Fungsi tombol tidak berubah, hanya urutannya.</string>
+    <string name="action_grid_default">Kembalikan tombol bawaan</string>
+    <string name="grid_note">Tombol persegi dan rata atas dengan area tulis. Baris tombol bisa mengikuti area tulis atau diatur sendiri (1-6). Bila ukurannya otomatis, sisi tombol = tinggi satu baris area tulis, berapa pun baris tombolnya; ukuran sendiri memakai angka 32-160 dp. Menambah kolom membuat area tulis lebih sempit, menambah baris tombol membuat kolomnya lebih tinggi. Papan memangkas sendiri supaya tetap muat di layar.</string>
+    <string name="setting_action">Fungsi</string>
+    <string name="setting_custom_label">Label sendiri (opsional)</string>
+    <string name="setting_custom_text">Karakter atau teks yang dimasukkan</string>
+    <string name="char_picker_note">Ketuk karakter di bawah untuk memakai fungsi Karakter. Untuk teks lebih panjang (misalnya @gmail.com), ketik di kotak ini. Fungsi Papan karakter membuka angka, huruf, dan tanda baca dari satu tombol.</string>
+    <string name="char_function_note">Fungsi Karakter memasukkan angka, huruf, tanda baca, atau teks pendek yang Anda pilih — mukanya menampilkan karakter itu. Fungsi Papan karakter membuka papan karakter di atas panel (bukan keyboard QWERTY): ketuk untuk memasukkan, Tutup untuk kembali menulis.</string>
+    <string name="shortcut_function_note">Shortcut keyboard yang sering dipakai bisa dipasang pada tombol: lompat kata, awal/akhir dokumen, halaman atas/bawah, pilih kata, batal/ulangi teks, tab mundur, Esc, dan Kirim (cari, kirim, lanjut, atau selesai).</string>
+    <string name="action_add_shortcuts">Tambahkan shortcut keyboard</string>
+    <string name="msg_shortcuts_added">Shortcut keyboard dipasang di bilah atas. Panah di kanan area tulis pindah baris bila tidak muat satu baris.</string>
+    <string name="char_pad_hint">Ketuk karakter untuk memasukkannya. Tutup untuk kembali menulis.</string>
+    <string name="char_pad_close">Tutup</string>
+    <string name="action_add_char_pad">Tambahkan tombol papan karakter</string>
+    <string name="msg_char_pad_added">Tombol papan karakter dipasang di kiri bilah atas supaya selalu terlihat. Ketuk ikon kisinya untuk membuka angka, huruf, dan tanda baca.</string>
+    <string name="msg_char_pad_exists">Tombol papan karakter sudah ada di bilah atas.</string>
+    <string name="setting_repeat">Ulangi saat ditahan</string>
+    <string name="setting_repeat_sub">Cocok untuk tombol hapus.</string>
+
+    <!-- Keterangan fungsi tombol -->
+    <string name="hint_delete_forward">hapus huruf di depan kursor</string>
+    <string name="hint_tab">tab (geser ke kolom berikutnya)</string>
+    <string name="hint_cursor_left">geser kursor ke kiri</string>
+    <string name="hint_cursor_right">geser kursor ke kanan</string>
+    <string name="hint_cursor_up">geser kursor ke atas</string>
+    <string name="hint_cursor_down">geser kursor ke bawah</string>
+    <string name="hint_cursor_home">kursor ke awal baris</string>
+    <string name="hint_cursor_end">kursor ke akhir baris</string>
+    <string name="hint_cursor_word_left">lompat ke awal kata (Ctrl+kiri)</string>
+    <string name="hint_cursor_word_right">lompat ke akhir kata (Ctrl+kanan)</string>
+    <string name="hint_cursor_doc_start">kursor ke awal dokumen (Ctrl+Home)</string>
+    <string name="hint_cursor_doc_end">kursor ke akhir dokumen (Ctrl+End)</string>
+    <string name="hint_page_up">geser satu halaman ke atas</string>
+    <string name="hint_page_down">geser satu halaman ke bawah</string>
+    <string name="hint_select_word">pilih kata di posisi kursor</string>
+    <string name="hint_text_undo">batalkan ketikan terakhir (Ctrl+Z)</string>
+    <string name="hint_text_redo">ulangi ketikan yang dibatalkan (Ctrl+Y)</string>
+    <string name="hint_shift_tab">tab mundur (Shift+Tab)</string>
+    <string name="hint_escape">tombol Esc</string>
+    <string name="hint_editor_action">kirim, cari, lanjut, atau selesai sesuai kolom isian</string>
+    <string name="hint_select_all">pilih semua teks</string>
+    <string name="hint_cut">potong teks terpilih</string>
+    <string name="hint_copy">salin teks terpilih</string>
+    <string name="hint_paste">tempel dari papan klip</string>
+    <string name="hint_text">memasukkan angka, huruf, tanda baca, atau teks pendek</string>
+    <string name="hint_char_pad">membuka papan angka, huruf, dan tanda baca</string>
+    <string name="hint_space">menambah spasi</string>
+    <string name="hint_enter">baris baru</string>
+    <string name="hint_backspace">hapus satu huruf</string>
+    <string name="hint_delete_word">hapus satu kata</string>
+    <string name="hint_undo">batalkan goresan terakhir</string>
+    <string name="hint_redo">ulangi goresan yang dibatalkan</string>
+    <string name="hint_clear">bersihkan papan</string>
+    <string name="hint_delete_stroke">hapus goresan terakhir</string>
+    <string name="hint_cycle_pen">ganti warna pena</string>
+    <string name="hint_recognize">ubah tulisan menjadi teks</string>
+    <string name="hint_system_handwriting">pindah ke tulisan tangan perangkat</string>
+    <string name="hint_keyboard_picker">pilih keyboard lain (mis. Huawei)</string>
+    <string name="msg_keyboard_picker">Pilih keyboard yang ingin dipakai.</string>
+    <string name="hint_hide">sembunyikan keyboard</string>
+
+    <!-- Kartu: pengenalan tulisan -->
+    <string name="card_recognition">Pengenalan tulisan</string>
+    <string name="card_recognition_sub">Tulisan diubah menjadi teks secara otomatis.</string>
+    <string name="setting_auto_recognize">Input otomatis</string>
+    <string name="setting_auto_recognize_sub">Bila tidak ada goresan baru, tulisan langsung dikirim sebagai teks.</string>
+    <string name="setting_auto_delay">Jeda sebelum input otomatis</string>
+    <string name="setting_auto_space">Tambah spasi setelah kata</string>
+    <string name="setting_auto_space_sub">Satu tulisan dianggap satu kata, lalu spasi disiapkan untuk kata berikutnya.</string>
+    <string name="setting_clear_after">Kosongkan papan setelah jadi teks</string>
+    <string name="setting_clear_after_sub">Papan bersih lagi supaya siap untuk kata berikutnya.</string>
+    <string name="setting_language">Bahasa tulisan</string>
+    <string name="setting_auto_switch">Pindah otomatis ke tulisan tangan perangkat</string>
+    <string name="setting_auto_switch_sub">Dipakai bila mesin pengenalan Penboard tidak tersedia, misalnya di perangkat Huawei tanpa Google Play services.</string>
+    <string name="diag_engine_none">Mesin pengenalan belum pernah dipakai sejak aplikasi dibuka.</string>
+    <string name="diag_engine_message">Pesan terakhir dari mesin: %1$s</string>
+    <string name="check_model_ready">Model bahasa %1$s siap dipakai.</string>
+    <string name="check_model_not_downloaded">Model bahasa %1$s belum diunduh (unduh sekali di kartu Pengenalan).</string>
+    <string name="check_model_unknown">Model bahasa %1$s: statusnya tidak bisa diperiksa di perangkat ini.</string>
+    <string name="status_model_checking">Memeriksa model bahasa...</string>
+    <string name="status_model_ready">Model bahasa siap dipakai.</string>
+    <string name="status_model_not_downloaded">Model bahasa belum diunduh.</string>
+    <string name="status_model_unsupported">Bahasa ini belum didukung ML Kit di perangkat ini.</string>
+    <string name="status_model_unknown">Status model tidak bisa diperiksa.</string>
+    <string name="status_model_downloading">Mengunduh model bahasa...</string>
+    <string name="status_model_failed">Model bahasa gagal diunduh.</string>
+    <string name="action_download_model">Unduh model bahasa</string>
+    <string name="recognition_note">Pengenalan berjalan di perangkat dan luring setelah model terunduh. Model bahasa Indonesia sekitar 20 MB dan diunduh sekali saja per bahasa.</string>
+    <string name="msg_engine_missing">Mesin pengenalan bawaan tidak tersedia di perangkat ini. Pakai keyboard tulisan tangan bawaan perangkat untuk menulis.</string>
+    <string name="flash_no_engine">✗ mesin tidak ada</string>
+    <string name="msg_engine_missing_detail">Mesin pengenalan bawaan tidak bisa dipakai. %1$s</string>
+    <string name="msg_language_unsupported">Bahasa %1$s belum didukung mesin pengenalan. Pilih bahasa lain di kartu Pengenalan tulisan.</string>
+    <string name="action_update_gms">Perbarui Google Play services</string>
+    <string name="action_open_handwriting_keyboard">Buka keyboard tulisan tangan perangkat</string>
+    <string name="msg_handwriting_picker">Pilih keyboard tulisan tangan perangkat di daftar.</string>
+    <string name="msg_handwriting_picker_failed">Tidak bisa membuka pemilih keyboard. Buka Pengaturan &gt; Sistem &gt; Bahasa &amp; masukan secara manual.</string>
+    <string name="msg_engine_no_services">Perangkat ini tanpa Google Play services, jadi mesin bawaan Penboard tidak bisa dipakai. Pakai keyboard tulisan tangan perangkat (mis. Huawei/Celia) lewat tombol coretan tangan, atau perbarui Google Play services bila ada.</string>
+    <string name="check_gms_detail">Google Play services: %1$s</string>
+    <string name="msg_model_offline">Model bahasa belum ada dan unduhannya gagal (perlu internet sekali). Sementara itu pakai keyboard tulisan tangan perangkat.</string>
+    <string name="msg_model_failed">Model bahasa gagal diunduh. Periksa koneksi internet.</string>
+    <string name="msg_not_recognized">Tulisan belum bisa dikenali. Coba tulis lebih jelas atau lebih besar, lalu tekan tombol Teks.</string>
+    <string name="msg_not_recognized_candidates">Mesin membaca "%1$s" — belum bisa dijadikan kata. Coba tulis lebih rapi atau lebih besar.</string>
+    <string name="action_copy_report">Salin laporan mesin</string>
+    <string name="msg_report_copied">Laporan disalin. Tempelkan ke chat supaya bisa saya periksa.</string>
+    <string name="msg_report_failed">Tidak bisa menyalin laporan di perangkat ini.</string>
+    <string name="diag_candidates_none">Belum ada jawaban dari mesin pengenalan.</string>
+    <string name="diag_candidates">Jawaban mesin terakhir: %1$s</string>
+    <string name="msg_not_recognized_reason">Tulisan belum bisa dikenali (%1$s). Coba tulis lebih jelas atau lebih besar.</string>
+    <string name="msg_model_downloading_auto">Model bahasa sedang diunduh sekali saja (±20 MB). Tulisan Anda tetap di papan; tunggu sebentar.</string>
+    <string name="flash_unreadable">✗ tidak terbaca</string>
+    <string name="flash_no_model">✗ model bahasa belum ada</string>
+    <string name="msg_board_empty">Papan masih kosong. Tulis dulu dengan pena.</string>
+    <string name="msg_pen_changed">Warna pena %1$d dipakai.</string>
+
+    <!-- Kartu: tampilan -->
+    <string name="card_look">Tampilan dan transparansi</string>
+    <string name="card_look_sub">Tema gelap/terang, warna pena, papan, panel, garis, dan tombol.</string>
+    <string name="setting_panel_opacity">Transparansi panel</string>
+    <string name="setting_panel_color">Warna panel</string>
+    <string name="setting_board_opacity">Transparansi papan</string>
+    <string name="setting_board_color">Warna papan</string>
+    <string name="setting_line_color">Warna garis</string>
+    <string name="setting_button_opacity">Transparansi tombol</string>
+    <string name="setting_button_color">Warna tombol</string>
+    <string name="setting_button_text_color">Warna tulisan tombol</string>
+    <string name="setting_accent_color">Warna aksen</string>
+    <string name="setting_corner_radius">Lengkung sudut</string>
+
+    <!-- Kartu: perangkat Huawei -->
+    <string name="card_huawei">Perangkat Huawei/Honor</string>
+    <string name="card_huawei_sub">Cara berdampingan dengan keyboard tulisan tangan bawaan.</string>
+    <string name="huawei_body">Mesin tulisan tangan Huawei (Celia) hanya bisa dipakai lewat keyboard bawaannya, jadi Penboard menyediakan tombol "Huawei" pada grid untuk berpindah ke sana. Supaya tidak bertabrakan, tombol samping M-Pen dipakai Penboard untuk menjadikan tulisan sebagai teks, sedangkan tulisan tangan bawaan Huawei dimatikan otomatis di kolom Uji tulis.</string>
+
+    <!-- Kartu: tentang -->
+    <string name="card_about">Tentang</string>
+    <string name="about_version">Versi %1$s</string>
+    <string name="about_privacy">Tidak ada data yang dikirim ke mana pun. Semua tulisan dikenali di dalam ponsel.</string>
+    <string name="about_repo">Kode sumber: github.com/retrobit-dev/RetroBit-Penboard</string>
+    <string name="repo_url">https://github.com/retrobit-dev/RetroBit-Penboard</string>
+    <string name="action_reset_all">Setel ulang semua pengaturan</string>
+    <string name="reset_confirm">Semua pengaturan kembali ke bawaan?</string>
+
+    <!-- Perpindahan ke tulisan tangan perangkat -->
+    <string name="system_handwriting_switched">Beralih ke %1$s. Tulis seperti biasa, tekan selesai untuk kembali ke Penboard.</string>
+    <string name="system_handwriting_picker">Pilih keyboard tulisan tangan perangkat dari daftar ini.</string>
+    <string name="msg_picker_failed">Tidak bisa membuka daftar keyboard.</string>
+</resources>

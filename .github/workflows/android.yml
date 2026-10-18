@@ -1,0 +1,93 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "arena/**" ]
+    tags: [ "v*" ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Unit test
+        run: |
+          set +e
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --stacktrace --console=plain 2>&1 | tee /tmp/unit-tests.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            bash .github/scripts/report-gradle-failures.sh /tmp/unit-tests.log "unit test"
+          fi
+          exit "$status"
+
+      - name: Build APK (debug + rilis)
+        run: |
+          set +e
+          set -o pipefail
+          ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace --console=plain 2>&1 | tee /tmp/build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            bash .github/scripts/report-gradle-failures.sh /tmp/build.log "build apk"
+          fi
+          exit "$status"
+
+      - name: Rincian uji yang gagal (bila ada)
+        if: failure()
+        run: bash .github/scripts/report-test-failures.sh
+
+      - name: Laporan kegagalan (bila gagal)
+        if: failure()
+        run: |
+          for f in /tmp/unit-tests.log /tmp/build.log; do
+            if [ -f "$f" ]; then
+              bash .github/scripts/report-gradle-failures.sh "$f" "error lanjutan" 11
+            fi
+          done
+
+      - name: Kumpulkan APK
+        run: |
+          mkdir -p artifacts
+          short="${GITHUB_SHA::7}"
+          cp app/build/outputs/apk/debug/app-debug.apk "artifacts/Penboard-${short}-debug.apk" || true
+          cp app/build/outputs/apk/release/app-release.apk "artifacts/Penboard-${short}-release.apk" || true
+          ls -lh artifacts
+
+      - name: Unggah artefak APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: penboard-apk
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Lampirkan APK ke rilis
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*.apk
+          generate_release_notes: true
