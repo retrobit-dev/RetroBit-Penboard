@@ -264,6 +264,36 @@ def bottom_row_indexes(count, cell_px, widths, available_width_px, spacing_px=0)
     return [visible]
 
 
+def pack_top_pages(count, row_count, cell_px, widths, available_width_px, spacing_px=0):
+    """Salinan GridMath.packTopPages: satu halaman = satu baris yang muat."""
+    if count <= 0 or row_count <= 0:
+        return []
+    pages = []
+    index = 0
+    while len(pages) < row_count and index < count:
+        page = []
+        used = 0
+        while index < count:
+            width = button_width_px(cell_px, widths[index] if index < len(widths) else 1.0)
+            needed = width if not page else used + spacing_px + width
+            if page and needed > available_width_px:
+                break
+            used = needed
+            page.append(index)
+            index += 1
+        if not page:
+            break
+        pages.append(page)
+    return pages
+
+
+def top_arrow_block_px(side, spacing, label):
+    """Salinan GridMath.topArrowBlockPx."""
+    if side <= 0:
+        return 0
+    return max(0, label) + side * 2 + max(0, spacing)
+
+
 def alpha(color, a):
     return color + (max(0, min(255, int(a))),)
 
@@ -298,7 +328,7 @@ def draw_board_ink(draw, left, top, right, line_gap, line_index=0):
 
 def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, minimize=True,
                    bottom_count=0, widths=None, heights=None, line_gap_dp=LINE_GAP_DP,
-                   board_fraction=DEFAULT_BOARD_FRACTION, rows=None):
+                   board_fraction=DEFAULT_BOARD_FRACTION, rows=None, row_count=1, page=0):
     """Ukuran-ukuran panel, dihitung dengan rumus yang sama seperti BoardPanel.
 
     - area tulis: tinggi = baris x jarak baris
@@ -327,9 +357,28 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
     grid_w = grid_width_px(columns, cell, SPACING)
     widths = widths or []
     heights = heights or []
-    # Bilah bawah memakai lebar isi panel (di atas area tulis), bukan lebar papan.
-    rows_of_buttons = bottom_row_indexes(bottom_count, cell, widths, usable_w, SPACING)
-    row_heights = bottom_row_heights(rows_of_buttons, cell, heights)
+    # Satu baris: lebar penuh. Beberapa baris: tombol berhenti sebelum panah di
+    # tepi kanan area tulis (board_w), bukan di atas kolom tombol samping.
+    show_arrows = row_count > 1 and bottom_count > 0
+    label_w = int(round(26 * D))
+    arrow_block = top_arrow_block_px(cell, SPACING, label_w) if show_arrows else 0
+    button_w = max(1, board_w - arrow_block - SPACING) if show_arrows else usable_w
+    if show_arrows:
+        pages = pack_top_pages(bottom_count, row_count, cell, widths, button_w, SPACING)
+        page = max(0, min(page, row_count - 1))
+        shown = pages[page] if page < len(pages) else []
+        packed = [index for group in pages for index in group]
+        row_h = cell if not packed else max(
+            button_height_px(cell, heights[index] if index < len(heights) else 1.0)
+            for index in packed
+        )
+        rows_of_buttons = [shown]
+        row_heights = [row_h]
+    else:
+        # Bilah satu baris memakai lebar isi panel, sama seperti aplikasinya.
+        rows_of_buttons = bottom_row_indexes(bottom_count, cell, widths, usable_w, SPACING)
+        row_heights = bottom_row_heights(rows_of_buttons, cell, heights)
+        page = 0
     bottom_h = 0 if not row_heights else SPACING + bottom_bar_height_px(row_heights, SPACING)
     title_block = (title_h + SPACING) if title_h else 0
     grid_h = board_height_px(rows, cell, SPACING)
@@ -340,7 +389,8 @@ def panel_geometry(lines, columns=3, cell_dp=0, panel_width=None, frame=True, mi
         "rows": rows, "columns": columns, "lines": lines, "line_gap": line_gap_px,
         "board_h": board_h, "board_w": board_w, "grid_w": grid_w, "grid_h": grid_h,
         "bottom_rows": row_heights, "bottom_indexes": rows_of_buttons,
-        "bottom_h": bottom_h,
+        "bottom_h": bottom_h, "show_arrows": show_arrows, "arrow_block": arrow_block,
+        "page": page, "row_count": row_count if show_arrows else 1,
     }
 
 
@@ -348,7 +398,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
                title="PENBOARD", bottom_keys=None, frame=True, minimize=True,
                columns=3, cell_dp=0, panel_width=None, widths=None, heights=None, marks=None,
                ink_line=0, line_gap_dp=LINE_GAP_DP, board_fraction=DEFAULT_BOARD_FRACTION,
-               rows=None):
+               rows=None, row_count=1, page=0):
     """Panel Penboard lengkap: bilah judul, papan tulis, kolom tombol persegi, tombol bawah.
 
     frame=False -> bingkai dimatikan; bila minimize tetap nyala, yang digambar hanya
@@ -360,7 +410,7 @@ def draw_panel(lines, keys, flash=None, pending=None,
     bottom_count = len(bottom_keys)
     geo = panel_geometry(lines, columns, cell_dp, panel_width,
                          frame, minimize, bottom_count, widths, heights, line_gap_dp,
-                         board_fraction, rows)
+                         board_fraction, rows, row_count, page)
     panel_w, panel_h = geo["panel_w"], geo["panel_h"]
     cell, board_h, board_w, grid_w = geo["cell"], geo["board_h"], geo["board_w"], geo["grid_w"]
     title_h = geo["title_h"]
@@ -462,6 +512,34 @@ def draw_panel(lines, keys, flash=None, pending=None,
             draw_key_face(draw, action, x_cursor + width / 2, y0 + height / 2,
                           min(width, height) * 0.72, COL_TEXT)
             x_cursor += width + SPACING
+        if geo.get("show_arrows") and row_index == 0:
+            block = geo["arrow_block"]
+            side = min(cell, row_h)
+            label_w = int(round(26 * D))
+            ax = br - block
+            label = "%d/%d" % (geo["page"] + 1, geo["row_count"])
+            font = ImageFont.truetype(FONT_BOLD, max(9, int(label_w * 0.36)))
+            box = draw.textbbox((0, 0), label, font=font)
+            draw.text(
+                (ax + (label_w - (box[2] - box[0])) / 2 - box[0],
+                 y_row + (row_h - (box[3] - box[1])) / 2 - box[1]),
+                label, font=font, fill=alpha(COL_TEXT, 230),
+            )
+
+            def arrow_button(x, action, enabled):
+                top = y_row + (row_h - side) / 2
+                draw.rounded_rectangle(
+                    [x, top, x + side, top + side],
+                    max(2, int(RADIUS_DP * D * 0.9)),
+                    fill=alpha(COL_BUTTON, int(255 * BUTTON_OPACITY * (1 if enabled else 0.35))),
+                    outline=alpha(COL_ACCENT, 130), width=1,
+                )
+                draw_pixel_icon(draw, PIXEL_ART.get(action), x + side / 2, top + side / 2,
+                                side * 0.62, alpha(COL_TEXT, 255 if enabled else 120))
+
+            arrow_button(ax + label_w, "CURSOR_UP", geo["page"] > 0)
+            arrow_button(ax + label_w + side + SPACING, "CURSOR_DOWN",
+                         geo["page"] < geo["row_count"] - 1)
         y_row += row_h + SPACING
 
     # tombol samping: semuanya persegi (sisi = cell)
@@ -544,6 +622,16 @@ def main():
         3, DEFAULT_KEYS, cell_dp=36,
         bottom_keys=["TEXT:1", "TEXT:2", "TEXT:3", "TEXT:.", "TEXT:,", "TEXT:?", "TEXT:@", "CHAR_PAD"],
     )
+    # Baris ke-2 dari 3: panah menempel di tepi kanan area tulis, bukan di kolom samping.
+    paged = draw_panel(
+        3, DEFAULT_KEYS, cell_dp=32, row_count=3, page=1,
+        bottom_keys=[
+            "CURSOR_WORD_LEFT", "CURSOR_WORD_RIGHT", "TEXT_UNDO", "TEXT_REDO",
+            "SELECT_WORD", "CURSOR_DOC_START", "CURSOR_DOC_END", "PAGE_UP",
+            "PAGE_DOWN", "SHIFT_TAB", "ESCAPE", "EDITOR_ACTION",
+            "SPACE", "ENTER", "BACKSPACE", "TAB", "COPY", "PASTE",
+        ],
+    )
 
     pad = 40
     width = PANEL_W + pad * 2
@@ -573,8 +661,8 @@ def main():
         ("8. Baris ke-2 = teks satu baris di bawah kursor",
          "baris ke-3 = dua enter, baris ke-1 = tepat di posisi kursor",
          ("field2", second_line)),
-        ("9. Tombol atas satu baris: 11 dari 20 yang muat tampil",
-         "rata kiri, jarak seragam; sisanya tidak ditampilkan, ruang kanan kosong",
+        ("9. Jumlah baris = 1: yang tidak muat tidak ditampilkan",
+         "rata kiri; tambah baris supaya sisanya bisa digeser dengan panah",
          ("plain", many_bottom)),
         ("10. Kolom tombol 3 x 5 - area tulis tetap 3 baris",
          "baris tombol bisa mengikuti area tulis atau diatur sendiri 1-6",
@@ -582,6 +670,9 @@ def main():
         ("11. Tombol karakter: angka, tanda baca, papan karakter",
          "fungsi Karakter menampilkan hurufnya; kisi = buka papan karakter",
          ("plain", characters)),
+        ("12. Baris 2/3 - panah tepat di atas sisi kanan area tulis",
+         "shortcut keyboard: lompat kata, batal teks, Esc, Kirim; geser atau ketuk panah",
+         ("plain", paged)),
     ]
     canvas_heights = [header]
     for _, _, (kind, item) in panels:
@@ -597,9 +688,9 @@ def main():
             canvas_heights.append(item.height + extra)
     canvas = Image.new("RGBA", (width, sum(canvas_heights) + 40), alpha((0x12, 0x12, 0x12), 255))
     draw = ImageDraw.Draw(canvas)
-    draw.text((pad, 18), "Penboard 3.5.7 - tombol memasukkan karakter",
+    draw.text((pad, 18), "Penboard 3.5.8 - beberapa baris tombol atas",
               font=ImageFont.truetype(FONT_BOLD, 16), fill=alpha(COL_ACCENT, 255))
-    draw.text((pad, 42), "angka, huruf, tanda baca; atau satu tombol papan karakter",
+    draw.text((pad, 42), "satu baris tampil; panah di kanan area tulis, plus shortcut keyboard",
               font=ImageFont.truetype(FONT_PATH, 13), fill=alpha(COL_ACCENT, 150))
 
     y = header

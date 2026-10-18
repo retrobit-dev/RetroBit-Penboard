@@ -2,7 +2,23 @@
 
 Papan tulis stylus bergaya **HiWrite** untuk Android, dengan tema **retro cyberpunk grayscale ePaper**. Tulis dengan Huawei M-Pen (atau stylus apa pun) di papan tulis, lalu tulisan itu berubah menjadi teks dan langsung masuk ke kolom isian aplikasi yang sedang dipakai. Bukan keyboard QWERTY: papan tulisnya lebar di kiri, tombolnya berupa **ikon** dan tersusun rapi 3 kolom di kanan.
 
-Versi terbaru: **3.5.7** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+Versi terbaru: **3.5.8** (lihat [Releases](https://github.com/retrobit-dev/RetroBit-Penboard/releases) untuk berkas APK).
+
+## Yang baru di 3.5.8
+
+- **Tombol atas bisa beberapa baris.** Jumlah baris diatur 1–8 (bawaan tetap 1, jadi
+  susunan lama tidak berubah). Hanya **satu baris yang tampil** — baris lain tidak
+  ditumpuk, jadi tinggi papan tidak bertambah.
+- **Panah atas/bawah** duduk tepat di atas sisi kanan area tulis (bukan di atas kolom
+  tombol samping). Ketuk panah, atau geser bilah ke atas/bawah, untuk pindah baris.
+  Angka di samping panah menunjukkan baris yang sedang tampil.
+- Kapasitas naik sampai **80 tombol**. Semua slot tetap bisa diatur, termasuk yang
+  belum tampil. Menyimpan slot tersembunyi menaikkan jumlah tombol dan, bila perlu,
+  jumlah baris.
+- **Shortcut keyboard** yang sering dipakai bisa dipasang pada tombol: lompat kata
+  (Ctrl+kiri/kanan), awal/akhir dokumen, halaman atas/bawah, pilih kata, batal/ulangi
+  teks, tab mundur, Esc, dan Kirim (cari, kirim, lanjut, atau selesai). Tombol
+  *Tambahkan shortcut keyboard* memasangnya sekaligus di bilah atas.
 
 ## Yang baru di 3.5.7
 
@@ -364,12 +380,12 @@ dilewati. Bisa dimatikan di pengaturan papan.
 
 Bilah judul berisi judul jendela + tombol minimize, dan dipakai sebagai **pegangan untuk
 memindahkan papan**. **Tombol atas** berada di dalam bingkai yang sama, **di atas area
-menulis** (tepat di bawah bilah judul), dalam **satu baris** (sampai **30 tombol** diminta);
-tombolnya **rata kiri** dengan jarak yang sama seperti tombol samping (tidak dilebarkan
-memenuhi papan) dan ukuran dasarnya mengikuti tombol samping — jadi makin kecil tombol
-samping, makin banyak yang muat. Tombol yang tidak muat **tidak ditampilkan**, dan sisa ruang
-di kanan dibiarkan kosong. **Lebar dan tinggi tiap tombol bisa diatur sendiri**; isinya bebas
-diatur (lihat **Pengaturan yang tersedia**).
+menulis** (tepat di bawah bilah judul). Yang tampil selalu **satu baris**, rata kiri, jaraknya
+sama seperti tombol samping. Jumlah baris bisa diatur 1–8 (sampai **80 tombol**); baris lain
+diganti dengan **panah atas/bawah tepat di atas sisi kanan area tulis**, atau dengan menggeser
+bilah. Bila barisnya 1, panah disembunyikan dan tombol yang tidak muat tidak ditampilkan.
+**Lebar dan tinggi tiap tombol bisa diatur sendiri**; isinya bebas diatur, termasuk shortcut
+keyboard (lompat kata, batal teks, Esc, Kirim, dan sebagainya).
 
 Tinggi papan menyesuaikan ruang yang disediakan keyboard: kalau layar tidak cukup untuk
 bingkai + bilah judul + tombol bawah + semua baris tulisan, **jarak baris dan ukuran tombol
@@ -428,7 +444,7 @@ punya polanya sendiri) — bawaan sejak 3.2.0. Bila ingin ikon bergaris halus se
 | Tampilan | **tema retro cyberpunk grayscale ePaper** (satu tombol), garis pindaian, **gaya ikon tombol (pixel art / vektor)**, transparansi panel/papan/tombol 0–100%, warna panel/papan/garis/tombol/teks tombol/aksen, lengkung sudut |
 | Tombol samping pena | aksi klik dan aksi kedua, dari 7 pilihan |
 | Jendela papan | bingkai jendela on/off, tombol minimize on/off (tetap ada sebagai bilah kecil bila bingkainya dimatikan), judul jendela (bawaan `PENBOARD`), **papan bisa dipindah / diangkat** (tarik bilah judul), **lebar papan 45–100 %** (atau tarik sudut kanan bawah), **lebar area tulis 40–80 %** |
-| Tombol atas | tampil/tidak, **jumlah 0–30**, **satu baris**, **rata kiri dengan jarak sama seperti tombol samping** (yang tidak muat tidak ditampilkan), **semua 30 slot bisa diatur kapan saja** (slot yang belum tampil otomatis diaktifkan saat disimpan), aksi + label + **karakter/teks** + tahan-untuk-mengulang + **lebar 0,6x–4x** dan **tinggi 0,6x–2x** tiap tombol (dasar = ukuran tombol samping, letaknya di dalam bingkai **di atas** area menulis), kembali ke bawaan |
+| Tombol atas | tampil/tidak, **jumlah 0–80**, **baris 1–8** (hanya satu yang tampil; panah di kanan area tulis atau geser mengganti baris), **rata kiri**, **semua 80 slot bisa diatur** (slot tersembunyi diaktifkan saat disimpan), aksi + label + karakter/teks + shortcut keyboard + tahan-untuk-mengulang + lebar/tinggi tiap tombol, kembali ke bawaan |
 
 Tombol panah kursor, papan klip, tab, dan hapus di depan kursor bekerja saat keyboard Penboard aktif — semuanya memerlukan kolom isian.
 

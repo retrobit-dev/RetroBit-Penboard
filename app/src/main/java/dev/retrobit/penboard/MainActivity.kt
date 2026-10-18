@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     /** Status model bahasa terakhir yang terbaca (dipakai laporan diagnostik). */
     private var modelStatusText: String? = null
     private var previewPanel: BoardPanel? = null
+    private var previewBottomStatus: TextView? = null
 
     /** Sisa tarikan sudut yang belum genap 1 dp (lebar papan memakai pecahan, tinggi memakai dp). */
     private var pendingResizeDp = 0f
@@ -337,6 +338,10 @@ class MainActivity : AppCompatActivity() {
             override fun onResizeBy(dxPx: Int, dyPx: Int) = resizeFromPreview(dxPx, dyPx)
 
             override fun onGestureFinished() = Unit
+
+            override fun onTopPageChanged() {
+                previewBottomStatus?.text = bottomStatusText(panel)
+            }
         }
         // Kartu ini memakai ukuran yang **sama persis** dengan keyboard sungguhan:
         // semuanya dihitung [BoardPanel.applyConfig], jadi tidak ada angka kembar yang
@@ -356,6 +361,7 @@ class MainActivity : AppCompatActivity() {
         val square = Ui.statusText(card, getString(R.string.preview_square_wait))
         val align = Ui.statusText(card, getString(R.string.preview_align_wait))
         val bottom = Ui.statusText(card, getString(R.string.preview_bottom_wait))
+        previewBottomStatus = bottom
         Ui.body(card, getString(R.string.preview_cell_style, store.config.iconStyle.label))
         Ui.body(
             card,
@@ -432,13 +438,27 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.preview_align_ok, gridRows, boardRows)
             else -> getString(R.string.preview_align_bad, gridRows, boardRows)
         }
-        // Bilah atas selalu satu baris: beri tahu bila ada tombol yang tidak muat.
+        bottom.text = bottomStatusText(panel)
+    }
+
+    /** Status bilah atas: satu baris, atau halaman yang sedang digeser. */
+    private fun bottomStatusText(panel: BoardPanel): String {
         val shown = panel.bottomShownCount
         val requested = panel.bottomRequestedCount
-        bottom.text = when {
+        val rows = panel.topRowCount
+        val reachable = panel.topReachableCount
+        return when {
             requested <= 0 -> getString(R.string.preview_bottom_none)
-            shown >= requested -> getString(R.string.preview_bottom_ok, shown)
-            else -> getString(R.string.preview_bottom_partial, shown, requested)
+            rows <= 1 && shown >= requested -> getString(R.string.preview_bottom_ok, shown)
+            rows <= 1 -> getString(R.string.preview_bottom_partial, shown, requested)
+            reachable < requested -> getString(
+                R.string.preview_bottom_paged_more,
+                panel.topPage + 1,
+                rows,
+                shown,
+                requested - reachable
+            )
+            else -> getString(R.string.preview_bottom_paged, panel.topPage + 1, rows, shown)
         }
     }
 
@@ -792,16 +812,33 @@ class MainActivity : AppCompatActivity() {
             PenboardConfig.MAX_BOTTOM_KEYS,
             getString(R.string.unit_keys)
         ) { value -> store.update { it.copy(bottomButtonCount = value) } }
+        Ui.sliderRow(
+            card,
+            getString(R.string.setting_bottom_rows),
+            config.bottomRowCount,
+            PenboardConfig.MIN_BOTTOM_ROWS,
+            PenboardConfig.MAX_BOTTOM_ROWS,
+            getString(R.string.unit_rows)
+        ) { value -> store.update { it.copy(bottomRowCount = value) } }
         Ui.body(card, getString(R.string.bottom_single_row_note))
+        Ui.body(card, getString(R.string.shortcut_function_note))
+        Ui.outlinedButton(card, getString(R.string.action_add_shortcuts)) { addShortcutButtons() }
+        Ui.outlinedButton(card, getString(R.string.action_add_char_pad)) { addCharPadButton() }
 
         Ui.divider(card)
         // SEMUA slot bisa diatur kapan saja, termasuk yang belum tampil di papan:
         // pengguna sering ingin menyiapkan tombol ke-6 dst. sebelum menaikkan jumlahnya.
         // Slot yang belum tampil hanya diredupkan, bukan dimatikan.
+        var lastPageHeader = -1
         for (index in 0 until PenboardConfig.BOTTOM_SLOTS) {
             val key = config.bottomKeys.getOrNull(index)
                 ?: PenboardConfig.defaultBottomKeys().getOrElse(index) { KeyDef() }
             val shown = index < config.bottomButtonCount
+            val page = previewPanel?.topPageFor(index) ?: 0
+            if (config.bottomRowCount > 1 && shown && page != lastPageHeader) {
+                Ui.body(card, getString(R.string.bottom_page_header, page + 1))
+                lastPageHeader = page
+            }
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
@@ -809,10 +846,15 @@ class MainActivity : AppCompatActivity() {
             }
             row.addView(
                 AppCompatTextView(this).apply {
-                    text = if (shown) {
-                        getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
-                    } else {
-                        getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
+                    text = when {
+                        !shown -> getString(R.string.bottom_slot_hidden, index + 1, config.labelFor(key))
+                        config.bottomRowCount > 1 -> getString(
+                            R.string.bottom_slot_page,
+                            index + 1,
+                            config.labelFor(key),
+                            page + 1
+                        )
+                        else -> getString(R.string.grid_slot_label, index + 1, config.labelFor(key))
                     }
                     textSize = 14f
                     alpha = if (shown) 1f else 0.55f
@@ -835,14 +877,14 @@ class MainActivity : AppCompatActivity() {
             store.update {
                 it.copy(
                     bottomKeys = PenboardConfig.defaultBottomKeys(),
-                    bottomButtonCount = PenboardConfig.DEFAULT_BOTTOM_KEYS
+                    bottomButtonCount = PenboardConfig.DEFAULT_BOTTOM_KEYS,
+                    bottomRowCount = PenboardConfig.DEFAULT_BOTTOM_ROWS
                 )
             }
             render()
         }
         Ui.body(card, getString(R.string.bottom_note))
         Ui.body(card, getString(R.string.char_function_note))
-        Ui.outlinedButton(card, getString(R.string.action_add_char_pad)) { addCharPadButton() }
     }
 
     private fun renderRecognitionCard() {
@@ -1078,13 +1120,18 @@ class MainActivity : AppCompatActivity() {
                     // Jaga-jaga bila daftar lebih pendek dari jumlah slot.
                     while (keys.size <= index) keys.add(KeyDef())
                     keys[index] = updated
+                    val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
+                    val neededRows = (index / per) + 1
                     cfg.copy(
                         bottomKeys = keys,
-                        // Slot yang baru diatur langsung ditampilkan supaya hasilnya terlihat.
-                        bottomButtonCount = maxOf(cfg.bottomButtonCount, index + 1)
+                        // Slot yang baru diatur langsung bisa digeser, bukan hanya dihitung.
+                        bottomButtonCount = maxOf(cfg.bottomButtonCount, index + 1),
+                        bottomRowCount = maxOf(cfg.bottomRowCount, neededRows)
+                            .coerceAtMost(PenboardConfig.MAX_BOTTOM_ROWS)
                     )
                 }
                 render()
+                previewPanel?.let { panel -> panel.showTopPage(panel.topPageFor(index)) }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -1182,6 +1229,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Pasang shortcut keyboard yang sering dipakai di akhir daftar tombol atas,
+     * dan naikkan jumlah baris supaya semuanya bisa digeser.
+     */
+    private fun addShortcutButtons() {
+        val start = store.config.bottomButtonCount.coerceAtLeast(0)
+        val shortcuts = listOf(
+            KeyDef(KeyAction.CURSOR_WORD_LEFT, repeatOnHold = true),
+            KeyDef(KeyAction.CURSOR_WORD_RIGHT, repeatOnHold = true),
+            KeyDef(KeyAction.TEXT_UNDO),
+            KeyDef(KeyAction.TEXT_REDO),
+            KeyDef(KeyAction.SELECT_WORD),
+            KeyDef(KeyAction.CURSOR_DOC_START),
+            KeyDef(KeyAction.CURSOR_DOC_END),
+            KeyDef(KeyAction.PAGE_UP, repeatOnHold = true),
+            KeyDef(KeyAction.PAGE_DOWN, repeatOnHold = true),
+            KeyDef(KeyAction.SHIFT_TAB),
+            KeyDef(KeyAction.ESCAPE),
+            KeyDef(KeyAction.EDITOR_ACTION)
+        )
+        store.update { cfg ->
+            val keys = cfg.bottomKeys.toMutableList()
+            while (keys.size < PenboardConfig.BOTTOM_SLOTS) keys.add(KeyDef())
+            val per = (previewPanel?.topButtonsPerRow ?: 0).coerceAtLeast(1)
+            var index = cfg.bottomButtonCount.coerceAtLeast(0)
+            var written = 0
+            for (key in shortcuts) {
+                if (index >= PenboardConfig.MAX_BOTTOM_KEYS) break
+                keys[index] = key
+                index++
+                written++
+            }
+            if (written == 0) return@update cfg
+            val count = index.coerceAtMost(PenboardConfig.MAX_BOTTOM_KEYS)
+            val rows = maxOf(cfg.bottomRowCount, (count + per - 1) / per)
+                .coerceIn(PenboardConfig.MIN_BOTTOM_ROWS, PenboardConfig.MAX_BOTTOM_ROWS)
+            cfg.copy(
+                bottomKeys = keys.take(PenboardConfig.BOTTOM_SLOTS),
+                bottomButtonCount = count,
+                bottomRowCount = rows
+            )
+        }
+        toast(getString(R.string.msg_shortcuts_added))
+        render()
+        previewPanel?.let { panel -> panel.showTopPage(panel.topPageFor(start)) }
+    }
+
+    /**
      * Kotak karakter + pemilih angka/huruf/tanda baca.
      * Memilih atau mengetik karakter mengalihkan fungsi tombol ke Karakter.
      */
@@ -1270,6 +1364,35 @@ class MainActivity : AppCompatActivity() {
                 testField.setSelection(TextInsert.moveCaret(existing, start, 1))
                 return true
             }
+            KeyAction.CURSOR_WORD_LEFT -> {
+                testField.setSelection(TextInsert.wordStart(existing, start))
+                return true
+            }
+            KeyAction.CURSOR_WORD_RIGHT -> {
+                testField.setSelection(TextInsert.wordEnd(existing, start))
+                return true
+            }
+            KeyAction.CURSOR_DOC_START -> {
+                testField.setSelection(0)
+                return true
+            }
+            KeyAction.CURSOR_DOC_END -> {
+                testField.setSelection(existing.length)
+                return true
+            }
+            KeyAction.PAGE_UP -> {
+                testField.setSelection(TextInsert.pageCaret(existing, start, -1))
+                return true
+            }
+            KeyAction.PAGE_DOWN -> {
+                testField.setSelection(TextInsert.pageCaret(existing, start, 1))
+                return true
+            }
+            KeyAction.SELECT_WORD -> {
+                val (from, to) = TextInsert.wordRange(existing, start)
+                testField.setSelection(from, to.coerceAtLeast(from))
+                return true
+            }
             else -> return false
         }
         testField.setText(result.text)
@@ -1293,7 +1416,19 @@ class MainActivity : AppCompatActivity() {
             KeyAction.CURSOR_DOWN -> R.string.hint_cursor_down
             KeyAction.CURSOR_HOME -> R.string.hint_cursor_home
             KeyAction.CURSOR_END -> R.string.hint_cursor_end
+            KeyAction.CURSOR_WORD_LEFT -> R.string.hint_cursor_word_left
+            KeyAction.CURSOR_WORD_RIGHT -> R.string.hint_cursor_word_right
+            KeyAction.CURSOR_DOC_START -> R.string.hint_cursor_doc_start
+            KeyAction.CURSOR_DOC_END -> R.string.hint_cursor_doc_end
+            KeyAction.PAGE_UP -> R.string.hint_page_up
+            KeyAction.PAGE_DOWN -> R.string.hint_page_down
             KeyAction.SELECT_ALL -> R.string.hint_select_all
+            KeyAction.SELECT_WORD -> R.string.hint_select_word
+            KeyAction.TEXT_UNDO -> R.string.hint_text_undo
+            KeyAction.TEXT_REDO -> R.string.hint_text_redo
+            KeyAction.SHIFT_TAB -> R.string.hint_shift_tab
+            KeyAction.ESCAPE -> R.string.hint_escape
+            KeyAction.EDITOR_ACTION -> R.string.hint_editor_action
             KeyAction.CUT -> R.string.hint_cut
             KeyAction.COPY -> R.string.hint_copy
             KeyAction.PASTE -> R.string.hint_paste

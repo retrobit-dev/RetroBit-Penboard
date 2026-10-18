@@ -41,6 +41,30 @@ object KeyIcons {
             moveTo(19f, 12f); lineTo(10f, 12f)
             moveTo(14f, 8f); lineTo(10f, 12f); lineTo(14f, 16f)
         }
+        KeyAction.CURSOR_WORD_LEFT -> strokePath {
+            moveTo(5f, 5f); lineTo(5f, 19f)
+            moveTo(16f, 6f); lineTo(8f, 12f); lineTo(16f, 18f)
+        }
+        KeyAction.CURSOR_WORD_RIGHT -> strokePath {
+            moveTo(19f, 5f); lineTo(19f, 19f)
+            moveTo(8f, 6f); lineTo(16f, 12f); lineTo(8f, 18f)
+        }
+        KeyAction.CURSOR_DOC_START -> strokePath {
+            moveTo(5f, 5f); lineTo(19f, 5f)
+            moveTo(12f, 19f); lineTo(12f, 9f); lineTo(7f, 13f); moveTo(12f, 9f); lineTo(17f, 13f)
+        }
+        KeyAction.CURSOR_DOC_END -> strokePath {
+            moveTo(5f, 19f); lineTo(19f, 19f)
+            moveTo(12f, 5f); lineTo(12f, 15f); lineTo(7f, 11f); moveTo(12f, 15f); lineTo(17f, 11f)
+        }
+        KeyAction.PAGE_UP -> strokePath {
+            moveTo(7f, 11f); lineTo(12f, 6f); lineTo(17f, 11f)
+            moveTo(7f, 17f); lineTo(12f, 12f); lineTo(17f, 17f)
+        }
+        KeyAction.PAGE_DOWN -> strokePath {
+            moveTo(7f, 7f); lineTo(12f, 12f); lineTo(17f, 7f)
+            moveTo(7f, 13f); lineTo(12f, 18f); lineTo(17f, 13f)
+        }
         KeyAction.CURSOR_END -> strokePath {
             moveTo(19f, 5f); lineTo(19f, 19f)
             moveTo(5f, 12f); lineTo(14f, 12f)
@@ -96,6 +120,35 @@ object KeyIcons {
             addOval(RectF(14f, 15f, 20f, 21f), Path.Direction.CW)
             moveTo(7f, 14f); lineTo(17f, 3f)
             moveTo(17f, 14f); lineTo(7f, 3f)
+        }
+        KeyAction.SELECT_WORD -> strokePath {
+            moveTo(5f, 5f); lineTo(19f, 5f); lineTo(19f, 19f); lineTo(5f, 19f); close()
+            moveTo(8f, 9f); lineTo(16f, 9f)
+            moveTo(8f, 12f); lineTo(16f, 12f)
+            moveTo(8f, 15f); lineTo(13f, 15f)
+        }
+        KeyAction.TEXT_UNDO -> strokePath {
+            moveTo(8f, 8f); lineTo(8f, 5f); lineTo(5f, 8f)
+            moveTo(8f, 6f); lineTo(13f, 6f); lineTo(16f, 9f); lineTo(16f, 14f); lineTo(13f, 17f); lineTo(8f, 17f)
+            moveTo(6f, 20f); lineTo(18f, 20f)
+        }
+        KeyAction.TEXT_REDO -> strokePath {
+            moveTo(16f, 8f); lineTo(16f, 5f); lineTo(19f, 8f)
+            moveTo(16f, 6f); lineTo(11f, 6f); lineTo(8f, 9f); lineTo(8f, 14f); lineTo(11f, 17f); lineTo(16f, 17f)
+            moveTo(6f, 20f); lineTo(18f, 20f)
+        }
+        KeyAction.SHIFT_TAB -> strokePath {
+            moveTo(6f, 5f); lineTo(6f, 19f)
+            moveTo(18f, 8f); lineTo(10f, 8f); lineTo(13f, 5f); moveTo(10f, 8f); lineTo(13f, 11f)
+            moveTo(18f, 16f); lineTo(12f, 16f)
+        }
+        KeyAction.ESCAPE -> strokePath {
+            moveTo(7f, 7f); lineTo(17f, 17f)
+            moveTo(17f, 7f); lineTo(7f, 17f)
+        }
+        KeyAction.EDITOR_ACTION -> strokePath {
+            moveTo(6f, 7f); lineTo(6f, 16f); lineTo(12f, 16f)
+            moveTo(10f, 13f); lineTo(18f, 13f); lineTo(15f, 10f); moveTo(18f, 13f); lineTo(15f, 16f)
         }
         KeyAction.PASTE -> strokePath {
             moveTo(5f, 7f); lineTo(5f, 21f); lineTo(19f, 21f); lineTo(19f, 7f); lineTo(15f, 7f)

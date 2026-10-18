@@ -40,12 +40,33 @@ enum class KeyAction(val id: String, val label: String) {
     CURSOR_DOWN("cursorDown", "Bawah"),
     CURSOR_HOME("cursorHome", "Awal baris"),
     CURSOR_END("cursorEnd", "Akhir baris"),
+    /** Ctrl+kiri: lompat ke awal kata. */
+    CURSOR_WORD_LEFT("cursorWordLeft", "Kata kiri"),
+    /** Ctrl+kanan: lompat ke akhir kata. */
+    CURSOR_WORD_RIGHT("cursorWordRight", "Kata kanan"),
+    /** Ctrl+Home: awal seluruh teks. */
+    CURSOR_DOC_START("cursorDocStart", "Awal dokumen"),
+    /** Ctrl+End: akhir seluruh teks. */
+    CURSOR_DOC_END("cursorDocEnd", "Akhir dokumen"),
+    PAGE_UP("pageUp", "Hal. atas"),
+    PAGE_DOWN("pageDown", "Hal. bawah"),
 
     // Papan klip & pilihan
     SELECT_ALL("selectAll", "Pilih semua"),
     CUT("cut", "Potong"),
     COPY("copy", "Salin"),
     PASTE("paste", "Tempel"),
+    /** Pilih kata di posisi kursor (seperti ketuk dua kali). */
+    SELECT_WORD("selectWord", "Pilih kata"),
+    /** Ctrl+Z pada teks di kolom isian — bukan batal goresan papan. */
+    TEXT_UNDO("textUndo", "Batal teks"),
+    /** Ctrl+Y pada teks di kolom isian — bukan ulangi goresan papan. */
+    TEXT_REDO("textRedo", "Ulangi teks"),
+    /** Shift+Tab. */
+    SHIFT_TAB("shiftTab", "Tab mundur"),
+    ESCAPE("escape", "Esc"),
+    /** Aksi kolom isian: cari, kirim, lanjut, atau selesai. */
+    EDITOR_ACTION("editorAction", "Kirim"),
 
     // Jembatan ke perangkat
     SYSTEM_HANDWRITING("systemHandwriting", "Huawei"),
@@ -208,6 +229,11 @@ data class PenboardConfig(
     val bottomKeys: List<KeyDef> = defaultBottomKeys(),
     /** Berapa tombol bawah yang tampil; 0 berarti bilah bawah disembunyikan. */
     val bottomButtonCount: Int = DEFAULT_BOTTOM_KEYS,
+    /**
+     * Berapa baris tombol atas yang bisa diganti. Hanya satu yang tampil;
+     * panah di kanan area tulis (atau geser) pindah ke baris lain.
+     */
+    val bottomRowCount: Int = DEFAULT_BOTTOM_ROWS,
 
     /** Gaya ikon semua tombol papan: pixel art ([IconStyle.PIXEL]) atau vektor. */
     val iconStyle: IconStyle = IconStyle.PIXEL,
@@ -300,6 +326,7 @@ data class PenboardConfig(
         minimizeButton = true,
         bottomKeys = defaultBottomKeys(),
         bottomButtonCount = DEFAULT_BOTTOM_KEYS,
+        bottomRowCount = DEFAULT_BOTTOM_ROWS,
         // Pengenalan: kata jadi teks otomatis setelah 2 detik, lalu papan bersih.
         autoRecognize = true,
         autoRecognizeDelayMs = 2000,
@@ -384,6 +411,7 @@ data class PenboardConfig(
         put("autoSwitchToSystemHandwriting", autoSwitchToSystemHandwriting)
         put("bottomKeys", JSONArray().apply { bottomKeys.forEach { put(it.toJson()) } })
         put("bottomButtonCount", bottomButtonCount)
+        put("bottomRowCount", bottomRowCount)
         put("iconStyle", iconStyle.id)
         put("gridCellDp", gridCellDp)
         put("panelWidthFraction", panelWidthFraction)
@@ -429,6 +457,7 @@ data class PenboardConfig(
             recognitionLanguage = RecognitionLanguages.normalize(recognitionLanguage),
             bottomKeys = sanitizeKeys(bottomKeys, defaultBottomKeys(), BOTTOM_SLOTS),
             bottomButtonCount = bottomButtonCount.coerceIn(MIN_BOTTOM_KEYS, MAX_BOTTOM_KEYS),
+            bottomRowCount = bottomRowCount.coerceIn(MIN_BOTTOM_ROWS, MAX_BOTTOM_ROWS),
             windowTitle = windowTitle.trim().take(MAX_WINDOW_TITLE)
         )
     }
@@ -494,17 +523,20 @@ data class PenboardConfig(
         const val MAX_GRID_KEYS = GRID_SLOTS
 
         /**
-         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai **30 tombol**.
+         * Bilah tombol di atas papan tulis: 0 (disembunyikan) sampai **80 tombol**.
          *
-         * Ukuran dasarnya mengikuti tombol samping, jadi jumlah yang **benar-benar muat**
-         * bergantung pada ukuran itu: tombol samping 32 dp memberi sekitar 10 tombol per
-         * baris, sementara tombol 96 dp hanya sekitar 3. Tombol yang tidak muat turun ke
-         * baris berikutnya (tetap rata kiri, jaraknya sama dengan tombol samping).
+         * Hanya **satu baris** yang terlihat. Tombol yang tidak muat di baris itu pindah
+         * ke baris berikutnya, diganti dengan panah di kanan area tulis — bukan ditumpuk,
+         * supaya tinggi papan tidak bertambah. Jumlah baris diatur pengguna (1-8).
+         * Bila barisnya 1, tombol yang tidak muat tidak ditampilkan.
          */
         const val MIN_BOTTOM_KEYS = 0
-        const val MAX_BOTTOM_KEYS = 30
+        const val MAX_BOTTOM_KEYS = 80
         const val BOTTOM_SLOTS = MAX_BOTTOM_KEYS
         const val DEFAULT_BOTTOM_KEYS = 5
+        const val MIN_BOTTOM_ROWS = 1
+        const val MAX_BOTTOM_ROWS = 8
+        const val DEFAULT_BOTTOM_ROWS = 1
 
         /** Tinggi bilah judul jendela (dp) dan bilah kecil minimize tanpa bingkai. */
         const val TITLE_BAR_DP = 22
@@ -659,6 +691,7 @@ data class PenboardConfig(
                 ),
                 bottomKeys = bottomKeys,
                 bottomButtonCount = json.optInt("bottomButtonCount", base.bottomButtonCount),
+                bottomRowCount = json.optInt("bottomRowCount", base.bottomRowCount),
                 iconStyle = IconStyle.fromId(json.optString("iconStyle", base.iconStyle.id)),
                 gridCellDp = json.optInt("gridCellDp", base.gridCellDp),
                 panelWidthFraction = json.optDouble("panelWidthFraction", base.panelWidthFraction.toDouble()).toFloat(),

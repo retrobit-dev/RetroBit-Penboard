@@ -305,8 +305,9 @@ class GridMathTest {
     @Test
     fun `tombol atas muat lebih dari dua puluh bila tombolnya kecil`() {
         // Batas penyimpanan jauh di atas 20; jumlah nyata ditentukan geometri panel.
-        assertEquals(30, PenboardConfig.MAX_BOTTOM_KEYS)
-        assertEquals(30, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(80, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(80, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(8, PenboardConfig.MAX_BOTTOM_ROWS)
         assertTrue(PenboardConfig.MAX_BOTTOM_KEYS > 20)
 
         // Tombol samping 32 dp di isi panel 532 px: satu baris memuat 11 tombol,
@@ -323,6 +324,19 @@ class GridMathTest {
 
         // Semua tombol yang tampil ada di baris yang sama dan berurutan dari kiri.
         assertEquals((0 until perRow).toList(), rows.first())
+
+        // Beberapa baris = beberapa halaman, bukan tumpukan. Satu baris = hasil yang sama.
+        val packed = GridMath.packTopPages(5, 3, 100, List(5) { 1f }, 250, 10)
+        assertEquals(listOf(listOf(0, 1), listOf(2, 3), listOf(4)), packed)
+        assertEquals(
+            GridMath.bottomRowIndexes(5, 100, List(5) { 1f }, 250, 10),
+            GridMath.packTopPages(5, 1, 100, List(5) { 1f }, 250, 10)
+        )
+        assertEquals(
+            emptyList<Int>(),
+            GridMath.topPageIndexes(4, 2, 5, 100, List(5) { 1f }, 250, 10)
+        )
+        assertEquals(26 + 40 + 40 + 8, GridMath.topArrowBlockPx(40, 8, 26))
 
         // Semua tombol bawaan benar-benar bekerja (bukan TEXT kosong).
         PenboardConfig.defaultBottomKeys().forEach { key ->

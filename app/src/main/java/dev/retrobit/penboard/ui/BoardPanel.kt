@@ -32,8 +32,9 @@ import kotlin.math.roundToInt
  * - Di atas papan ada **bingkai jendela**: bilah judul (bisa ditarik untuk memindah
  *   papan) dengan tombol minimize, dan **sudut kanan bawah** bisa ditarik untuk
  *   mengubah lebar papan sekaligus ukuran tombolnya.
- * - Di atas papan ada **bilah tombol atas** (dulu "tombol bawah"): maksimal 5, rata
- *   kiri dengan jarak yang sama seperti tombol samping, ukurannya mengikuti tombol samping.
+ * - Di atas papan ada **bilah tombol atas** (dulu "tombol bawah"): sampai 80 tombol,
+ *   rata kiri, jaraknya sama seperti tombol samping. Hanya satu baris yang tampil;
+ *   baris lain diganti dengan panah tepat di atas sisi kanan area tulis.
  * - Ikon tombol mengikuti [PenboardConfig.iconStyle] (pixel art atau vektor).
  */
 class BoardPanel(private val context: Context) {
@@ -56,6 +57,9 @@ class BoardPanel(private val context: Context) {
 
         /** Tarikan selesai: simpan posisi/ukuran. */
         fun onGestureFinished()
+
+        /** Bilah atas berpindah baris (panah atau geser). Tinggi papan tidak berubah. */
+        fun onTopPageChanged() {}
     }
 
     var listener: Listener? = null
@@ -96,10 +100,24 @@ class BoardPanel(private val context: Context) {
     var cellPx: Int = 0
         private set
 
-    /** Jumlah tombol atas yang diminta pengaturan, dan yang benar-benar tampil. */
+    /** Jumlah tombol atas yang diminta pengaturan, dan yang benar-benar tampil di baris ini. */
     var bottomRequestedCount: Int = 0
         private set
     var bottomShownCount: Int = 0
+        private set
+
+    /** Baris tombol atas yang sedang tampil (0 = pertama) dan jumlah baris yang diatur. */
+    var topPage: Int = 0
+        private set
+    var topRowCount: Int = 1
+        private set
+
+    /** Perkiraan berapa tombol persegi yang muat di satu baris (dipakai editor slot). */
+    var topButtonsPerRow: Int = 0
+        private set
+
+    /** Berapa tombol yang kebagian halaman dengan jumlah baris sekarang. */
+    var topReachableCount: Int = 0
         private set
 
     /** Ukuran papan yang sedang dipakai (px). */
@@ -120,6 +138,50 @@ class BoardPanel(private val context: Context) {
     private var lastConfig: PenboardConfig = PenboardConfig()
     private var lastHeightPx = 0
     private var lastWidthPx = 0
+    private var lastCell = 0
+    private var lastSpacing = 0
+    private var lastUsable = 0
+    private var lastWritingRight = 0
+    private var lastScale = 1f
+    private var lastPages: List<List<Int>> = emptyList()
+    private var pageChangePosted = false
+
+    /** Panah ganti baris: bukan tombol yang bisa diatur, hanya pengalih halaman. */
+    private val rowUp = KeyButton(context)
+    private val rowDown = KeyButton(context)
+    private val topPageLabel = AppCompatTextView(context)
+    private val topBarHost = object : FrameLayout(context) {
+        private var downX = 0f
+        private var downY = 0f
+
+        override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+            if (topRowCount <= 1) return false
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = ev.x
+                    downY = ev.y
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dy = ev.y - downY
+                    val dx = ev.x - downX
+                    val slop = 24f * density
+                    if (abs(dy) > slop && abs(dy) > abs(dx) * 1.3f) return true
+                }
+            }
+            return false
+        }
+
+        override fun onTouchEvent(ev: MotionEvent): Boolean {
+            if (topRowCount <= 1) return false
+            if (ev.actionMasked == MotionEvent.ACTION_UP) {
+                val dy = ev.y - downY
+                val slop = 24f * density
+                // Jari ke atas = baris berikutnya (isi bergeser ke atas), sama seperti scroll.
+                if (dy <= -slop) stepTopPage(1) else if (dy >= slop) stepTopPage(-1)
+            }
+            return true
+        }
+    }
 
     /** Batas angkat papan (px) menurut tinggi area keyboard yang tersedia saat ini. */
     val maxLiftPx: Int
@@ -130,6 +192,11 @@ class BoardPanel(private val context: Context) {
         }
 
     init {
+        topBarHost.clipChildren = true
+        topBarHost.clipToPadding = true
+        topPageLabel.gravity = Gravity.CENTER
+        topPageLabel.maxLines = 1
+        topPageLabel.typeface = Typeface.MONOSPACE
         board.onStrokeStarted = { listener?.onStrokeStarted() }
         board.onStrokeCommitted = { listener?.onStrokeCommitted() }
         board.onContentChanged = { listener?.onContentChanged() }
@@ -358,11 +425,15 @@ class BoardPanel(private val context: Context) {
         var bottomScale = 1f
         fun barCell(): Int = (cell * bottomScale).roundToInt().coerceAtLeast(1)
         fun layoutBottom() {
-            bottomRows = GridMath.bottomRowIndexes(bottomCount, barCell(), bottomWidths, usableWidth, spacing)
-            bottomRowHeights = GridMath.bottomRowHeights(bottomRows, barCell(), bottomHeightMultipliers)
-            // Bilah atas hanya satu baris: tombol yang tidak muat tidak ditampilkan.
+            val gridW = GridMath.gridWidthPx(columns, cell, spacing)
+            val writingRight = (usableWidth - spacing - gridW).coerceAtLeast(1)
+            val measured = measureTopBar(config, barCell(), spacing, usableWidth, writingRight)
+            // Selalu satu baris yang terlihat, setinggi tombol tertinggi di semua halaman
+            // supaya pindah baris tidak mengubah tinggi papan atau memotong tombol.
+            bottomRows = if (measured.rowHeight <= 0) emptyList() else listOf(measured.shown)
+            bottomRowHeights = if (measured.rowHeight <= 0) emptyList() else listOf(measured.rowHeight)
             bottomRequestedCount = bottomCount
-            bottomShownCount = bottomRows.firstOrNull()?.size ?: 0
+            bottomShownCount = measured.shown.size
         }
 
         // Dua putaran: ukuran tombol menentukan tinggi bilah bawah, dan tinggi bilah bawah
@@ -551,7 +622,8 @@ class BoardPanel(private val context: Context) {
             gridHeight
         ).apply { marginStart = spacing }
 
-        applyBottomBar(config, cell, spacing, usableWidth, bottomScale)
+        val writingRight = (usableWidth - spacing - gridWidth).coerceAtLeast(1)
+        applyBottomBar(config, cell, spacing, usableWidth, bottomScale, writingRight)
         applyResizeHandle(config)
         // Ukuran berubah => posisi harus dipasang ulang supaya sudut pengubah ukuran
         // tetap menempel di pojok kanan bawah papan.
@@ -629,19 +701,32 @@ class BoardPanel(private val context: Context) {
     }
 
     /**
-     * Tombol **tepat di bawah area menulis** (masih di dalam bingkai jendela):
-     * **tingginya selalu sama dengan tombol samping**, lebarnya bisa diatur per tombol
-     * ([KeyDef.widthMultiplier]), dan ikonnya mengikuti gaya yang dipilih.
+     * Tombol **tepat di atas area menulis** (masih di dalam bingkai jendela).
+     *
+     * Hanya satu baris yang dipasang. Bila pengguna menambah baris, sisanya tidak
+     * ditumpuk: panah atas/bawah duduk tepat di tepi kanan area tulis dan mengganti
+     * baris. Geser vertikal pada bilah melakukan hal yang sama.
      */
     private fun applyBottomBar(
         config: PenboardConfig,
         cell: Int,
         spacing: Int,
         availableWidth: Int,
-        scale: Float = 1f
+        scale: Float = 1f,
+        writingRight: Int = availableWidth
     ) {
+        lastCell = cell
+        lastSpacing = spacing
+        lastUsable = availableWidth
+        lastScale = scale
+        lastWritingRight = writingRight
         // Sama seperti tombol grid: lepaskan dulu dari baris lama sebelum disusun ulang.
         for (button in bottomButtons) (button.parent as? ViewGroup)?.removeView(button)
+        (rowUp.parent as? ViewGroup)?.removeView(rowUp)
+        (rowDown.parent as? ViewGroup)?.removeView(rowDown)
+        (topPageLabel.parent as? ViewGroup)?.removeView(topPageLabel)
+        (topBarHost.parent as? ViewGroup)?.removeView(topBarHost)
+        topBarHost.removeAllViews()
         bottomContainer.removeAllViews()
         val count = bottomCount(config)
         if (count <= 0) {
@@ -654,41 +739,243 @@ class BoardPanel(private val context: Context) {
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply { topMargin = if (config.showsTitleBar) spacing else 0 }
 
-        val defaults = PenboardConfig.defaultBottomKeys()
-        // Skala sama dengan yang dipakai [applyConfig] saat menghitung tinggi bilah.
         val side = (cell * scale).roundToInt().coerceAtLeast(1)
-        // Susunan barisnya dihitung di GridMath supaya sama persis dengan hitungan
-        // tinggi panel di [applyConfig]: lebar & tinggi tiap tombol ikut diperhitungkan.
-        val rows = GridMath.bottomRowIndexes(
-            count,
-            side,
-            bottomMultipliers(config),
-            availableWidth,
-            spacing
+        val measured = measureTopBar(config, side, spacing, availableWidth, writingRight)
+        val defaults = PenboardConfig.defaultBottomKeys()
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        // Rata kiri, jarak sama seperti tombol samping. Lebar baris berhenti sebelum
+        // panah supaya tombol tidak menutupi tepi kanan area tulis.
+        val rowWidth = if (measured.arrows != null) measured.buttonWidth else ViewGroup.LayoutParams.MATCH_PARENT
+        for ((position, index) in measured.shown.withIndex()) {
+            val key = config.bottomKeys.getOrNull(index)
+                ?: defaults.getOrElse(index) { defaults.last() }
+            row.addView(
+                buildBottomButton(config, key, side, if (position == 0) 0 else spacing, index)
+            )
+        }
+        topBarHost.addView(
+            row,
+            FrameLayout.LayoutParams(rowWidth, measured.rowHeight).apply {
+                gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            }
         )
-        val heights = GridMath.bottomRowHeights(rows, side, bottomHeights(config))
-        for ((rowIndex, indexes) in rows.withIndex()) {
-            val row = LinearLayout(context).apply {
+        val arrows = measured.arrows
+        if (arrows != null) {
+            val cluster = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
-                // Tombol berukuran berbeda tetap sejajar di tengah barisnya.
                 gravity = Gravity.CENTER_VERTICAL
             }
-            // Tombol bersebelahan dengan jarak yang **sama seperti tombol samping**,
-            // rata kiri: tidak ada jarak yang dilebarkan untuk memenuhi lebar papan.
-            for ((position, index) in indexes.withIndex()) {
-                val key = config.bottomKeys.getOrNull(index)
-                    ?: defaults.getOrElse(index) { defaults.last() }
-                row.addView(
-                    buildBottomButton(config, key, side, if (position == 0) 0 else spacing, index)
-                )
-            }
-            bottomContainer.addView(
-                row,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    heights.getOrElse(rowIndex) { cell }
-                ).apply { topMargin = if (rowIndex == 0) 0 else spacing }
+            topPageLabel.text = "${measured.page + 1}/${measured.rowCount}"
+            topPageLabel.setTextColor(config.buttonTextColor)
+            topPageLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, (arrows.label * 0.38f).coerceAtLeast(8f))
+            topPageLabel.contentDescription = context.getString(
+                R.string.desc_top_page,
+                measured.page + 1,
+                measured.rowCount
             )
+            cluster.addView(
+                topPageLabel,
+                LinearLayout.LayoutParams(arrows.label, ViewGroup.LayoutParams.MATCH_PARENT)
+            )
+            styleArrow(
+                rowUp, config, arrows.side, spacing, KeyAction.CURSOR_UP,
+                enabled = measured.page > 0,
+                delta = -1,
+                description = context.getString(R.string.desc_row_up)
+            )
+            styleArrow(
+                rowDown, config, arrows.side, spacing, KeyAction.CURSOR_DOWN,
+                enabled = measured.page < measured.rowCount - 1,
+                delta = 1,
+                description = context.getString(R.string.desc_row_down)
+            )
+            cluster.addView(rowUp)
+            cluster.addView(rowDown)
+            val arrowLeft = (measured.writingRight - arrows.block).coerceAtLeast(0)
+            topBarHost.addView(
+                cluster,
+                FrameLayout.LayoutParams(
+                    arrows.block,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ).apply {
+                    gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                    leftMargin = arrowLeft
+                }
+            )
+        }
+        bottomContainer.addView(
+            topBarHost,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                measured.rowHeight
+            )
+        )
+    }
+
+    /** Pindah baris tombol atas. Tidak mengubah tinggi papan. */
+    private fun stepTopPage(delta: Int) {
+        showTopPage(topPage + delta)
+    }
+
+    /**
+     * Tampilkan baris [page]. Dipakai panah, geser, dan setelah memasang tombol baru.
+     * Penyusunan ulang dijadwalkan supaya tidak mengubah hierarki di tengah sentuhan.
+     */
+    fun showTopPage(page: Int) {
+        if (lastCell <= 0) {
+            topPage = page.coerceAtLeast(0)
+            return
+        }
+        val next = page.coerceIn(0, (topRowCount - 1).coerceAtLeast(0))
+        if (next == topPage) return
+        topPage = next
+        if (pageChangePosted) return
+        pageChangePosted = true
+        topBarHost.post {
+            pageChangePosted = false
+            applyBottomBar(lastConfig, lastCell, lastSpacing, lastUsable, lastScale, lastWritingRight)
+            listener?.onTopPageChanged()
+        }
+    }
+
+    /** Halaman perkiraan untuk slot [index], termasuk yang belum muat di baris sekarang. */
+    fun topPageFor(index: Int): Int {
+        if (index < 0) return 0
+        for ((page, indexes) in lastPages.withIndex()) {
+            if (index in indexes) return page
+        }
+        val per = topButtonsPerRow.coerceAtLeast(1)
+        return index / per
+    }
+
+    private data class ArrowMetrics(val side: Int, val label: Int, val block: Int)
+
+    private data class TopBarMeasure(
+        val pages: List<List<Int>>,
+        val page: Int,
+        val rowCount: Int,
+        val shown: List<Int>,
+        val rowHeight: Int,
+        val buttonWidth: Int,
+        val writingRight: Int,
+        val arrows: ArrowMetrics?,
+        val perRow: Int
+    )
+
+    /**
+     * Satu sumber hitungan untuk tinggi panel dan pemasangan tombol, supaya keduanya
+     * tidak berbeda. Panah hanya ada bila baris lebih dari satu.
+     */
+    private fun measureTopBar(
+        config: PenboardConfig,
+        side: Int,
+        spacing: Int,
+        usableWidth: Int,
+        writingRight: Int
+    ): TopBarMeasure {
+        val count = bottomCount(config)
+        val rowCount = config.bottomRowCount.coerceIn(
+            PenboardConfig.MIN_BOTTOM_ROWS,
+            PenboardConfig.MAX_BOTTOM_ROWS
+        )
+        topRowCount = rowCount
+        if (topPage >= rowCount) topPage = (rowCount - 1).coerceAtLeast(0)
+        if (topPage < 0) topPage = 0
+        val showArrows = rowCount > 1 && count > 0
+        val arrows = if (showArrows) arrowMetrics(side, spacing, writingRight) else null
+        val buttonWidth = if (arrows != null) {
+            (writingRight - arrows.block - spacing).coerceAtLeast(1)
+        } else {
+            usableWidth.coerceAtLeast(1)
+        }
+        val pages = GridMath.packTopPages(
+            count,
+            rowCount,
+            side,
+            bottomMultipliers(config),
+            buttonWidth,
+            spacing
+        )
+        lastPages = pages
+        topReachableCount = pages.sumOf { it.size }
+        val shown = pages.getOrElse(topPage) { emptyList() }
+        val heightIndexes = pages.flatten()
+        val heights = bottomHeights(config)
+        val rowHeight = when {
+            count <= 0 -> 0
+            heightIndexes.isEmpty() -> side
+            else -> heightIndexes.maxOf { index ->
+                GridMath.buttonHeightPx(side, heights.getOrElse(index) { 1f })
+            }
+        }
+        val perRow = GridMath.bottomRowIndexes(
+            PenboardConfig.MAX_BOTTOM_KEYS,
+            side,
+            List(PenboardConfig.MAX_BOTTOM_KEYS) { 1f },
+            buttonWidth,
+            spacing
+        ).firstOrNull()?.size ?: 0
+        topButtonsPerRow = perRow
+        return TopBarMeasure(
+            pages = pages,
+            page = topPage,
+            rowCount = rowCount,
+            shown = shown,
+            rowHeight = rowHeight,
+            buttonWidth = buttonWidth,
+            writingRight = writingRight,
+            arrows = arrows,
+            perRow = perRow
+        )
+    }
+
+    /** Panah dikecilkan bila area tulis lebih sempit daripada dua tombol + label. */
+    private fun arrowMetrics(side: Int, spacing: Int, writingRight: Int): ArrowMetrics {
+        val label = (26f * density).roundToInt().coerceAtLeast(1)
+        val full = GridMath.topArrowBlockPx(side, spacing, label)
+        if (full <= writingRight) return ArrowMetrics(side, label, full)
+        val compact = (18f * density).roundToInt().coerceAtLeast(1)
+        val room = (writingRight - compact - spacing).coerceAtLeast(2)
+        val shrunk = (room / 2).coerceIn(1, side)
+        val block = GridMath.topArrowBlockPx(shrunk, spacing, compact)
+            .coerceAtMost(writingRight.coerceAtLeast(1))
+        return ArrowMetrics(shrunk, compact, block)
+    }
+
+    private fun styleArrow(
+        button: KeyButton,
+        config: PenboardConfig,
+        side: Int,
+        spacing: Int,
+        action: KeyAction,
+        enabled: Boolean,
+        delta: Int,
+        description: String
+    ) {
+        button.repeatOnHold = false
+        button.visibility = View.VISIBLE
+        button.alpha = if (enabled) 1f else 0.35f
+        button.contentDescription = description
+        // Jarak hanya di antara dua panah, supaya lebar blok sama dengan hitungan GridMath.
+        button.layoutParams = LinearLayout.LayoutParams(side, side).apply {
+            marginStart = if (delta < 0) 0 else spacing
+        }
+        button.style(
+            radiusPx = config.cornerRadiusDp * density * 0.9f,
+            fillColor = BoardView.withAlpha(config.buttonColor, config.buttonOpacity * 255 / 100),
+            borderColor = BoardView.withAlpha(config.accentColor, 130),
+            labelColor = config.buttonTextColor,
+            textSizePx = side * 0.26f,
+            haptics = config.haptics
+        )
+        applyIcon(button, config, KeyDef(action), fraction = 0.62f)
+        button.onTap = if (enabled) {
+            { stepTopPage(delta) }
+        } else {
+            null
         }
     }
 
@@ -700,6 +987,7 @@ class BoardPanel(private val context: Context) {
         gapStart: Int,
         index: Int
     ): KeyButton = bottomButtons[index].apply {
+        visibility = View.VISIBLE
         repeatOnHold = key.repeatOnHold
         bindTap(this, key)
         contentDescription = describeKey(config, key)

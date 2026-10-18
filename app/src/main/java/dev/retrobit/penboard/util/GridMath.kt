@@ -291,6 +291,67 @@ object GridMath {
     }
 
     /**
+     * Tombol atas dibagi ke beberapa halaman. Setiap halaman memuat sebanyak yang
+     * muat di [availableWidthPx] (aturan yang sama dengan [bottomRowIndexes]), lalu
+     * halaman berikutnya melanjutkan sisanya. Paling banyak [rowCount] halaman;
+     * tombol selebihnya tidak masuk halaman mana pun.
+     *
+     * [rowCount] 1 menghasilkan daftar yang sama dengan [bottomRowIndexes].
+     */
+    fun packTopPages(
+        count: Int,
+        rowCount: Int,
+        cellPx: Int,
+        widthMultipliers: List<Float>,
+        availableWidthPx: Int,
+        spacingPx: Int = 0
+    ): List<List<Int>> {
+        if (count <= 0 || rowCount <= 0) return emptyList()
+        val pages = mutableListOf<List<Int>>()
+        var index = 0
+        while (pages.size < rowCount && index < count) {
+            val page = mutableListOf<Int>()
+            var used = 0
+            while (index < count) {
+                val width = buttonWidthPx(cellPx, widthMultipliers.getOrElse(index) { 1f })
+                val needed = if (page.isEmpty()) width else used + spacingPx + width
+                // Tombol pertama halaman tetap masuk walau lebih lebar dari ruangnya.
+                if (page.isNotEmpty() && needed > availableWidthPx) break
+                used = needed
+                page.add(index)
+                index++
+            }
+            if (page.isEmpty()) break
+            pages.add(page)
+        }
+        return pages
+    }
+
+    /** Indeks tombol pada halaman [page] (0 = baris pertama). Kosong bila halaman itu tidak ada. */
+    fun topPageIndexes(
+        page: Int,
+        rowCount: Int,
+        count: Int,
+        cellPx: Int,
+        widthMultipliers: List<Float>,
+        availableWidthPx: Int,
+        spacingPx: Int = 0
+    ): List<Int> {
+        if (page < 0) return emptyList()
+        return packTopPages(count, rowCount, cellPx, widthMultipliers, availableWidthPx, spacingPx)
+            .getOrElse(page) { emptyList() }
+    }
+
+    /**
+     * Lebar blok panah baris (label "1/4" + dua tombol panah + jarak di antaranya).
+     * Blok ini duduk di tepi kanan area tulis dan tidak ikut dihitung sebagai tombol.
+     */
+    fun topArrowBlockPx(buttonSidePx: Int, spacingPx: Int, labelPx: Int): Int {
+        if (buttonSidePx <= 0) return 0
+        return labelPx.coerceAtLeast(0) + buttonSidePx * 2 + spacingPx.coerceAtLeast(0)
+    }
+
+    /**
      * Jumlah baris tombol atas untuk [count] tombol: 1 bila ada tombol, 0 bila tidak.
      * (Bilah atas tidak pernah dibungkus ke baris kedua.)
      */

@@ -507,7 +507,9 @@ class PenboardConfigTest {
                 "text", "charPad", "recognize", "clear", "deleteStroke", "undo", "redo", "cyclePen",
                 "space", "enter", "backspace", "deleteWord", "deleteForward", "tab",
                 "cursorLeft", "cursorRight", "cursorUp", "cursorDown", "cursorHome", "cursorEnd",
-                "selectAll", "cut", "copy", "paste",
+                "cursorWordLeft", "cursorWordRight", "cursorDocStart", "cursorDocEnd", "pageUp", "pageDown",
+                "selectAll", "cut", "copy", "paste", "selectWord", "textUndo", "textRedo",
+                "shiftTab", "escape", "editorAction",
                 "systemHandwriting", "keyboardPicker", "hide"
             ),
             KeyAction.entries.map { it.id }
@@ -543,10 +545,12 @@ class PenboardConfigTest {
     fun `bilah atas punya bawaan dan batas aman`() {
         val config = PenboardConfig()
         assertEquals(PenboardConfig.DEFAULT_BOTTOM_KEYS, config.bottomButtonCount)
-        // Bilah atas sampai 30 tombol; bawaan 8 aksi mengisi slot pertama.
+        // Bilah atas sampai 80 tombol; bawaan 8 aksi mengisi slot pertama.
         assertEquals(PenboardConfig.defaultBottomKeys().size, config.bottomKeys.size)
-        assertEquals(30, PenboardConfig.MAX_BOTTOM_KEYS)
-        assertEquals(30, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(80, PenboardConfig.MAX_BOTTOM_KEYS)
+        assertEquals(80, PenboardConfig.BOTTOM_SLOTS)
+        assertEquals(1, PenboardConfig.DEFAULT_BOTTOM_ROWS)
+        assertEquals(8, PenboardConfig.MAX_BOTTOM_ROWS)
         assertEquals(
             listOf(
                 KeyAction.RECOGNIZE, KeyAction.ENTER, KeyAction.DELETE_STROKE,
@@ -562,7 +566,11 @@ class PenboardConfigTest {
         // Daftar bawaan tidak lebih panjang dari jumlah slot, dan slot tambahan
         // memakai bawaan bergiliran (bukan tombol mati).
         assertTrue(PenboardConfig.defaultBottomKeys().size <= PenboardConfig.BOTTOM_SLOTS)
-        assertEquals(30, many.bottomKeys.size)
+        assertEquals(PenboardConfig.BOTTOM_SLOTS, many.bottomKeys.size)
+        val rows = PenboardConfig(bottomRowCount = 0).sanitized()
+        assertEquals(PenboardConfig.MIN_BOTTOM_ROWS, rows.bottomRowCount)
+        val tooManyRows = PenboardConfig(bottomRowCount = 40).sanitized()
+        assertEquals(PenboardConfig.MAX_BOTTOM_ROWS, tooManyRows.bottomRowCount)
         assertEquals(
             PenboardConfig.defaultBottomKeys().first().action,
             many.bottomKeys[PenboardConfig.defaultBottomKeys().size].action

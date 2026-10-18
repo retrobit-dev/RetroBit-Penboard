@@ -90,6 +90,13 @@ class PenboardTypingService : AccessibilityService() {
         KeyAction.CURSOR_RIGHT -> moveCaret(1)
         KeyAction.CURSOR_HOME -> setSelection(0, 0)
         KeyAction.CURSOR_END -> setSelection(-1, -1)
+        KeyAction.CURSOR_WORD_LEFT -> moveTo { text, caret -> TextInsert.wordStart(text, caret) }
+        KeyAction.CURSOR_WORD_RIGHT -> moveTo { text, caret -> TextInsert.wordEnd(text, caret) }
+        KeyAction.CURSOR_DOC_START -> setSelection(0, 0)
+        KeyAction.CURSOR_DOC_END -> setSelection(-1, -1)
+        KeyAction.PAGE_UP -> moveTo { text, caret -> TextInsert.pageCaret(text, caret, -1) }
+        KeyAction.PAGE_DOWN -> moveTo { text, caret -> TextInsert.pageCaret(text, caret, 1) }
+        KeyAction.SELECT_WORD -> selectWordNode()
         KeyAction.BACKSPACE -> edit { text, start, end -> TextInsert.deleteBackward(text, start, end) }
         KeyAction.DELETE_FORWARD -> edit { text, start, end -> TextInsert.deleteForward(text, start, end) }
         KeyAction.DELETE_WORD -> edit { text, start, end -> TextInsert.deleteWord(text, start, end) }
@@ -98,6 +105,23 @@ class PenboardTypingService : AccessibilityService() {
         KeyAction.CUT -> act(AccessibilityNodeInfo.ACTION_CUT)
         KeyAction.PASTE -> act(AccessibilityNodeInfo.ACTION_PASTE)
         else -> false
+    }
+
+    private fun moveTo(target: (String, Int) -> Int): Boolean {
+        val node = focusedEditable() ?: return false
+        val text = node.text?.toString().orEmpty()
+        val caret = if (node.textSelectionStart < 0) text.length else node.textSelectionStart
+        val next = target(text, caret)
+        return setSelection(next, next)
+    }
+
+    private fun selectWordNode(): Boolean {
+        val node = focusedEditable() ?: return false
+        val text = node.text?.toString().orEmpty()
+        val caret = if (node.textSelectionStart < 0) text.length else node.textSelectionStart
+        val (from, to) = TextInsert.wordRange(text, caret)
+        if (from == to) return true
+        return setSelection(node, from, to)
     }
 
     private fun moveCaret(delta: Int): Boolean {

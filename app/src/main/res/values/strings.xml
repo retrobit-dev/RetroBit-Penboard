@@ -32,19 +32,22 @@
 
     <!-- Kartu: bilah tombol atas (pixel art) -->
     <string name="card_bottom">Tombol atas (pixel art)</string>
-    <string name="card_bottom_sub">Tombol di dalam bingkai papan, tepat <b>di atas</b> area menulis. Sampai <b>30 tombol</b>, selalu <b>satu baris</b>: rata kiri, berjarak sama seperti tombol samping, sisanya kosong. Ukuran dasar mengikuti tombol samping.</string>
+    <string name="card_bottom_sub">Tombol di dalam bingkai, tepat di atas area menulis. Sampai 80 tombol dan 8 baris. Hanya satu baris yang tampil; panah di kanan area tulis mengganti baris. Ukuran dasar mengikuti tombol samping.</string>
     <string name="setting_bottom_show">Tampilkan bilah tombol atas</string>
     <string name="setting_bottom_show_sub">Tombol untuk aksi yang paling sering dipakai, dipasang di atas area menulis (di dalam bingkai).</string>
     <string name="setting_bottom_count">Jumlah tombol atas</string>
-    <string name="bottom_single_row_note">Bilah atas selalu satu baris. Bila tombolnya tidak muat, tombol terakhir tidak ditampilkan — sisa ruang di kanan dibiarkan kosong.</string>
+    <string name="setting_bottom_rows">Jumlah baris tombol atas</string>
+    <string name="bottom_single_row_note">Hanya satu baris yang tampil. Tambah baris supaya tombol yang tidak muat pindah ke baris berikutnya, diganti dengan panah atas/bawah tepat di atas sisi kanan area tulis — atau geser bilahnya ke atas/bawah. Sisa ruang di kanan dibiarkan kosong. Bila barisnya 1, panah disembunyikan dan tombol yang tidak muat tidak ditampilkan.</string>
+    <string name="bottom_page_header">Baris %1$d</string>
+    <string name="bottom_slot_page">%1$d. %2$s - baris %3$d</string>
     <string name="bottom_slot_hidden">%1$d. %2$s - belum tampil</string>
-    <string name="bottom_edit_all_note">Semua slot di atas bisa diatur kapan saja, termasuk yang bertanda "belum tampil". Menyimpan slot yang belum tampil otomatis menaikkan Jumlah tombol atas supaya hasilnya langsung terlihat.</string>
+    <string name="bottom_edit_all_note">Semua slot di atas bisa diatur kapan saja, termasuk yang bertanda "belum tampil". Menyimpan slot yang belum tampil menaikkan jumlah tombol dan, bila perlu, jumlah baris supaya hasilnya bisa digeser.</string>
     <string name="setting_bottom_width">Lebar tombol</string>
     <string name="setting_bottom_height">Tinggi tombol</string>
     <string name="setting_bottom_width_sub">Ukuran dasar tombol atas mengikuti ukuran tombol samping; lebar dan tingginya bisa diatur sendiri per tombol (100% = sama dengan tombol samping).</string>
     <string name="action_bottom_default">Kembalikan bilah tombol atas</string>
     <string name="bottom_slot_title">Tombol atas %1$d</string>
-    <string name="bottom_note">Tombol atas berada di dalam bingkai jendela, tepat di atas area menulis dan selalu dalam <b>satu baris</b>: rata kiri, jarak antar tombol sama seperti tombol samping, sisa ruang di kanan dibiarkan kosong. Jumlah yang muat mengikuti ukuran tombol samping (32 dp = sekitar 10 tombol). Tombol yang tidak muat tidak ditampilkan — kurangi jumlahnya, kecilkan ukuran tombol samping, atau lebarkan papan. Lebar dan tinggi tiap tombol tetap bisa diatur di editor tombolnya; ikonnya pixel art 12 x 12 supaya tetap tajam.</string>
+    <string name="bottom_note">Tombol atas berada di dalam bingkai, tepat di atas area menulis. Jumlah baris 1-8; yang tampil selalu satu baris, rata kiri, jaraknya sama seperti tombol samping. Panah ganti baris menempel di tepi kanan area tulis, bukan di atas kolom tombol samping. Lebar dan tinggi tiap tombol tetap bisa diatur; ikonnya pixel art 12 x 12.</string>
 
     <!-- Kartu: keyboard -->
     <string name="card_keyboard">Keyboard Penboard</string>
@@ -88,7 +91,12 @@
     <string name="preview_align_manual">✓ %1$d baris tombol samping diatur sendiri, area tulis %2$d baris (rata atas).</string>
     <string name="preview_bottom_wait">Menghitung tombol atas…</string>
     <string name="preview_bottom_ok">✓ Tombol atas: %1$d tombol dalam satu baris.</string>
-    <string name="preview_bottom_partial">⚠ Tombol atas satu baris: %1$d dari %2$d tombol tampil; sisanya tidak muat.</string>
+    <string name="preview_bottom_partial">⚠ Baris 1: %1$d dari %2$d tombol tampil. Tambah jumlah baris supaya sisanya bisa digeser.</string>
+    <string name="preview_bottom_paged">✓ Baris %1$d/%2$d: %3$d tombol tampil. Panah di kanan area tulis pindah baris.</string>
+    <string name="preview_bottom_paged_more">⚠ Baris %1$d/%2$d menampilkan %3$d tombol. %4$d tombol belum kebagian baris — tambah baris.</string>
+    <string name="desc_top_page">Baris %1$d dari %2$d</string>
+    <string name="desc_row_up">Baris sebelumnya</string>
+    <string name="desc_row_down">Baris berikutnya</string>
     <string name="preview_bottom_none">Tombol atas tidak ditampilkan.</string>
     <string name="preview_line_on">Baris tulisan → posisi teks: baris 1 = di kursor, baris 2 = +1 enter, baris 3 = +2 enter. Baris tombol samping = %1$d, sama dengan baris tulisan.</string>
     <string name="preview_line_off">Baris tulisan tidak menggeser teks: hasil tulisan selalu masuk di posisi kursor.</string>
@@ -161,6 +169,9 @@
     <string name="setting_custom_text">Karakter atau teks yang dimasukkan</string>
     <string name="char_picker_note">Ketuk karakter di bawah untuk memakai fungsi Karakter. Untuk teks lebih panjang (misalnya @gmail.com), ketik di kotak ini. Fungsi Papan karakter membuka angka, huruf, dan tanda baca dari satu tombol.</string>
     <string name="char_function_note">Fungsi Karakter memasukkan angka, huruf, tanda baca, atau teks pendek yang Anda pilih — mukanya menampilkan karakter itu. Fungsi Papan karakter membuka papan karakter di atas panel (bukan keyboard QWERTY): ketuk untuk memasukkan, Tutup untuk kembali menulis.</string>
+    <string name="shortcut_function_note">Shortcut keyboard yang sering dipakai bisa dipasang pada tombol: lompat kata, awal/akhir dokumen, halaman atas/bawah, pilih kata, batal/ulangi teks, tab mundur, Esc, dan Kirim (cari, kirim, lanjut, atau selesai).</string>
+    <string name="action_add_shortcuts">Tambahkan shortcut keyboard</string>
+    <string name="msg_shortcuts_added">Shortcut keyboard dipasang di bilah atas. Panah di kanan area tulis pindah baris bila tidak muat satu baris.</string>
     <string name="char_pad_hint">Ketuk karakter untuk memasukkannya. Tutup untuk kembali menulis.</string>
     <string name="char_pad_close">Tutup</string>
     <string name="action_add_char_pad">Tambahkan tombol papan karakter</string>
@@ -178,6 +189,18 @@
     <string name="hint_cursor_down">geser kursor ke bawah</string>
     <string name="hint_cursor_home">kursor ke awal baris</string>
     <string name="hint_cursor_end">kursor ke akhir baris</string>
+    <string name="hint_cursor_word_left">lompat ke awal kata (Ctrl+kiri)</string>
+    <string name="hint_cursor_word_right">lompat ke akhir kata (Ctrl+kanan)</string>
+    <string name="hint_cursor_doc_start">kursor ke awal dokumen (Ctrl+Home)</string>
+    <string name="hint_cursor_doc_end">kursor ke akhir dokumen (Ctrl+End)</string>
+    <string name="hint_page_up">geser satu halaman ke atas</string>
+    <string name="hint_page_down">geser satu halaman ke bawah</string>
+    <string name="hint_select_word">pilih kata di posisi kursor</string>
+    <string name="hint_text_undo">batalkan ketikan terakhir (Ctrl+Z)</string>
+    <string name="hint_text_redo">ulangi ketikan yang dibatalkan (Ctrl+Y)</string>
+    <string name="hint_shift_tab">tab mundur (Shift+Tab)</string>
+    <string name="hint_escape">tombol Esc</string>
+    <string name="hint_editor_action">kirim, cari, lanjut, atau selesai sesuai kolom isian</string>
     <string name="hint_select_all">pilih semua teks</string>
     <string name="hint_cut">potong teks terpilih</string>
     <string name="hint_copy">salin teks terpilih</string>

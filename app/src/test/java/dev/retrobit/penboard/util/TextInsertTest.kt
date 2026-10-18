@@ -82,4 +82,31 @@ class TextInsertTest {
         // Kursor tak diketahui dianggap di awal saat menggeser.
         assertEquals(1, TextInsert.moveCaret("halo", -1, 1))
     }
+
+    @Test
+    fun `lompat kata seperti ctrl panah`() {
+        // Ctrl+kanan dari awal kata berhenti di batas kata (sesudah "halo"), bukan di spasi.
+        assertEquals(4, TextInsert.wordEnd("halo dunia", 0))
+        assertEquals(10, TextInsert.wordEnd("halo dunia", 5))
+        assertEquals(0, TextInsert.wordStart("halo dunia", 4))
+        assertEquals(5, TextInsert.wordStart("halo dunia", 10))
+    }
+
+    @Test
+    fun `rentang kata di sekitar kursor`() {
+        assertEquals(5 to 10, TextInsert.wordRange("halo dunia", 7))
+        assertEquals(0 to 4, TextInsert.wordRange("halo dunia", 4))
+        assertEquals(5 to 10, TextInsert.wordRange("halo dunia", 5))
+        assertEquals(0 to 0, TextInsert.wordRange("", 0))
+    }
+
+    @Test
+    fun `halaman menggeser sekitar tiga baris`() {
+        val text = "a\nb\nc\nd\ne"
+        assertEquals(0, TextInsert.pageCaret(text, 6, -1))
+        // Tiga baris ke bawah dari awal berhenti di awal baris ke-4, bukan di ujung teks.
+        assertEquals(6, TextInsert.pageCaret(text, 0, 1))
+        assertEquals(0, TextInsert.lineStart(text, 0))
+        assertEquals(2, TextInsert.lineStart(text, 3))
+    }
 }

@@ -62,6 +62,70 @@ object TextInsert {
         return index
     }
 
+    /**
+     * Akhir kata di kanan [caret]: spasi tepat di kanan dilewati, lalu habiskan satu kata.
+     * Sama seperti Ctrl+kanan.
+     */
+    fun wordEnd(existing: String, caret: Int): Int {
+        var index = normalize(existing, caret, fallbackEnd = false)
+        while (index < existing.length && existing[index].isWhitespace()) index++
+        while (index < existing.length && !existing[index].isWhitespace()) index++
+        return index
+    }
+
+    /**
+     * Rentang kata di sekitar [caret]. Di tengah kata = kata itu; di spasi atau di
+     * akhir kata = kata di kirinya; bila tidak ada, kata di kanannya.
+     */
+    fun wordRange(existing: String, caret: Int): Pair<Int, Int> {
+        if (existing.isEmpty()) return 0 to 0
+        val index = normalize(existing, caret, fallbackEnd = true).coerceIn(0, existing.length)
+        val inside = index < existing.length && !existing[index].isWhitespace()
+        if (inside) {
+            var start = index
+            var end = index
+            while (start > 0 && !existing[start - 1].isWhitespace()) start--
+            while (end < existing.length && !existing[end].isWhitespace()) end++
+            return start to end
+        }
+        var end = index
+        while (end > 0 && existing[end - 1].isWhitespace()) end--
+        var start = end
+        while (start > 0 && !existing[start - 1].isWhitespace()) start--
+        if (start < end) return start to end
+        start = index
+        while (start < existing.length && existing[start].isWhitespace()) start++
+        end = start
+        while (end < existing.length && !existing[end].isWhitespace()) end++
+        return start to end
+    }
+
+    /** Awal baris yang memuat [caret]. */
+    fun lineStart(existing: String, caret: Int): Int {
+        val index = normalize(existing, caret, fallbackEnd = true).coerceIn(0, existing.length)
+        if (index == 0) return 0
+        val newline = existing.lastIndexOf('\n', index - 1)
+        return if (newline < 0) 0 else newline + 1
+    }
+
+    /**
+     * Geser kursor sekitar tiga baris. [direction] negatif = ke atas, positif = ke bawah.
+     * Dipakai layanan aksesibilitas; keyboard sungguhan mengirim tombol Page Up/Down.
+     */
+    fun pageCaret(existing: String, caret: Int, direction: Int): Int {
+        var index = normalize(existing, caret, fallbackEnd = false).coerceIn(0, existing.length)
+        repeat(3) {
+            index = if (direction < 0) {
+                val start = lineStart(existing, index)
+                if (start < index) start else lineStart(existing, (start - 1).coerceAtLeast(0))
+            } else {
+                val newline = existing.indexOf('\n', index)
+                if (newline < 0) existing.length else (newline + 1).coerceAtMost(existing.length)
+            }
+        }
+        return index.coerceIn(0, existing.length)
+    }
+
     /** Posisi kursor setelah digeser [delta] huruf. */
     fun moveCaret(existing: String, caret: Int, delta: Int): Int {
         val from = normalize(existing, caret, fallbackEnd = false)

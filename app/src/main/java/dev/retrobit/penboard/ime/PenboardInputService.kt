@@ -5,6 +5,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedTextRequest
 import android.widget.Toast
 import dev.retrobit.penboard.R
 import dev.retrobit.penboard.data.ConfigStore
@@ -15,6 +16,7 @@ import dev.retrobit.penboard.ink.HandwritingInput
 import dev.retrobit.penboard.ui.BoardPanel
 import dev.retrobit.penboard.util.GridMath
 import dev.retrobit.penboard.util.KeyboardChars
+import dev.retrobit.penboard.util.TextInsert
 import dev.retrobit.penboard.util.SystemHandwriting
 
 /**
@@ -247,6 +249,18 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
             KeyAction.CURSOR_DOWN -> sendKey(KeyEvent.KEYCODE_DPAD_DOWN)
             KeyAction.CURSOR_HOME -> sendKey(KeyEvent.KEYCODE_MOVE_HOME)
             KeyAction.CURSOR_END -> sendKey(KeyEvent.KEYCODE_MOVE_END)
+            KeyAction.CURSOR_WORD_LEFT -> sendKey(KeyEvent.KEYCODE_DPAD_LEFT, CTRL)
+            KeyAction.CURSOR_WORD_RIGHT -> sendKey(KeyEvent.KEYCODE_DPAD_RIGHT, CTRL)
+            KeyAction.CURSOR_DOC_START -> sendKey(KeyEvent.KEYCODE_MOVE_HOME, CTRL)
+            KeyAction.CURSOR_DOC_END -> sendKey(KeyEvent.KEYCODE_MOVE_END, CTRL)
+            KeyAction.PAGE_UP -> sendKey(KeyEvent.KEYCODE_PAGE_UP)
+            KeyAction.PAGE_DOWN -> sendKey(KeyEvent.KEYCODE_PAGE_DOWN)
+            KeyAction.SELECT_WORD -> selectWord()
+            KeyAction.TEXT_UNDO -> undoText(forward = false)
+            KeyAction.TEXT_REDO -> undoText(forward = true)
+            KeyAction.SHIFT_TAB -> sendKey(KeyEvent.KEYCODE_TAB, SHIFT)
+            KeyAction.ESCAPE -> sendKey(KeyEvent.KEYCODE_ESCAPE)
+            KeyAction.EDITOR_ACTION -> performImeAction()
 
             // Papan klip & pilihan teks.
             KeyAction.SELECT_ALL -> contextMenu(android.R.id.selectAll)
@@ -307,11 +321,58 @@ class PenboardInputService : InputMethodService(), BoardPanel.Listener {
         return true
     }
 
-    /** Kirim satu penekanan tombol ke kolom isian (dipakai panah kursor dan tab). */
-    private fun sendKey(code: Int) {
+    private val CTRL = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+    private val SHIFT = KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON
+
+    /** Kirim satu penekanan tombol ke kolom isian (dipakai panah kursor, tab, dan shortcut). */
+    private fun sendKey(code: Int, meta: Int = 0) {
         val connection = currentInputConnection ?: return
-        connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
-        connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+        if (meta == 0) {
+            connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
+            connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+            return
+        }
+        val time = android.os.SystemClock.uptimeMillis()
+        connection.sendKeyEvent(KeyEvent(time, time, KeyEvent.ACTION_DOWN, code, 0, meta))
+        connection.sendKeyEvent(KeyEvent(time, time, KeyEvent.ACTION_UP, code, 0, meta))
+    }
+
+    /** Pilih kata di kursor, seperti ketuk dua kali pada keyboard biasa. */
+    private fun selectWord() {
+        val connection = currentInputConnection ?: return
+        val extracted = connection.getExtractedText(
+            ExtractedTextRequest().apply {
+                hintMaxChars = 10000
+                hintMaxLines = 200
+            },
+            0
+        ) ?: return
+        val text = extracted.text?.toString() ?: return
+        if (extracted.selectionStart < 0) return
+        val (from, to) = TextInsert.wordRange(text, extracted.selectionStart)
+        if (to <= from) return
+        connection.setSelection(extracted.startOffset + from, extracted.startOffset + to)
+    }
+
+    /** Batal/ulangi teks di kolom isian (bukan goresan di papan). */
+    private fun undoText(forward: Boolean) {
+        val connection = currentInputConnection ?: return
+        val menu = if (forward) android.R.id.redo else android.R.id.undo
+        if (connection.performContextMenuAction(menu)) return
+        val code = if (forward) KeyEvent.KEYCODE_Y else KeyEvent.KEYCODE_Z
+        sendKey(code, CTRL)
+    }
+
+    /** Tombol Kirim: cari, kirim, lanjut, atau selesai — sesuai kolom isiannya. */
+    private fun performImeAction() {
+        val connection = currentInputConnection ?: return
+        val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION)
+            ?: EditorInfo.IME_ACTION_UNSPECIFIED
+        val performed = when (action) {
+            EditorInfo.IME_ACTION_NONE, EditorInfo.IME_ACTION_UNSPECIFIED -> false
+            else -> connection.performEditorAction(action)
+        }
+        if (!performed) sendEnter()
     }
 
     /** Aksi menu teks: pilih semua, potong, salin, tempel. */
